@@ -25,6 +25,11 @@ function New-Fixture([string]$Name) {
     Put (Join-Path $package 'payload/defaults/local.bigwalk.native-dlss.cfg') 'default-config'
     Put (Join-Path $package 'payload/defaults/OptiScaler.ini') 'default-opti'
     foreach ($name in @('LICENSE','NOTICE','THIRD_PARTY_NOTICES.md')) { Put (Join-Path $package $name) "fixture-$name" }
+    Put (Join-Path $package 'THIRD_PARTY_NOTICES.md') '[Vendor](docs/licenses/vendor.txt) [Assessment](docs/LICENSING.md)'
+    Put (Join-Path $package 'docs/LICENSING.md') '[Project license](../LICENSE) [Checklist](RELEASE-CHECKLIST.md)'
+    Put (Join-Path $package 'docs/RELEASE-CHECKLIST.md') '[Sources](licenses/SOURCES.md)'
+    Put (Join-Path $package 'docs/UPSCALERS.md') 'fixture upscaler guide'
+    Put (Join-Path $package 'docs/licenses/SOURCES.md') '[Project license](../../LICENSE)'
     Put (Join-Path $package 'docs/licenses/vendor.txt') 'fixture-vendor-license'
     Put (Join-Path $root 'archive/winhttp.dll') 'loader-known'
     Put (Join-Path $root 'archive/BepInEx/core/BepInEx.Core.dll') 'bep-core-known'
@@ -171,7 +176,13 @@ try {
         Assert (Test-Path (Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll')) 'plugin installed'
         Assert (-not (Test-Path (Join-Path $f.GamePath 'OptiScaler.ini'))) 'core-only install does not create OptiScaler config'
         Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/BigWalkDLSS/notices/NOTICE')) -eq 'fixture-NOTICE') 'attribution installed'
-        Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/BigWalkDLSS/notices/licenses/vendor.txt')) -eq 'fixture-vendor-license') 'vendor license installed'
+        Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/BigWalkDLSS/notices/docs/licenses/vendor.txt')) -eq 'fixture-vendor-license') 'vendor license installed'
+        $notices=Join-Path $f.GamePath 'BepInEx/BigWalkDLSS/notices'
+        foreach ($document in Get-ChildItem -LiteralPath $notices -Filter '*.md' -Recurse -File) {
+            foreach ($link in [regex]::Matches([IO.File]::ReadAllText($document.FullName),'\]\(([^)]+)\)')) {
+                Assert (Test-Path -LiteralPath (Join-Path $document.DirectoryName $link.Groups[1].Value)) 'installed attribution link resolves'
+            }
+        }
         Uninstall $f | Out-Null
         Assert (-not (Test-Path (Join-Path $f.GamePath 'winhttp.dll'))) 'owned loader removed'
         Assert (-not (Test-Path (Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll'))) 'plugin removed'
@@ -189,7 +200,25 @@ try {
         Put (Join-Path $f.GamePath 'BepInEx/plugins/AnotherMod.dll') 'other-mod'
         Uninstall $f | Out-Null
         Assert (Test-Path (Join-Path $f.GamePath 'winhttp.dll')) 'shared loader retained'
-        Assert (Test-Path (Join-Path $f.GamePath 'BepInEx/BigWalkDLSS/notices/licenses/vendor.txt')) 'shared loader licenses retained'
+        Assert (Test-Path (Join-Path $f.GamePath 'BepInEx/BigWalkDLSS/notices/docs/licenses/vendor.txt')) 'shared loader licenses retained'
+    }
+    Case 'retained shared notices remain repairable and removable after another mod leaves' {
+        $f=New-Fixture 'retained-ownership'; Install $f | Out-Null
+        $other=Join-Path $f.GamePath 'BepInEx/plugins/AnotherMod.dll'
+        Put $other 'other-mod'
+        Uninstall $f | Out-Null
+        $manifest=Get-Content -LiteralPath (Join-Path $f.GamePath '.big-beautiful-walk/manifest.json') -Raw | ConvertFrom-Json
+        Assert (@($manifest.Entries | Where-Object { $_.Role -eq 'plugin' }).Count -eq 0) 'removed plugin ownership discarded'
+        Assert (@($manifest.Entries | Where-Object { $_.Role -eq 'notices' }).Count -gt 0) 'retained notices stay owned'
+        Put (Join-Path $f.PackagePath 'NOTICE') 'updated-attribution'
+        Install $f | Out-Null
+        Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/BigWalkDLSS/notices/NOTICE')) -eq 'updated-attribution') 'known retained attribution updates without collision'
+        Uninstall $f | Out-Null
+        Assert (Test-Path -LiteralPath $other) 'other mod preserved through reinstall and removal'
+        Remove-Item -LiteralPath $other
+        Uninstall $f | Out-Null
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'winhttp.dll'))) 'owned shared loader removable after last other mod leaves'
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'BepInEx/BigWalkDLSS/notices/NOTICE'))) 'no orphan notices after shared loader removal'
     }
     Case 'existing known dependency and config bytes preserved' {
         $f=New-Fixture 'preserve'

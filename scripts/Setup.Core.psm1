@@ -239,12 +239,17 @@ function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyD
         if (-not [IO.File]::Exists($source)) { throw "Release notices are incomplete: missing $name. Extract the complete release ZIP and retry." }
         $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/BigWalkDLSS/notices/$name"; FreshOnly=$false; Role='notices' })
     }
+    foreach ($name in @('LICENSING.md','RELEASE-CHECKLIST.md','UPSCALERS.md')) {
+        $source = Resolve-BbwPath $PackagePath "docs/$name"
+        if (-not [IO.File]::Exists($source)) { throw "Release notices are incomplete: missing docs/$name. Extract the complete release ZIP and retry." }
+        $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/BigWalkDLSS/notices/docs/$name"; FreshOnly=$false; Role='notices' })
+    }
     $licenses = Resolve-BbwPath $PackagePath 'docs/licenses'
     if (-not [IO.Directory]::Exists($licenses)) { throw 'Release licenses are missing. Extract the complete release ZIP and retry.' }
     foreach ($file in Get-ChildItem -LiteralPath $licenses -Recurse -File) {
         $relative = $file.FullName.Substring($licenses.Length + 1).Replace('\','/')
         $source = Resolve-BbwPath $licenses $relative
-        $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/BigWalkDLSS/notices/licenses/$relative"; FreshOnly=$false; Role='notices' })
+        $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/BigWalkDLSS/notices/docs/licenses/$relative"; FreshOnly=$false; Role='notices' })
     }
     $lock = Read-BbwJson (Resolve-BbwPath $PackagePath 'packaging/dependencies.lock.json')
     if (-not $lock -or -not $lock.PSObject.Properties['SchemaVersion'] -or $lock.SchemaVersion -ne 1 -or -not $lock.PSObject.Properties['Dependencies']) { throw 'Dependency lock is missing or incomplete. This alpha cannot install until official dependency URLs and SHA256 hashes are supplied in packaging/dependencies.lock.json.' }
@@ -419,7 +424,13 @@ function Invoke-BbwSetup {
         } else {
             $otherPlugins=Test-BbwOtherPlugins $GamePath
             foreach ($entry in @($manifest.Entries)) {
-                if ((Test-BbwEditable $entry) -or ($otherPlugins -and (Get-BbwRole $entry) -in @('bepinex','notices'))) { continue }
+                if (Test-BbwEditable $entry) { continue }
+                if ($otherPlugins -and (Get-BbwRole $entry) -in @('bepinex','notices')) {
+                    # Preserve ownership with the shared files, so a later repair can
+                    # update notices and a later uninstall can remove our loader safely.
+                    $entries.Add($entry)
+                    continue
+                }
                 $beforeHash=Get-BbwHash (Resolve-BbwPath $GamePath $entry.Target)
                 if (-not $beforeHash -and -not $entry.OriginalHash) { continue }
                 $source = $null
@@ -455,7 +466,7 @@ function Invoke-BbwSetup {
             $applied++
             if ($FaultAfter -gt 0 -and $applied -eq $FaultAfter) { throw 'Injected transaction failure.' }
         }
-        if ($Mode -eq 'Install') { Write-BbwJson $manifestPath ([pscustomobject]@{ SchemaVersion=1; Version='0.6.0'; Entries=@($entries.ToArray()) }) }
+        if ($Mode -eq 'Install' -or $entries.Count -gt 0) { Write-BbwJson $manifestPath ([pscustomobject]@{ SchemaVersion=1; Version='0.7.0'; Entries=@($entries.ToArray()) }) }
         elseif ([IO.File]::Exists($manifestPath)) { [IO.File]::Delete($manifestPath) }
         [IO.File]::Delete($journalPath)
         if ($Mode -eq 'Install') {

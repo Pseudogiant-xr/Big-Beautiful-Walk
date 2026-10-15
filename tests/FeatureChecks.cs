@@ -18,6 +18,7 @@ foreach (string provider in FeatureOptions.ProviderValues)
     Check(Value(changes, "FrameGen", "FGInput") == "Upscaler" && Value(changes, "FrameGen", "FGNvngxReplacement") == "None", "Direct route replaced with a different integration");
     Check(Value(changes, "DLSSG", "InterpolationCount") == "1" && Value(changes, "DLSSG", "ForceDMFG") == "false", "Unverified NVIDIA multiplier exposed");
     Check(Value(changes, "XeFG", "InterpolationCount") == "1" && Value(changes, "XeFG", "IgnoreInitChecks") == "false", "Intel baseline bypassed capability checks");
+    Check(Value(changes, "fakenvapi", "ForceXeLL") == "false", "Forced XeLL can override the chosen provider");
 }
 bool rejected = false;
 try { FeatureOptions.FrameGenChanges(true, "OptiFG"); } catch (ArgumentException) { rejected = true; }
@@ -54,7 +55,12 @@ foreach (string file in FeatureOptions.AmdFiles) BridgeSettings.Files.Add(file);
 foreach (string file in FeatureOptions.IntelFiles) BridgeSettings.Files.Add(file);
 Check(FeatureSettings.FrameGenUnavailable("FSRFG", 0x10de, "NVIDIA GeForce RTX 4090") == "", "AMD provider incorrectly vendor-gated");
 Check(FeatureSettings.FrameGenUnavailable("XeFG", 0x1002, "AMD Radeon") == "", "Intel provider incorrectly Intel-only");
+BridgeSettings.Values[("fakenvapi", "ForceXeLL")] = "true";
+BridgeSettings.Values[("fakenvapi", "KeepOtherSetting")] = "unchanged";
+Check(FeatureSettings.QueuedFrameGen.Provider == "XeFG", "Forced XeLL startup route was reported as NVIDIA");
 Check(FeatureSettings.SetFrameGen(true, "FSRFG", 0x10de, "NVIDIA GeForce RTX 4090"), "Direct AMD baseline not saved");
+Check(FeatureSettings.QueuedFrameGen.Provider == "FSRFG" && BridgeSettings.ReadOption("fakenvapi", "ForceXeLL") == "false", "AMD choice remains overridden by forced XeLL");
+Check(BridgeSettings.ReadOption("fakenvapi", "KeepOtherSetting") == "unchanged", "Provider selection changed unrelated settings");
 Check(FeatureSettings.FrameGenPending && FeatureSettings.QueuedFrameGen.Enabled && !FeatureSettings.StartupFrameGen.Enabled, "Queued FG falsely reported as startup state");
 BridgeSettings.Files.Remove(FeatureOptions.IntelFiles[0]);
 Check(!FeatureSettings.SetFrameGen(true, "XeFG", 0x1002, "AMD Radeon"), "Missing FG dependency ignored");

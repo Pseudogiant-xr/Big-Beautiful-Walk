@@ -12,7 +12,7 @@ Install the optional bridge using Setup while the game is closed. Fresh defaults
 | AMD FSR FG | Signed FidelityFX loader 2.3.0.2740 and frame-generation DLL 4.0.1.2740 | Cross-vendor route; GPU/resource compatibility must be established by initialization and rendering. No 0.7 game test has run. |
 | Intel XeSS FG | XeSS SDK 3.0.2's FG 1.3.1.78 and XeLL 1.3.2.10 | Supports Intel hardware and non-Intel Shader Model 6.4 GPUs. Requires XeLL and a recent Visual C++ runtime. Use borderless or windowed mode, not fullscreen exclusive. No 0.7 game test has run. |
 
-Profiles use one generated frame per rendered frame. Multi-frame generation is not exposed without real capability evidence. Changing NVIDIA's FG preset C is a driver-profile operation and is separate from SR model preset L; this mod does not alter driver profiles. Prefer a stable rendered-frame rate before enabling FG. Bars, foliage and fast movement need close comparison because interpolation can introduce shimmer.
+Profiles use one generated frame per rendered frame and clear F10's conflicting Force XeLL mode, which disables frame generation. Multi-frame generation is not exposed without real capability evidence. Changing NVIDIA's FG preset C is a driver-profile operation and is separate from SR model preset L; this mod does not alter driver profiles. Prefer a stable rendered-frame rate before enabling FG. Bars, foliage and fast movement need close comparison because interpolation can introduce shimmer.
 
 To turn FG off, use its **Enabled** control. Changing **FG Input** in F10 is a different operation. Compare the same moving view with FG disabled and enabled, checking actual displayed presents as well as responsiveness; an engine FPS counter may only count rendered frames.
 

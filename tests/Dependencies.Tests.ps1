@@ -21,6 +21,16 @@ try {
             throw "Installed bytes differ: $($entry.Target)"
         }
     }
+    $notices=Join-Path $game 'BepInEx/BigWalkDLSS/notices'
+    $links=0
+    foreach ($document in Get-ChildItem -LiteralPath $notices -Filter '*.md' -Recurse -File) {
+        foreach ($link in [regex]::Matches([IO.File]::ReadAllText($document.FullName),'\]\(([^)]+)\)')) {
+            $relative=$link.Groups[1].Value.Split('#')[0]
+            if (-not $relative -or $relative -match '^[a-zA-Z][a-zA-Z0-9+.-]*:') { continue }
+            if (-not (Test-Path -LiteralPath (Join-Path $document.DirectoryName $relative))) { throw "Broken installed notice link in $($document.Name): $relative" }
+            $links++
+        }
+    }
     foreach ($relative in @('OptiScaler/amd_fidelityfx_framegeneration_dx12.dll','OptiScaler/libxess_fg.dll',
         'OptiScaler/libxell.dll','OptiScaler/nvngx.dll_dlssnr.dll','BepInEx/BigWalkDLSS/notices/NOTICE')) {
         if (-not (Test-Path -LiteralPath (Join-Path $game $relative))) { throw "Provider/notice missing: $relative" }
@@ -36,7 +46,7 @@ try {
         }
     }
     if ([IO.File]::ReadAllText((Join-Path $game 'GameAssembly.dll')) -ne 'Disposable game assembly sentinel.') { throw 'Game sentinel changed.' }
-    Write-Output "PASS all pinned dependencies installed, repaired and removed in an unlaunched disposable fixture; $(@($manifest.Entries).Count) installed file hashes verified."
+    Write-Output "PASS all pinned dependencies installed, repaired and removed in an unlaunched disposable fixture; $(@($manifest.Entries).Count) installed file hashes and $links notice links verified."
 }
 finally {
     $resolved=[IO.Path]::GetFullPath($scratch)

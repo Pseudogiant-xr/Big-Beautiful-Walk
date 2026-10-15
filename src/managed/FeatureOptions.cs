@@ -68,11 +68,11 @@ internal static class FeatureOptions
         return new FrameGenProfile
         {
             Enabled = Bool(Get("FrameGen", "Enabled", "false")),
-            Provider = Get("FrameGen", "FGOutput", "DLSSG"),
+            Provider = Bool(Get("fakenvapi", "ForceXeLL", "false")) ? "XeFG" : Get("FrameGen", "FGOutput", "DLSSG"),
             Signature = string.Join("|", Get("FrameGen", "Enabled", "false"), Get("FrameGen", "FGOutput", "DLSSG"),
                 Get("FrameGen", "FGInput", "Upscaler"), Get("FrameGen", "FGNvngxReplacement", "None"),
                 Get("DLSSG", "InterpolationCount", "1"), Get("DLSSG", "ForceDMFG", "false"),
-                Get("XeFG", "InterpolationCount", "1"), Get("XeFG", "IgnoreInitChecks", "false"))
+                Get("XeFG", "InterpolationCount", "1"), Get("XeFG", "IgnoreInitChecks", "false"), Get("fakenvapi", "ForceXeLL", "false"))
         };
     }
 
@@ -95,7 +95,7 @@ internal static class FeatureOptions
         return new[] { ("FrameGen", "Enabled", enabled ? "true" : "false"), ("FrameGen", "FGOutput", provider),
             ("FrameGen", "FGInput", "Upscaler"), ("FrameGen", "FGNvngxReplacement", "None"),
             ("DLSSG", "InterpolationCount", "1"), ("DLSSG", "ForceDMFG", "false"),
-            ("XeFG", "InterpolationCount", "1"), ("XeFG", "IgnoreInitChecks", "false") };
+            ("XeFG", "InterpolationCount", "1"), ("XeFG", "IgnoreInitChecks", "false"), ("fakenvapi", "ForceXeLL", "false") };
     }
 
     internal static (string Section, string Key, string Value)[] NeuralChanges(NeuralProfile profile)
