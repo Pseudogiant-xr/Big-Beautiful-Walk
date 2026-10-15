@@ -234,6 +234,18 @@ function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyD
         if (-not [IO.File]::Exists($source)) { throw "Release payload is incomplete: missing $name. Extract the complete release ZIP and run Setup.cmd again." }
         $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/plugins/BigWalkDLSS/$name"; FreshOnly=$false; Role='plugin' })
     }
+    foreach ($name in @('LICENSE','NOTICE','THIRD_PARTY_NOTICES.md')) {
+        $source = Resolve-BbwPath $PackagePath $name
+        if (-not [IO.File]::Exists($source)) { throw "Release notices are incomplete: missing $name. Extract the complete release ZIP and retry." }
+        $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/BigWalkDLSS/notices/$name"; FreshOnly=$false; Role='notices' })
+    }
+    $licenses = Resolve-BbwPath $PackagePath 'docs/licenses'
+    if (-not [IO.Directory]::Exists($licenses)) { throw 'Release licenses are missing. Extract the complete release ZIP and retry.' }
+    foreach ($file in Get-ChildItem -LiteralPath $licenses -Recurse -File) {
+        $relative = $file.FullName.Substring($licenses.Length + 1).Replace('\','/')
+        $source = Resolve-BbwPath $licenses $relative
+        $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/BigWalkDLSS/notices/licenses/$relative"; FreshOnly=$false; Role='notices' })
+    }
     $lock = Read-BbwJson (Resolve-BbwPath $PackagePath 'packaging/dependencies.lock.json')
     if (-not $lock -or -not $lock.PSObject.Properties['SchemaVersion'] -or $lock.SchemaVersion -ne 1 -or -not $lock.PSObject.Properties['Dependencies']) { throw 'Dependency lock is missing or incomplete. This alpha cannot install until official dependency URLs and SHA256 hashes are supplied in packaging/dependencies.lock.json.' }
     foreach ($feature in $Features) {
@@ -407,7 +419,7 @@ function Invoke-BbwSetup {
         } else {
             $otherPlugins=Test-BbwOtherPlugins $GamePath
             foreach ($entry in @($manifest.Entries)) {
-                if ((Test-BbwEditable $entry) -or ($otherPlugins -and (Get-BbwRole $entry) -eq 'bepinex')) { continue }
+                if ((Test-BbwEditable $entry) -or ($otherPlugins -and (Get-BbwRole $entry) -in @('bepinex','notices'))) { continue }
                 $beforeHash=Get-BbwHash (Resolve-BbwPath $GamePath $entry.Target)
                 if (-not $beforeHash -and -not $entry.OriginalHash) { continue }
                 $source = $null

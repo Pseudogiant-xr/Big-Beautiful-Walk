@@ -16,7 +16,7 @@ using PassData = UnityEngine.Rendering.Universal.PostProcessPassRenderGraph.DoFG
 
 namespace BigWalkDLSS;
 
-[BepInPlugin("local.bigwalk.native-dlss", "Big Beautiful Walk", "0.6.0")]
+[BepInPlugin("local.bigwalk.native-dlss", "Big Beautiful Walk", "0.7.0")]
 public sealed class Plugin : BasePlugin
 {
     internal static Plugin Instance = null!;
@@ -101,7 +101,7 @@ public sealed class Plugin : BasePlugin
         }
         else Log.LogWarning(SupportMessage);
         AddComponent<Controller>();
-        Log.LogInfo($"Big Beautiful Walk 0.6.0: API={SystemInfo.graphicsDeviceType}, Unity={Application.unityVersion}, game={Application.version}, native loaded={NativeLoaded}; XR is excluded.");
+        Log.LogInfo($"Big Beautiful Walk 0.7.0: API={SystemInfo.graphicsDeviceType}, Unity={Application.unityVersion}, game={Application.version}, native loaded={NativeLoaded}; XR is excluded.");
     }
 
     private static void InstallPatch()

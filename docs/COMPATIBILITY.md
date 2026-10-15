@@ -20,6 +20,7 @@ A completely fresh BepInEx installation and first-launch interop generation have
 ## Limits
 
 - VR is unsupported. Remove or disable this graphics integration before a VR session.
+- Version 0.7's Home FG/NR controls, AMD FG, Intel FG and all new provider combinations are prepared offline and have not been launched in Big Walk. The tested 0.6 NVIDIA path does not validate these additions. See [FRAME-GENERATION.md](FRAME-GENERATION.md).
 - DirectX 12, Vulkan, Linux/Proton, AMD/Intel GPUs and other RTX generations are unverified.
 - Game or Unity updates may change the rendering hooks. Preserve your installer backups before updating.
 - FG can shimmer on grass and foliage; generated-frame rate is different from the game's rendered-frame rate.
@@ -31,4 +32,4 @@ A completely fresh BepInEx installation and first-launch interop generation have
 
 ## Problem reports
 
-Include version 0.6.0, your game version/build, GPU/driver, API, whether OptiScaler is installed, the selected graphics preset, steps to reproduce and relevant log excerpts. For a crash or missing panel, run Setup's **Diagnose** first. Do not upload game assemblies, proprietary DLLs, full personal configuration dumps or unredacted logs.
+Include version 0.7.0, your game version/build, GPU/driver, API, whether OptiScaler is installed, the selected graphics preset, steps to reproduce and relevant log excerpts. For a crash or missing panel, run Setup's **Diagnose** first. Do not upload game assemblies, proprietary DLLs, full personal configuration dumps or unredacted logs.

@@ -16,7 +16,7 @@ try {
 $optionalHeight=0
 if ($hasFg) { $optionalHeight=32 }
 $form = New-Object Windows.Forms.Form
-$form.Text = 'Big Beautiful Walk - Setup 0.6.0'
+$form.Text = 'Big Beautiful Walk - Setup 0.7.0'
 $form.ClientSize = New-Object Drawing.Size(690,(470+$optionalHeight))
 $form.StartPosition = 'CenterScreen'
 $form.MinimumSize = $form.Size
@@ -56,7 +56,7 @@ $fgCheck.SetBounds(20,122,650,28)
 $fgCheck.Checked=$false
 if ($hasFg) {
     $form.Controls.Add($fgCheck)
-    $status.Text='Ready. Core installs Super Resolution + Advanced Graphics. The optional checkbox installs the experimental Frame Generation bridge; fresh defaults leave Frame Generation off. Use the FG / NR guide for configuration and Neural Rendering. Diagnose only reads files.'
+    $status.Text='Ready. The optional bridge adds NVIDIA, AMD and Intel Frame Generation runtimes and Home controls; fresh defaults leave FG and NR off. Neural Rendering needs a separately obtained model. These new routes need in-game testing. Diagnose only reads files.'
 }
 $guide=New-Object Windows.Forms.Button
 $guide.Text='FG / NR guide'

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace BigWalkDLSS;
 
-// Small, lossless editor for the two OptiScaler options owned by the Home panel.
+// Lossless editor for OptiScaler options owned by the Home panel.
 internal sealed class IniSettings
 {
     private readonly Encoding _encoding;
@@ -93,6 +93,21 @@ internal sealed class IniSettings
         Array.Copy(_preamble, result, _preamble.Length);
         Array.Copy(body, 0, result, _preamble.Length, body.Length);
         return result;
+    }
+
+    internal byte[] WithValues(params (string Section, string Key, string Value)[] changes)
+    {
+        // Build the whole profile before saving anything. A malformed later option
+        // must not leave a partially selected provider on disk.
+        var next = this;
+        var targets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var change in changes)
+        {
+            if (!targets.Add(change.Section + "\0" + change.Key))
+                throw new InvalidDataException("Duplicate option in configuration batch.");
+            next = new IniSettings(next.WithValue(change.Section, change.Key, change.Value));
+        }
+        return next.Original;
     }
 
     private static void EndPrevious(List<(string Text, string Ending)> lines, int index, string newline)

@@ -67,7 +67,7 @@ internal static class UpscalingMenu
             GUI.Label(new Rect(x + 25, y + 584, 715, 36), BridgeSettings.Message, small);
             if (GUI.Button(new Rect(x + 750, y + 584, 175, 31), "Refresh settings", button)) BridgeSettings.Reload();
             GUI.Label(new Rect(x + 25, y + 625, 900, 28),
-                "Open the OptiScaler menu (usually F10) for Frame Generation and Neural Rendering controls.", small);
+                "Use the Frame Gen and Neural tabs for optional features after restart. F10 contains advanced experimental controls.", small);
         }
         finally { GUI.enabled = enabled; }
     }

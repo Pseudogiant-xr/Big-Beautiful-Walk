@@ -18,11 +18,11 @@ Obtain the NVIDIA DLSS/NGX SDK and Streamline headers under their upstream terms
 
 ```powershell
 .\scripts\Build.ps1 -GameDir 'E:\SteamLibrary\steamapps\common\Big Walk' -NgxRoot 'E:\SDKs\DLSS' -StreamlineRoot 'E:\SDKs\Streamline'
-.\scripts\Package.ps1 -Destination '.\dist\Big-Beautiful-Walk-0.6.0-alpha'
+.\scripts\Package.ps1 -Destination '.\dist\Big-Beautiful-Walk-0.7.0-offline-candidate'
 ```
 
-The managed/native packet ABI is 120 bytes, version 3; always distribute both DLLs from the same build. Release builds omit debug-path records. The pure graphics and lossless-INI checks run with .NET 8 via `tests/GraphicsChecks.csproj` and `tests/BridgeChecks.csproj`; installer recovery checks run with `tests/Setup.Tests.ps1` on Windows PowerShell 5.1 and PowerShell 7. Hosted CI covers those CPU checks, not game rendering.
+The managed/native packet ABI is 120 bytes, version 3; always distribute both DLLs from the same build. Release builds omit debug-path records. The pure graphics, lossless-INI and FG/NR profile checks run with .NET 8 via `tests/GraphicsChecks.csproj`, `tests/BridgeChecks.csproj` and `tests/FeatureChecks.csproj`; installer recovery checks run with `tests/Setup.Tests.ps1` on Windows PowerShell 5.1 and PowerShell 7. Hosted CI covers those CPU checks, not game rendering.
 
 The bridge loads the runtime DLL from the game folder; compiling it does not supply that runtime or establish compatibility with an arbitrary version. Use the pins in `packaging/dependencies.lock.json` for the public core.
 
-Keep `THIRD_PARTY_NOTICES.md` and `docs/licenses` with source and compiled deliverables. The Unity adaptation and incorporated NVIDIA SDK code retain their own terms; see `docs/RELEASE-CHECKLIST.md` before publishing a build.
+Keep `LICENSE`, `NOTICE`, `THIRD_PARTY_NOTICES.md` and `docs/licenses` with source and compiled deliverables. The Unity adaptation and incorporated NVIDIA SDK code retain their own terms; see `docs/RELEASE-CHECKLIST.md` before publishing a build.

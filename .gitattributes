@@ -9,3 +9,6 @@
 *.ps1 text eol=crlf
 *.psm1 text eol=crlf
 *.cmd text eol=crlf
+# Preserve upstream licence snapshots byte-for-byte with their recorded hashes.
+LICENSE -text
+docs/licenses/* -text

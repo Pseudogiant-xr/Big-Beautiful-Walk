@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0 — private offline candidate
+
+- Add Home profiles for NVIDIA, AMD and Intel frame generation, with dependency checks and startup/next-launch status.
+- Add Neural Rendering settings and its integration forwarder; no proprietary NR model is included.
+- Stage pinned AMD FG and Intel FG / XeLL runtimes through the optional installer.
+- Save coordinated provider settings as one lossless, backed-up INI edit.
+- Add in-app credits and install the full attribution/licence collection.
+- License original project code under Apache 2.0 while preserving Unity and vendor-specific terms and historical MIT permissions.
+
+No 0.7 game launch or visual/pacing test has been performed. Publication remains private pending the permission questions in `docs/LICENSING.md`.
+
 ## 0.6.0 — public alpha candidate
 
 - Rename the project Big Beautiful Walk and add an Overview tab with DLSS status and graphics presets.

@@ -16,6 +16,8 @@ internal static class BridgeSettings
     internal static bool PresetOverride { get; private set; }
     internal static int RunningBackend { get; private set; }
     internal static int NextLaunchBackend { get; private set; }
+    internal static string RunningBackendValue { get; private set; } = "";
+    internal static string NextLaunchBackendValue => ReadOption("Upscalers", "Dx11Upscaler") ?? "auto";
     internal static string Message { get; private set; } = "Graphics settings are loading.";
 
     internal static void Initialize()
@@ -25,7 +27,9 @@ internal static class BridgeSettings
         _backupDirectory = Path.Combine(Paths.BepInExRootPath, "BigWalkDLSS", "config-backups");
         Reload();
         RunningBackend = NextLaunchBackend;
+        RunningBackendValue = NextLaunchBackendValue;
         PresetOverride = string.Equals(_ini?.Get("DLSS", "RenderPresetOverride"), "true", StringComparison.OrdinalIgnoreCase);
+        FeatureSettings.Initialize();
     }
 
     internal static void Reload()
@@ -98,7 +102,27 @@ internal static class BridgeSettings
         return true;
     }
 
-    private static bool Write(string section, string key, string value)
+    internal static string? ReadOption(string section, string key)
+    {
+        try { return _ini?.Get(section, key); }
+        catch (InvalidDataException) { return null; }
+    }
+
+    internal static bool HasRuntimeFile(string relativePath)
+    {
+        try
+        {
+            string path = Path.GetFullPath(Path.Combine(_gameRoot, relativePath));
+            if (!path.StartsWith(Path.GetFullPath(_gameRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) return false;
+            IniSettings.RejectReparsePath(path);
+            return File.Exists(path);
+        }
+        catch (Exception error) when (error is IOException || error is UnauthorizedAccessException || error is ArgumentException) { return false; }
+    }
+
+    private static bool Write(string section, string key, string value) => WriteOptions((section, key, value));
+
+    internal static bool WriteOptions(params (string Section, string Key, string Value)[] changes)
     {
         if (_ini == null) return false;
         try
@@ -107,9 +131,10 @@ internal static class BridgeSettings
             IniSettings.RejectReparsePath(proxy);
             if (!File.Exists(proxy) || IniSettings.Hash(File.ReadAllBytes(proxy)) != OptiScalerHash)
                 throw new IOException("Optional proxy changed.");
-            byte[] next = _ini.WithValue(section, key, value);
+            byte[] next = _ini.WithValues(changes);
             IniSettings.SaveAtomic(_iniPath, _ini.Original, next, _backupDirectory);
             _ini = new IniSettings(next);
+            Message = "Settings saved. Restart Big Walk to apply bridge changes.";
             return true;
         }
         catch (Exception error) when (error is IOException || error is InvalidDataException || error is UnauthorizedAccessException || error is ArgumentException)
