@@ -113,6 +113,10 @@ try {
         $name=& $module { param($path) Get-BbwMutexName $path } $first.GamePath
         $alias=& $module { param($path) Get-BbwMutexName $path } ($first.GamePath.ToUpperInvariant()+'\')
         Assert ($name -eq $alias) 'case and trailing slash share one mutex'
+        $activeTarget=Join-Path $first.GamePath 'pending.dll'; Put $activeTarget 'active-transaction-bytes'
+        $activeJournal=Join-Path $first.GamePath '.big-beautiful-walk/journal.json'
+        Put $activeJournal (@{SchemaVersion=1;PreviousManifest=$null;Actions=@(@{Target='pending.dll';BeforeHash=$null;AfterHash=(Get-FileHash $activeTarget).Hash.ToLowerInvariant();TransactionBackup=$null})} | ConvertTo-Json -Depth 8)
+        $journalBytes=[IO.File]::ReadAllText($activeJournal)
         $ready=New-Object Threading.ManualResetEvent($false)
         $release=New-Object Threading.ManualResetEvent($false)
         $holder=[PowerShell]::Create()
@@ -126,6 +130,9 @@ try {
         try {
             Assert ($ready.WaitOne(5000)) 'independent runspace holds first-game lock'
             Expect-Failure { Install $first } 'Another setup'
+            Expect-Failure { Uninstall $first } 'Another setup'
+            Assert ([IO.File]::ReadAllText($activeTarget) -eq 'active-transaction-bytes') 'competing setup cannot roll back active transaction bytes'
+            Assert ([IO.File]::ReadAllText($activeJournal) -eq $journalBytes) 'competing setup preserves active journal exactly'
             Install $second | Out-Null; Uninstall $second | Out-Null
         } finally {
             [void]$release.Set(); [void]$holder.EndInvoke($operation)
@@ -189,9 +196,45 @@ try {
         $f=New-Fixture 'conflict'; Install $f | Out-Null
         $changed=Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll'
         Put $changed 'user-change'
-        Expect-Failure { Uninstall $f } 'changed or removed'
+        Expect-Failure { Uninstall $f } 'changed after installation'
         Assert ([IO.File]::ReadAllText($changed) -eq 'user-change') 'user change preserved'
         Assert (Test-Path (Join-Path $f.GamePath 'winhttp.dll')) 'no partial uninstall'
+    }
+    Case 'missing owned DLL repairs from verified payload and does not block uninstall' {
+        $f=New-Fixture 'missing-owned'; Install $f | Out-Null
+        $plugin=Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll'
+        $config=Join-Path $f.GamePath 'BepInEx/config/local.bigwalk.native-dlss.cfg'; Put $config 'my-retained-settings'
+        $other=Join-Path $f.GamePath 'BepInEx/plugins/AnotherMod/AnotherMod.dll'; Put $other 'my-other-mod'
+        [IO.File]::Delete($plugin)
+        Assert ((Invoke-BbwSetup @f -Mode Diagnose) -match 'MISSING:.*Run Install/Repair') 'diagnostics explain missing-file repair'
+        Install $f | Out-Null
+        Assert ([IO.File]::ReadAllText($plugin) -eq 'plugin-one') 'verified release payload repairs absent DLL'
+        [IO.File]::Delete($plugin)
+        Uninstall $f | Out-Null
+        Assert (-not (Test-Path $plugin)) 'already absent owned DLL stays absent on uninstall'
+        Assert ([IO.File]::ReadAllText($config) -eq 'my-retained-settings') 'settings preserved after missing-DLL recovery'
+        Assert ([IO.File]::ReadAllText($other) -eq 'my-other-mod') 'other mod preserved after missing-DLL recovery'
+    }
+    Case 'missing installed DLL restores verified original backup and refuses missing original backup' {
+        foreach ($backupState in @('valid','missing')) {
+            $f=New-Fixture ('original-backup-'+$backupState); Install $f | Out-Null
+            $manifestPath=Join-Path $f.GamePath '.big-beautiful-walk/manifest.json'
+            $manifest=Get-Content $manifestPath -Raw | ConvertFrom-Json
+            $entry=@($manifest.Entries | Where-Object { $_.Target -eq 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll' })[0]
+            $backup=Join-Path $f.GamePath '.big-beautiful-walk/backups/original.bin'; Put $backup 'original-before-bbw'
+            $entry.OriginalHash=(Get-FileHash $backup).Hash.ToLowerInvariant(); $entry.Backup='backups/original.bin'
+            Put $manifestPath ($manifest | ConvertTo-Json -Depth 8)
+            $plugin=Join-Path $f.GamePath $entry.Target; [IO.File]::Delete($plugin)
+            if ($backupState -eq 'missing') {
+                [IO.File]::Delete($backup)
+                Expect-Failure { Uninstall $f } 'Original backup is damaged'
+                Assert (-not (Test-Path $plugin)) 'missing original backup does not invent replacement bytes'
+                Assert (Test-Path (Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSSNative.dll')) 'missing original backup prevents partial uninstall'
+            } else {
+                Uninstall $f | Out-Null
+                Assert ([IO.File]::ReadAllText($plugin) -eq 'original-before-bbw') 'verified original restored even if installed DLL is absent'
+            }
+        }
     }
     Case 'launch-like editable config mutation survives repair and uninstall' {
         foreach ($style in @('modern','legacy')) {
@@ -229,6 +272,25 @@ try {
             Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'winhttp.dll')) -eq 'loader-known') 'shared loader preserved'
             Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/core/BepInEx.Core.dll')) -eq 'bep-core-known') 'shared core preserved'
             Assert (-not (Test-Path (Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll'))) 'BBW plugin removed'
+        }
+    }
+    Case 'other patchers and extra DLLs inside the managed plugin folder retain shared BepInEx' {
+        foreach ($style in @('modern','legacy')) {
+            foreach ($location in @('BepInEx/patchers/AnotherMod/OtherPatcher.dll','BepInEx/plugins/BigWalkDLSS/OtherHelper.dll')) {
+                $f=New-Fixture ('shared-extra-'+$style+'-'+[guid]::NewGuid().ToString('N')); Install $f | Out-Null
+                if ($style -eq 'legacy') {
+                    $manifestPath=Join-Path $f.GamePath '.big-beautiful-walk/manifest.json'
+                    $manifest=Get-Content $manifestPath -Raw | ConvertFrom-Json
+                    foreach ($entry in $manifest.Entries) { $entry.PSObject.Properties.Remove('PreserveOnRemove'); $entry.PSObject.Properties.Remove('Role') }
+                    Put $manifestPath ($manifest | ConvertTo-Json -Depth 8)
+                }
+                $other=Join-Path $f.GamePath $location; Put $other 'other-bep-component'
+                Uninstall $f | Out-Null
+                Assert ([IO.File]::ReadAllText($other) -eq 'other-bep-component') 'other component retained'
+                Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'winhttp.dll')) -eq 'loader-known') 'other component loader retained'
+                Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/core/BepInEx.Core.dll')) -eq 'bep-core-known') 'other component core retained'
+                Assert (-not (Test-Path (Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll'))) 'only owned plugin DLL removed'
+            }
         }
     }
     Case 'optional FG selection installs bridge and fresh config while retaining FG off' {

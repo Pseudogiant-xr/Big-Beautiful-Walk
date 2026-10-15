@@ -78,17 +78,21 @@ function Get-BbwRole($Entry) {
 }
 
 function Test-BbwOtherPlugins([string]$GamePath) {
-    $plugins=Resolve-BbwPath $GamePath 'BepInEx/plugins'
-    if (-not [IO.Directory]::Exists($plugins)) { return $false }
-    $managed=(Resolve-BbwPath $GamePath 'BepInEx/plugins/BigWalkDLSS') + [IO.Path]::DirectorySeparatorChar
+    $managed=@(
+        (Resolve-BbwPath $GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll'),
+        (Resolve-BbwPath $GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSSNative.dll')
+    )
     $pending=New-Object 'Collections.Generic.Stack[string]'
-    $pending.Push($plugins)
+    foreach ($relative in @('BepInEx/plugins','BepInEx/patchers')) {
+        $directory=Resolve-BbwPath $GamePath $relative
+        if ([IO.Directory]::Exists($directory)) { $pending.Push($directory) }
+    }
     while ($pending.Count) {
         foreach ($item in @(Get-ChildItem -LiteralPath $pending.Pop() -Force)) {
             # Unknown linked plugin trees also need their shared loader preserved.
             if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) { return $true }
             if ($item.PSIsContainer) { $pending.Push($item.FullName) }
-            elseif ($item.Extension -ieq '.dll' -and -not $item.FullName.StartsWith($managed,[StringComparison]::OrdinalIgnoreCase)) { return $true }
+            elseif ($item.Extension -ieq '.dll' -and $managed -notcontains $item.FullName) { return $true }
         }
     }
     return $false
@@ -323,7 +327,8 @@ function Invoke-BbwSetup {
                 $entryPath=Resolve-BbwPath $GamePath $entry.Target
                 if (Test-BbwEditable $entry) { $messages.Add("Editable settings preserved: $($entry.Target)") }
                 elseif ((Get-BbwHash $entryPath) -eq $entry.InstalledHash) { $messages.Add("OK: $($entry.Target)") }
-                else { $messages.Add("CONFLICT: $($entry.Target) changed or is missing. Restore the installed bytes from your backup before setup can modify it.") }
+                elseif (-not (Test-Path -LiteralPath $entryPath)) { $messages.Add("MISSING: $($entry.Target). Run Install/Repair to restore verified release bytes, or Uninstall to remove the remaining owned files.") }
+                else { $messages.Add("CONFLICT: $($entry.Target) changed. Preserve your changes and restore the installed bytes before setup can modify it.") }
             }
         }
         foreach ($name in @('dxgi.dll','version.dll','winhttp.dll','nvngx_dlss.dll','nvngx_dlssnr.dll')) {
@@ -349,7 +354,8 @@ function Invoke-BbwSetup {
                 if ($owned.ContainsKey($entry.Target)) { throw 'Installed manifest contains duplicate paths.' }
                 $owned[$entry.Target] = $entry
                 $ownedPath=Resolve-BbwPath $GamePath $entry.Target
-                if (-not (Test-BbwEditable $entry) -and (Get-BbwHash $ownedPath) -ne $entry.InstalledHash) { throw "Setup stopped: '$($entry.Target)' was changed or removed after installation. Preserve your changes and restore the installed version before retrying; Diagnose lists affected files." }
+                $currentHash=Get-BbwHash $ownedPath
+                if (-not (Test-BbwEditable $entry) -and ([IO.Directory]::Exists($ownedPath) -or ($currentHash -and $currentHash -ne $entry.InstalledHash))) { throw "Setup stopped: '$($entry.Target)' was changed after installation. Preserve your changes and restore the installed version before retrying; Diagnose lists affected files." }
                 if ($entry.OriginalHash -and (Get-BbwHash (Resolve-BbwPath $state $entry.Backup)) -ne $entry.OriginalHash) { throw "Original backup is damaged for $($entry.Target). Preserve .big-beautiful-walk and restore your backup." }
             }
         }
@@ -402,9 +408,11 @@ function Invoke-BbwSetup {
             $otherPlugins=Test-BbwOtherPlugins $GamePath
             foreach ($entry in @($manifest.Entries)) {
                 if ((Test-BbwEditable $entry) -or ($otherPlugins -and (Get-BbwRole $entry) -eq 'bepinex')) { continue }
+                $beforeHash=Get-BbwHash (Resolve-BbwPath $GamePath $entry.Target)
+                if (-not $beforeHash -and -not $entry.OriginalHash) { continue }
                 $source = $null
                 if ($entry.OriginalHash) { $source = Resolve-BbwPath $state $entry.Backup }
-                $plans.Add([pscustomobject]@{ Target=$entry.Target; BeforeHash=$entry.InstalledHash; AfterHash=$entry.OriginalHash; Source=$source; TransactionBackup=$null })
+                $plans.Add([pscustomobject]@{ Target=$entry.Target; BeforeHash=$beforeHash; AfterHash=$entry.OriginalHash; Source=$source; TransactionBackup=$null })
             }
         }
         # All downloads, paths, collisions and installed hashes have passed before here.
@@ -446,7 +454,9 @@ function Invoke-BbwSetup {
         return 'Uninstall completed. Your settings, saves and other mods were preserved; installer backups remain in .big-beautiful-walk.'
     } catch {
         $failure = $_.Exception.Message
-        try { Restore-BbwTransaction $GamePath } catch { throw "$failure Recovery stopped safely: $($_.Exception.Message)" }
+        if ($locked) {
+            try { Restore-BbwTransaction $GamePath } catch { throw "$failure Recovery stopped safely: $($_.Exception.Message)" }
+        }
         throw $failure
     } finally {
         if ($locked) { $mutex.ReleaseMutex() }

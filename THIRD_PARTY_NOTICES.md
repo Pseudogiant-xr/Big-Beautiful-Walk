@@ -26,7 +26,7 @@ The managed plugin uses the loader's separately installed [Il2CppInterop](https:
 
 ## Optional OptiScaler, Streamline and Neural Rendering
 
-The prototype used [Skynizz's OptiScaler-DLSS5 v1.2.1](https://github.com/Skynizz/optiscaler-dlss5/releases/tag/v1.2.1). Upstream identifies it as GPL-3.0 and provides the corresponding full source archive, including submodules, on that release page. Its credits include OptiScaler contributors, Dagherbou's Neural Rendering integration and clshortfuse's MIT-licensed RenoDX colour composition. Big Beautiful Walk does not bundle or automatically download that stack.
+The optional bridge uses [Skynizz's OptiScaler-DLSS5 v1.2.1](https://github.com/Skynizz/optiscaler-dlss5/releases/tag/v1.2.1). Upstream identifies it as GPL-3.0 and provides the corresponding full source archive, including submodules, on that release page. Its credits include OptiScaler contributors, Dagherbou's Neural Rendering integration and clshortfuse's MIT-licensed RenoDX colour composition. The release does not bundle its binary; opting into the installer checkbox downloads the pinned upstream archive and selected Streamline/XeSS dependencies. No NR model is downloaded.
 
 [NVIDIA Streamline](https://github.com/NVIDIA-RTX/Streamline) has its own source and third-party terms; its included DLSS/NGX components retain their NVIDIA licenses. Cached Streamline 2.14.16, FG 310.9.16 and NR 310.8.SF-v2 files used during prototype testing do not establish public redistribution rights or official SDK provenance. The NR model is excluded from both the release and the dependency lock. No license or compatibility claim is made for it.
 

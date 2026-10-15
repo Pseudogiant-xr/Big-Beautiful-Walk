@@ -26,7 +26,7 @@ body:
       label: Rendering setup
       options:
         - Core DLSS SR only
-        - Optional Frame Generation bridge
+        - Optional upscalers / Frame Generation bridge
         - Additional Neural Rendering setup
         - Other mods or injectors
   - type: textarea

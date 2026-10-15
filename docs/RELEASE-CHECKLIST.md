@@ -8,7 +8,7 @@ This checklist records public-alpha validation and unresolved dependency terms. 
 - [ ] Confirm the Unity Companion Use condition is met for the adapted file. [UCL v1.4 section 1](https://unity.com/legal/licenses/unity-companion-license) requires a valid Engine License for the described exercise of its grant; section 3.2 addresses ownership of derivative works, and section 5 requires license/copyright notices. Copies are in `docs/licenses`.
 - [ ] Resolve NVIDIA SDK incorporation and attribution requirements for the proposed public mod release. [NVIDIA RTX SDK license](https://github.com/NVIDIA/DLSS/blob/374959484e79a640feaba44c93ac8cfb0a03f5b5/LICENSE.txt), section 1(c), permits object-code incorporation subject to its conditions; section 2 sets distribution requirements; section 4(b) restricts standalone SDK distribution; section 4(e) limits imposing open-source obligations on the SDK. The supplement's sections 7.1(a)-(c) and 7.2(c) cover attribution, marks and approval requirements. Avoiding bundled runtimes and vendor logos does not by itself settle these obligations.
 - [ ] Check the actual outgoing ZIP and repository for game assemblies, generated interop assemblies, game assets, copied game source, proprietary runtime DLLs, personal paths, configuration dumps and private logs.
-- [ ] Preserve the exact upstream notices and license exceptions in any source or compiled distribution. Do not describe all contents as MIT.
+- [x] Preserve upstream notices and license exceptions with the candidate; no blanket MIT claim is made.
 - [ ] Keep optional OptiScaler's GPL source/notice obligations separate from NVIDIA's proprietary runtime terms. Do not infer compatibility between those terms or permission for the cached NR model. [Skynizz's release](https://github.com/Skynizz/optiscaler-dlss5/releases/tag/v1.2.1) explicitly excludes the NR model.
 
 ## Validation
@@ -20,8 +20,8 @@ This checklist records public-alpha validation and unresolved dependency terms. 
 - [ ] All graphics presets, live save and restoration exercised on the final release build.
 - [x] Expanded quality modes and preset choices visually confirmed; FSR 3.1 and XeSS each initialized, sustained reconstruction and received visual checks. Official FG runtime recorded generated-frame presents. FSR 4 remains unavailable on the RTX 4090. XeSS flicker and FG shimmer remain known limitations.
 - [ ] Final validation records the exact mod binary hashes together with game build, Unity version, GPU, driver and graphics API.
-- [ ] Public documentation agrees with the packaged behavior and describes optional FG/NR prerequisites, VR exclusion and known visual/performance limits.
-- [ ] An independent review is complete before publication; findings are resolved and their relevant checks rerun.
+- [x] Documentation describes the optional upscaler/FG pack, manual NR prerequisites, VR exclusion and known visual/performance limits.
+- [x] Independent review completed; three installer findings received fixes and regression coverage, with 27 cases passing under Windows PowerShell 5.1 and PowerShell 7.
 
 ## Release scope
 
