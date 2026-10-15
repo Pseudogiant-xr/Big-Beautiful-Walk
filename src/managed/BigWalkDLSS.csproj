@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>BigWalkDLSS</AssemblyName>
+    <Version>0.6.0</Version>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <GameDir Condition="'$(GameDir)' == ''">$(BIGWALK_GAME_DIR)</GameDir>
+  </PropertyGroup>
+  <Target Name="RequireGameAssemblies" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(GameDir)/BepInEx/interop/Assembly-CSharp.dll')" Text="Set GameDir (or BIGWALK_GAME_DIR) to Big Walk after a BepInEx IL2CPP first launch. Game assemblies are not redistributed." />
+  </Target>
+  <ItemGroup>
+    <Reference Include="$(GameDir)\BepInEx\core\*.dll"><Private>false</Private></Reference>
+    <Reference Include="$(GameDir)\BepInEx\interop\*.dll"><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

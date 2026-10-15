@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a reproducible problem with Big Beautiful Walk.
+body:
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod version
+      placeholder: 0.6.0
+    validations:
+      required: true
+  - type: input
+    id: game-version
+    attributes:
+      label: Game version and Steam build
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: GPU, driver and Windows version
+    validations:
+      required: true
+  - type: dropdown
+    id: setup
+    attributes:
+      label: Rendering setup
+      options:
+        - Core DLSS SR only
+        - Optional Frame Generation bridge
+        - Additional Neural Rendering setup
+        - Other mods or injectors
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction and expected behaviour
+      description: Include the selected preset, graphics API and whether it also happens with Game defaults.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Relevant logs or screenshot
+      description: Use the smallest relevant excerpt. Remove account identifiers and personal paths before posting.

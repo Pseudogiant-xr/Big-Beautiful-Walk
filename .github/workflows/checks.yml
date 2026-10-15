@@ -1,0 +1,22 @@
+name: Checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Graphics logic
+        run: dotnet run --project tests/GraphicsChecks.csproj -c Release
+      - name: INI preservation and configuration recovery
+        run: dotnet run --project tests/BridgeChecks.csproj -c Release
+      - name: Installer recovery fixtures (Windows PowerShell)
+        shell: powershell
+        run: ./tests/Setup.Tests.ps1
+      - name: Installer recovery fixtures (PowerShell 7)
+        shell: pwsh
+        run: ./tests/Setup.Tests.ps1

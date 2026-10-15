@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+build/
+dist/
+payload/
+.cache/
+work/
+*.dll
+*.lib
+*.pdb
+*.exp
+*.log
+*.user
+*.zip
+.big-beautiful-walk/

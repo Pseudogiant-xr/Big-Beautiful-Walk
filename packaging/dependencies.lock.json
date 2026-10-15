@@ -1,0 +1,1033 @@
+{
+  "SchemaVersion": 1,
+  "Dependencies": [
+    {
+      "Url": "https://builds.bepinex.dev/projects/bepinex_be/755/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.755%2B3fab71a.zip",
+      "Feature": "core",
+      "Files": [
+        {
+          "Source": "doorstop_config.ini",
+          "Target": "doorstop_config.ini"
+        },
+        {
+          "Source": ".doorstop_version",
+          "Target": ".doorstop_version"
+        },
+        {
+          "Source": "winhttp.dll",
+          "Target": "winhttp.dll"
+        },
+        {
+          "Source": "dotnet/System.Linq.dll",
+          "Target": "dotnet/System.Linq.dll"
+        },
+        {
+          "Source": "dotnet/System.Collections.dll",
+          "Target": "dotnet/System.Collections.dll"
+        },
+        {
+          "Source": "dotnet/System.Core.dll",
+          "Target": "dotnet/System.Core.dll"
+        },
+        {
+          "Source": "dotnet/System.Linq.Queryable.dll",
+          "Target": "dotnet/System.Linq.Queryable.dll"
+        },
+        {
+          "Source": "dotnet/System.Private.Uri.dll",
+          "Target": "dotnet/System.Private.Uri.dll"
+        },
+        {
+          "Source": "dotnet/mscorrc.dll",
+          "Target": "dotnet/mscorrc.dll"
+        },
+        {
+          "Source": "dotnet/System.Threading.Tasks.Dataflow.dll",
+          "Target": "dotnet/System.Threading.Tasks.Dataflow.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.WebClient.dll",
+          "Target": "dotnet/System.Net.WebClient.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.Cryptography.Csp.dll",
+          "Target": "dotnet/System.Security.Cryptography.Csp.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.ServicePoint.dll",
+          "Target": "dotnet/System.Net.ServicePoint.dll"
+        },
+        {
+          "Source": "dotnet/System.Numerics.Vectors.dll",
+          "Target": "dotnet/System.Numerics.Vectors.dll"
+        },
+        {
+          "Source": "dotnet/System.ComponentModel.Primitives.dll",
+          "Target": "dotnet/System.ComponentModel.Primitives.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.Loader.dll",
+          "Target": "dotnet/System.Runtime.Loader.dll"
+        },
+        {
+          "Source": "dotnet/System.Text.Encodings.Web.dll",
+          "Target": "dotnet/System.Text.Encodings.Web.dll"
+        },
+        {
+          "Source": "dotnet/System.Collections.Immutable.dll",
+          "Target": "dotnet/System.Collections.Immutable.dll"
+        },
+        {
+          "Source": "dotnet/System.Data.DataSetExtensions.dll",
+          "Target": "dotnet/System.Data.DataSetExtensions.dll"
+        },
+        {
+          "Source": "dotnet/System.Diagnostics.Debug.dll",
+          "Target": "dotnet/System.Diagnostics.Debug.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.WebSockets.Client.dll",
+          "Target": "dotnet/System.Net.WebSockets.Client.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.Compression.FileSystem.dll",
+          "Target": "dotnet/System.IO.Compression.FileSystem.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.Extensions.Options.dll",
+          "Target": "dotnet/Microsoft.Extensions.Options.dll"
+        },
+        {
+          "Source": "dotnet/System.Resources.Writer.dll",
+          "Target": "dotnet/System.Resources.Writer.dll"
+        },
+        {
+          "Source": "dotnet/System.Globalization.Extensions.dll",
+          "Target": "dotnet/System.Globalization.Extensions.dll"
+        },
+        {
+          "Source": "dotnet/System.Xml.Serialization.dll",
+          "Target": "dotnet/System.Xml.Serialization.dll"
+        },
+        {
+          "Source": "dotnet/System.Linq.Expressions.dll",
+          "Target": "dotnet/System.Linq.Expressions.dll"
+        },
+        {
+          "Source": "dotnet/System.Text.Encoding.Extensions.dll",
+          "Target": "dotnet/System.Text.Encoding.Extensions.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.dll",
+          "Target": "dotnet/System.IO.dll"
+        },
+        {
+          "Source": "dotnet/System.Resources.ResourceManager.dll",
+          "Target": "dotnet/System.Resources.ResourceManager.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.dll",
+          "Target": "dotnet/System.Runtime.dll"
+        },
+        {
+          "Source": "dotnet/hostpolicy.dll",
+          "Target": "dotnet/hostpolicy.dll"
+        },
+        {
+          "Source": "dotnet/mscorlib.dll",
+          "Target": "dotnet/mscorlib.dll"
+        },
+        {
+          "Source": "dotnet/System.Threading.Tasks.Extensions.dll",
+          "Target": "dotnet/System.Threading.Tasks.Extensions.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.Security.dll",
+          "Target": "dotnet/System.Net.Security.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.Serialization.Json.dll",
+          "Target": "dotnet/System.Runtime.Serialization.Json.dll"
+        },
+        {
+          "Source": "dotnet/System.Resources.Reader.dll",
+          "Target": "dotnet/System.Resources.Reader.dll"
+        },
+        {
+          "Source": "dotnet/System.Private.Xml.dll",
+          "Target": "dotnet/System.Private.Xml.dll"
+        },
+        {
+          "Source": "dotnet/System.Xml.XmlSerializer.dll",
+          "Target": "dotnet/System.Xml.XmlSerializer.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.Cryptography.Primitives.dll",
+          "Target": "dotnet/System.Security.Cryptography.Primitives.dll"
+        },
+        {
+          "Source": "dotnet/System.Threading.Tasks.Parallel.dll",
+          "Target": "dotnet/System.Threading.Tasks.Parallel.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.Http.Json.dll",
+          "Target": "dotnet/System.Net.Http.Json.dll"
+        },
+        {
+          "Source": "dotnet/System.Diagnostics.StackTrace.dll",
+          "Target": "dotnet/System.Diagnostics.StackTrace.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.FileSystem.Primitives.dll",
+          "Target": "dotnet/System.IO.FileSystem.Primitives.dll"
+        },
+        {
+          "Source": "dotnet/System.Globalization.Calendars.dll",
+          "Target": "dotnet/System.Globalization.Calendars.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.Extensions.Logging.dll",
+          "Target": "dotnet/Microsoft.Extensions.Logging.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.Cryptography.Algorithms.dll",
+          "Target": "dotnet/System.Security.Cryptography.Algorithms.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.CompilerServices.Unsafe.dll",
+          "Target": "dotnet/System.Runtime.CompilerServices.Unsafe.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.IsolatedStorage.dll",
+          "Target": "dotnet/System.IO.IsolatedStorage.dll"
+        },
+        {
+          "Source": "dotnet/System.Private.DataContractSerialization.dll",
+          "Target": "dotnet/System.Private.DataContractSerialization.dll"
+        },
+        {
+          "Source": "dotnet/System.Collections.Concurrent.dll",
+          "Target": "dotnet/System.Collections.Concurrent.dll"
+        },
+        {
+          "Source": "dotnet/System.ComponentModel.EventBasedAsync.dll",
+          "Target": "dotnet/System.ComponentModel.EventBasedAsync.dll"
+        },
+        {
+          "Source": "dotnet/System.Drawing.dll",
+          "Target": "dotnet/System.Drawing.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.CSharp.dll",
+          "Target": "dotnet/Microsoft.CSharp.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.dll",
+          "Target": "dotnet/System.Net.dll"
+        },
+        {
+          "Source": "dotnet/System.Linq.Parallel.dll",
+          "Target": "dotnet/System.Linq.Parallel.dll"
+        },
+        {
+          "Source": "dotnet/System.Reflection.Emit.Lightweight.dll",
+          "Target": "dotnet/System.Reflection.Emit.Lightweight.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.UnmanagedMemoryStream.dll",
+          "Target": "dotnet/System.IO.UnmanagedMemoryStream.dll"
+        },
+        {
+          "Source": "dotnet/System.Xml.XPath.dll",
+          "Target": "dotnet/System.Xml.XPath.dll"
+        },
+        {
+          "Source": "dotnet/System.Reflection.TypeExtensions.dll",
+          "Target": "dotnet/System.Reflection.TypeExtensions.dll"
+        },
+        {
+          "Source": "dotnet/System.Xml.dll",
+          "Target": "dotnet/System.Xml.dll"
+        },
+        {
+          "Source": "dotnet/System.Diagnostics.TextWriterTraceListener.dll",
+          "Target": "dotnet/System.Diagnostics.TextWriterTraceListener.dll"
+        },
+        {
+          "Source": "dotnet/.version",
+          "Target": "dotnet/.version"
+        },
+        {
+          "Source": "dotnet/System.Transactions.dll",
+          "Target": "dotnet/System.Transactions.dll"
+        },
+        {
+          "Source": "dotnet/System.Text.Encoding.dll",
+          "Target": "dotnet/System.Text.Encoding.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.Mail.dll",
+          "Target": "dotnet/System.Net.Mail.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.Claims.dll",
+          "Target": "dotnet/System.Security.Claims.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.Ping.dll",
+          "Target": "dotnet/System.Net.Ping.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.WebSockets.dll",
+          "Target": "dotnet/System.Net.WebSockets.dll"
+        },
+        {
+          "Source": "dotnet/clrjit.dll",
+          "Target": "dotnet/clrjit.dll"
+        },
+        {
+          "Source": "dotnet/System.Web.HttpUtility.dll",
+          "Target": "dotnet/System.Web.HttpUtility.dll"
+        },
+        {
+          "Source": "dotnet/System.Diagnostics.Contracts.dll",
+          "Target": "dotnet/System.Diagnostics.Contracts.dll"
+        },
+        {
+          "Source": "dotnet/System.Windows.dll",
+          "Target": "dotnet/System.Windows.dll"
+        },
+        {
+          "Source": "dotnet/System.Xml.ReaderWriter.dll",
+          "Target": "dotnet/System.Xml.ReaderWriter.dll"
+        },
+        {
+          "Source": "dotnet/System.Threading.Channels.dll",
+          "Target": "dotnet/System.Threading.Channels.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.Cryptography.Cng.dll",
+          "Target": "dotnet/System.Security.Cryptography.Cng.dll"
+        },
+        {
+          "Source": "dotnet/System.Xml.XmlDocument.dll",
+          "Target": "dotnet/System.Xml.XmlDocument.dll"
+        },
+        {
+          "Source": "dotnet/System.Threading.Overlapped.dll",
+          "Target": "dotnet/System.Threading.Overlapped.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.Intrinsics.dll",
+          "Target": "dotnet/System.Runtime.Intrinsics.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.Pipes.AccessControl.dll",
+          "Target": "dotnet/System.IO.Pipes.AccessControl.dll"
+        },
+        {
+          "Source": "dotnet/System.Diagnostics.DiagnosticSource.dll",
+          "Target": "dotnet/System.Diagnostics.DiagnosticSource.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.Win32.Registry.dll",
+          "Target": "dotnet/Microsoft.Win32.Registry.dll"
+        },
+        {
+          "Source": "dotnet/System.Xml.Linq.dll",
+          "Target": "dotnet/System.Xml.Linq.dll"
+        },
+        {
+          "Source": "dotnet/System.Diagnostics.Process.dll",
+          "Target": "dotnet/System.Diagnostics.Process.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.Extensions.DependencyInjection.dll",
+          "Target": "dotnet/Microsoft.Extensions.DependencyInjection.dll"
+        },
+        {
+          "Source": "dotnet/System.AppContext.dll",
+          "Target": "dotnet/System.AppContext.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.NameResolution.dll",
+          "Target": "dotnet/System.Net.NameResolution.dll"
+        },
+        {
+          "Source": "dotnet/System.Buffers.dll",
+          "Target": "dotnet/System.Buffers.dll"
+        },
+        {
+          "Source": "dotnet/dbgshim.dll",
+          "Target": "dotnet/dbgshim.dll"
+        },
+        {
+          "Source": "dotnet/WindowsBase.dll",
+          "Target": "dotnet/WindowsBase.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.SecureString.dll",
+          "Target": "dotnet/System.Security.SecureString.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.Quic.dll",
+          "Target": "dotnet/System.Net.Quic.dll"
+        },
+        {
+          "Source": "dotnet/System.Web.dll",
+          "Target": "dotnet/System.Web.dll"
+        },
+        {
+          "Source": "dotnet/System.Text.Json.dll",
+          "Target": "dotnet/System.Text.Json.dll"
+        },
+        {
+          "Source": "dotnet/System.Reflection.dll",
+          "Target": "dotnet/System.Reflection.dll"
+        },
+        {
+          "Source": "dotnet/System.Reflection.Emit.ILGeneration.dll",
+          "Target": "dotnet/System.Reflection.Emit.ILGeneration.dll"
+        },
+        {
+          "Source": "dotnet/System.Dynamic.Runtime.dll",
+          "Target": "dotnet/System.Dynamic.Runtime.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.Primitives.dll",
+          "Target": "dotnet/System.Net.Primitives.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.Serialization.Primitives.dll",
+          "Target": "dotnet/System.Runtime.Serialization.Primitives.dll"
+        },
+        {
+          "Source": "dotnet/System.Xml.XDocument.dll",
+          "Target": "dotnet/System.Xml.XDocument.dll"
+        },
+        {
+          "Source": "dotnet/System.Data.dll",
+          "Target": "dotnet/System.Data.dll"
+        },
+        {
+          "Source": "dotnet/System.Globalization.dll",
+          "Target": "dotnet/System.Globalization.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.AccessControl.dll",
+          "Target": "dotnet/System.Security.AccessControl.dll"
+        },
+        {
+          "Source": "dotnet/System.Transactions.Local.dll",
+          "Target": "dotnet/System.Transactions.Local.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.HttpListener.dll",
+          "Target": "dotnet/System.Net.HttpListener.dll"
+        },
+        {
+          "Source": "dotnet/System.ValueTuple.dll",
+          "Target": "dotnet/System.ValueTuple.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.VisualBasic.Core.dll",
+          "Target": "dotnet/Microsoft.VisualBasic.Core.dll"
+        },
+        {
+          "Source": "dotnet/System.Collections.Specialized.dll",
+          "Target": "dotnet/System.Collections.Specialized.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.InteropServices.dll",
+          "Target": "dotnet/System.Runtime.InteropServices.dll"
+        },
+        {
+          "Source": "dotnet/netstandard.dll",
+          "Target": "dotnet/netstandard.dll"
+        },
+        {
+          "Source": "dotnet/System.Numerics.dll",
+          "Target": "dotnet/System.Numerics.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.Numerics.dll",
+          "Target": "dotnet/System.Runtime.Numerics.dll"
+        },
+        {
+          "Source": "dotnet/System.Threading.Thread.dll",
+          "Target": "dotnet/System.Threading.Thread.dll"
+        },
+        {
+          "Source": "dotnet/System.Memory.dll",
+          "Target": "dotnet/System.Memory.dll"
+        },
+        {
+          "Source": "dotnet/System.ComponentModel.DataAnnotations.dll",
+          "Target": "dotnet/System.ComponentModel.DataAnnotations.dll"
+        },
+        {
+          "Source": "dotnet/System.Console.dll",
+          "Target": "dotnet/System.Console.dll"
+        },
+        {
+          "Source": "dotnet/mscordbi.dll",
+          "Target": "dotnet/mscordbi.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.Compression.Native.dll",
+          "Target": "dotnet/System.IO.Compression.Native.dll"
+        },
+        {
+          "Source": "dotnet/System.Configuration.dll",
+          "Target": "dotnet/System.Configuration.dll"
+        },
+        {
+          "Source": "dotnet/System.Threading.Timer.dll",
+          "Target": "dotnet/System.Threading.Timer.dll"
+        },
+        {
+          "Source": "dotnet/System.Text.RegularExpressions.dll",
+          "Target": "dotnet/System.Text.RegularExpressions.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.VisualBasic.dll",
+          "Target": "dotnet/Microsoft.VisualBasic.dll"
+        },
+        {
+          "Source": "dotnet/System.Drawing.Primitives.dll",
+          "Target": "dotnet/System.Drawing.Primitives.dll"
+        },
+        {
+          "Source": "dotnet/System.ObjectModel.dll",
+          "Target": "dotnet/System.ObjectModel.dll"
+        },
+        {
+          "Source": "dotnet/System.Private.CoreLib.dll",
+          "Target": "dotnet/System.Private.CoreLib.dll"
+        },
+        {
+          "Source": "dotnet/System.Collections.NonGeneric.dll",
+          "Target": "dotnet/System.Collections.NonGeneric.dll"
+        },
+        {
+          "Source": "dotnet/System.ComponentModel.TypeConverter.dll",
+          "Target": "dotnet/System.ComponentModel.TypeConverter.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.Cryptography.Encoding.dll",
+          "Target": "dotnet/System.Security.Cryptography.Encoding.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.Cryptography.X509Certificates.dll",
+          "Target": "dotnet/System.Security.Cryptography.X509Certificates.dll"
+        },
+        {
+          "Source": "dotnet/System.Threading.ThreadPool.dll",
+          "Target": "dotnet/System.Threading.ThreadPool.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.FileSystem.AccessControl.dll",
+          "Target": "dotnet/System.IO.FileSystem.AccessControl.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.FileSystem.DriveInfo.dll",
+          "Target": "dotnet/System.IO.FileSystem.DriveInfo.dll"
+        },
+        {
+          "Source": "dotnet/System.Reflection.Primitives.dll",
+          "Target": "dotnet/System.Reflection.Primitives.dll"
+        },
+        {
+          "Source": "dotnet/System.Threading.dll",
+          "Target": "dotnet/System.Threading.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.NetworkInformation.dll",
+          "Target": "dotnet/System.Net.NetworkInformation.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.MemoryMappedFiles.dll",
+          "Target": "dotnet/System.IO.MemoryMappedFiles.dll"
+        },
+        {
+          "Source": "dotnet/System.Reflection.Extensions.dll",
+          "Target": "dotnet/System.Reflection.Extensions.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.dll",
+          "Target": "dotnet/System.Security.dll"
+        },
+        {
+          "Source": "dotnet/coreclr.dll",
+          "Target": "dotnet/coreclr.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.FileSystem.Watcher.dll",
+          "Target": "dotnet/System.IO.FileSystem.Watcher.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.Principal.Windows.dll",
+          "Target": "dotnet/System.Security.Principal.Windows.dll"
+        },
+        {
+          "Source": "dotnet/System.ServiceModel.Web.dll",
+          "Target": "dotnet/System.ServiceModel.Web.dll"
+        },
+        {
+          "Source": "dotnet/System.Diagnostics.TraceSource.dll",
+          "Target": "dotnet/System.Diagnostics.TraceSource.dll"
+        },
+        {
+          "Source": "dotnet/System.Reflection.Emit.dll",
+          "Target": "dotnet/System.Reflection.Emit.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+          "Target": "dotnet/Microsoft.Extensions.DependencyInjection.Abstractions.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.Compression.dll",
+          "Target": "dotnet/System.IO.Compression.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.Sockets.dll",
+          "Target": "dotnet/System.Net.Sockets.dll"
+        },
+        {
+          "Source": "dotnet/System.Diagnostics.Tracing.dll",
+          "Target": "dotnet/System.Diagnostics.Tracing.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.Handles.dll",
+          "Target": "dotnet/System.Runtime.Handles.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.Extensions.Primitives.dll",
+          "Target": "dotnet/Microsoft.Extensions.Primitives.dll"
+        },
+        {
+          "Source": "dotnet/System.Reflection.DispatchProxy.dll",
+          "Target": "dotnet/System.Reflection.DispatchProxy.dll"
+        },
+        {
+          "Source": "dotnet/mscordaccore.dll",
+          "Target": "dotnet/mscordaccore.dll"
+        },
+        {
+          "Source": "dotnet/System.Data.Common.dll",
+          "Target": "dotnet/System.Data.Common.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.Pipes.dll",
+          "Target": "dotnet/System.IO.Pipes.dll"
+        },
+        {
+          "Source": "dotnet/System.ServiceProcess.dll",
+          "Target": "dotnet/System.ServiceProcess.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.Requests.dll",
+          "Target": "dotnet/System.Net.Requests.dll"
+        },
+        {
+          "Source": "dotnet/clretwrc.dll",
+          "Target": "dotnet/clretwrc.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.NETCore.App.deps.json",
+          "Target": "dotnet/Microsoft.NETCore.App.deps.json"
+        },
+        {
+          "Source": "dotnet/System.Net.Http.dll",
+          "Target": "dotnet/System.Net.Http.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.Serialization.Formatters.dll",
+          "Target": "dotnet/System.Runtime.Serialization.Formatters.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.Serialization.dll",
+          "Target": "dotnet/System.Runtime.Serialization.dll"
+        },
+        {
+          "Source": "dotnet/System.Text.Encoding.CodePages.dll",
+          "Target": "dotnet/System.Text.Encoding.CodePages.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.Serialization.Xml.dll",
+          "Target": "dotnet/System.Runtime.Serialization.Xml.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.Compression.ZipFile.dll",
+          "Target": "dotnet/System.IO.Compression.ZipFile.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.InteropServices.RuntimeInformation.dll",
+          "Target": "dotnet/System.Runtime.InteropServices.RuntimeInformation.dll"
+        },
+        {
+          "Source": "dotnet/System.dll",
+          "Target": "dotnet/System.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.Principal.dll",
+          "Target": "dotnet/System.Security.Principal.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.DiaSymReader.Native.amd64.dll",
+          "Target": "dotnet/Microsoft.DiaSymReader.Native.amd64.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.Compression.Brotli.dll",
+          "Target": "dotnet/System.IO.Compression.Brotli.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.Extensions.dll",
+          "Target": "dotnet/System.Runtime.Extensions.dll"
+        },
+        {
+          "Source": "dotnet/System.ComponentModel.dll",
+          "Target": "dotnet/System.ComponentModel.dll"
+        },
+        {
+          "Source": "dotnet/msquic.dll",
+          "Target": "dotnet/msquic.dll"
+        },
+        {
+          "Source": "dotnet/System.Threading.Tasks.dll",
+          "Target": "dotnet/System.Threading.Tasks.dll"
+        },
+        {
+          "Source": "dotnet/System.Formats.Asn1.dll",
+          "Target": "dotnet/System.Formats.Asn1.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.Extensions.Logging.Abstractions.dll",
+          "Target": "dotnet/Microsoft.Extensions.Logging.Abstractions.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.Bcl.AsyncInterfaces.dll",
+          "Target": "dotnet/Microsoft.Bcl.AsyncInterfaces.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.Win32.Primitives.dll",
+          "Target": "dotnet/Microsoft.Win32.Primitives.dll"
+        },
+        {
+          "Source": "dotnet/System.Diagnostics.Tools.dll",
+          "Target": "dotnet/System.Diagnostics.Tools.dll"
+        },
+        {
+          "Source": "dotnet/mscordaccore_amd64_amd64_6.0.722.32202.dll",
+          "Target": "dotnet/mscordaccore_amd64_amd64_6.0.722.32202.dll"
+        },
+        {
+          "Source": "dotnet/System.Private.Xml.Linq.dll",
+          "Target": "dotnet/System.Private.Xml.Linq.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.WebProxy.dll",
+          "Target": "dotnet/System.Net.WebProxy.dll"
+        },
+        {
+          "Source": "dotnet/System.IO.FileSystem.dll",
+          "Target": "dotnet/System.IO.FileSystem.dll"
+        },
+        {
+          "Source": "dotnet/System.Security.Cryptography.OpenSsl.dll",
+          "Target": "dotnet/System.Security.Cryptography.OpenSsl.dll"
+        },
+        {
+          "Source": "dotnet/Microsoft.NETCore.App.runtimeconfig.json",
+          "Target": "dotnet/Microsoft.NETCore.App.runtimeconfig.json"
+        },
+        {
+          "Source": "dotnet/System.Diagnostics.FileVersionInfo.dll",
+          "Target": "dotnet/System.Diagnostics.FileVersionInfo.dll"
+        },
+        {
+          "Source": "dotnet/System.Runtime.CompilerServices.VisualC.dll",
+          "Target": "dotnet/System.Runtime.CompilerServices.VisualC.dll"
+        },
+        {
+          "Source": "dotnet/System.Xml.XPath.XDocument.dll",
+          "Target": "dotnet/System.Xml.XPath.XDocument.dll"
+        },
+        {
+          "Source": "dotnet/System.ComponentModel.Annotations.dll",
+          "Target": "dotnet/System.ComponentModel.Annotations.dll"
+        },
+        {
+          "Source": "dotnet/System.Reflection.Metadata.dll",
+          "Target": "dotnet/System.Reflection.Metadata.dll"
+        },
+        {
+          "Source": "dotnet/System.Net.WebHeaderCollection.dll",
+          "Target": "dotnet/System.Net.WebHeaderCollection.dll"
+        },
+        {
+          "Source": "BepInEx/core/MonoMod.Backports.dll",
+          "Target": "BepInEx/core/MonoMod.Backports.dll"
+        },
+        {
+          "Source": "BepInEx/core/BepInEx.Unity.IL2CPP.xml",
+          "Target": "BepInEx/core/BepInEx.Unity.IL2CPP.xml"
+        },
+        {
+          "Source": "BepInEx/core/StableNameDotNet.dll",
+          "Target": "BepInEx/core/StableNameDotNet.dll"
+        },
+        {
+          "Source": "BepInEx/core/Mono.Cecil.Rocks.dll",
+          "Target": "BepInEx/core/Mono.Cecil.Rocks.dll"
+        },
+        {
+          "Source": "BepInEx/core/BepInEx.Unity.IL2CPP.dll.config",
+          "Target": "BepInEx/core/BepInEx.Unity.IL2CPP.dll.config"
+        },
+        {
+          "Source": "BepInEx/core/Mono.Cecil.Pdb.dll",
+          "Target": "BepInEx/core/Mono.Cecil.Pdb.dll"
+        },
+        {
+          "Source": "BepInEx/core/LibCpp2IL.dll",
+          "Target": "BepInEx/core/LibCpp2IL.dll"
+        },
+        {
+          "Source": "BepInEx/core/Mono.Cecil.Mdb.dll",
+          "Target": "BepInEx/core/Mono.Cecil.Mdb.dll"
+        },
+        {
+          "Source": "BepInEx/core/Gee.External.Capstone.dll",
+          "Target": "BepInEx/core/Gee.External.Capstone.dll"
+        },
+        {
+          "Source": "BepInEx/core/AsmResolver.dll",
+          "Target": "BepInEx/core/AsmResolver.dll"
+        },
+        {
+          "Source": "BepInEx/core/Disarm.dll",
+          "Target": "BepInEx/core/Disarm.dll"
+        },
+        {
+          "Source": "BepInEx/core/Iced.dll",
+          "Target": "BepInEx/core/Iced.dll"
+        },
+        {
+          "Source": "BepInEx/core/BepInEx.Preloader.Core.xml",
+          "Target": "BepInEx/core/BepInEx.Preloader.Core.xml"
+        },
+        {
+          "Source": "BepInEx/core/AsmResolver.PE.File.dll",
+          "Target": "BepInEx/core/AsmResolver.PE.File.dll"
+        },
+        {
+          "Source": "BepInEx/core/BepInEx.Core.dll",
+          "Target": "BepInEx/core/BepInEx.Core.dll"
+        },
+        {
+          "Source": "BepInEx/core/SemanticVersioning.dll",
+          "Target": "BepInEx/core/SemanticVersioning.dll"
+        },
+        {
+          "Source": "BepInEx/core/BepInEx.Unity.Common.dll",
+          "Target": "BepInEx/core/BepInEx.Unity.Common.dll"
+        },
+        {
+          "Source": "BepInEx/core/AsmResolver.DotNet.dll",
+          "Target": "BepInEx/core/AsmResolver.DotNet.dll"
+        },
+        {
+          "Source": "BepInEx/core/Il2CppInterop.Runtime.dll",
+          "Target": "BepInEx/core/Il2CppInterop.Runtime.dll"
+        },
+        {
+          "Source": "BepInEx/core/MonoMod.Utils.dll",
+          "Target": "BepInEx/core/MonoMod.Utils.dll"
+        },
+        {
+          "Source": "BepInEx/core/AsmResolver.PE.dll",
+          "Target": "BepInEx/core/AsmResolver.PE.dll"
+        },
+        {
+          "Source": "BepInEx/core/BepInEx.Unity.IL2CPP.dll",
+          "Target": "BepInEx/core/BepInEx.Unity.IL2CPP.dll"
+        },
+        {
+          "Source": "BepInEx/core/WasmDisassembler.dll",
+          "Target": "BepInEx/core/WasmDisassembler.dll"
+        },
+        {
+          "Source": "BepInEx/core/Mono.Cecil.dll",
+          "Target": "BepInEx/core/Mono.Cecil.dll"
+        },
+        {
+          "Source": "BepInEx/core/BepInEx.Core.xml",
+          "Target": "BepInEx/core/BepInEx.Core.xml"
+        },
+        {
+          "Source": "BepInEx/core/BepInEx.Preloader.Core.dll",
+          "Target": "BepInEx/core/BepInEx.Preloader.Core.dll"
+        },
+        {
+          "Source": "BepInEx/core/AssetRipper.Primitives.dll",
+          "Target": "BepInEx/core/AssetRipper.Primitives.dll"
+        },
+        {
+          "Source": "BepInEx/core/MonoMod.ILHelpers.dll",
+          "Target": "BepInEx/core/MonoMod.ILHelpers.dll"
+        },
+        {
+          "Source": "BepInEx/core/BepInEx.Unity.Common.xml",
+          "Target": "BepInEx/core/BepInEx.Unity.Common.xml"
+        },
+        {
+          "Source": "BepInEx/core/AssetRipper.CIL.dll",
+          "Target": "BepInEx/core/AssetRipper.CIL.dll"
+        },
+        {
+          "Source": "BepInEx/core/Cpp2IL.Core.dll",
+          "Target": "BepInEx/core/Cpp2IL.Core.dll"
+        },
+        {
+          "Source": "BepInEx/core/MonoMod.RuntimeDetour.dll",
+          "Target": "BepInEx/core/MonoMod.RuntimeDetour.dll"
+        },
+        {
+          "Source": "BepInEx/core/dobby.dll",
+          "Target": "BepInEx/core/dobby.dll"
+        },
+        {
+          "Source": "BepInEx/core/Il2CppInterop.HarmonySupport.dll",
+          "Target": "BepInEx/core/Il2CppInterop.HarmonySupport.dll"
+        },
+        {
+          "Source": "BepInEx/core/Il2CppInterop.Common.dll",
+          "Target": "BepInEx/core/Il2CppInterop.Common.dll"
+        },
+        {
+          "Source": "BepInEx/core/0Harmony.dll",
+          "Target": "BepInEx/core/0Harmony.dll"
+        },
+        {
+          "Source": "BepInEx/core/Il2CppInterop.Generator.dll",
+          "Target": "BepInEx/core/Il2CppInterop.Generator.dll"
+        }
+      ],
+      "Archive": "zip",
+      "SourceUrl": "https://github.com/BepInEx/BepInEx/tree/3fab71a",
+      "LicenseUrl": "https://github.com/BepInEx/BepInEx/blob/3fab71a/LICENSE",
+      "Id": "bepinex",
+      "SHA256": "3616D6A67F5F595973EC4AA7BD7EDAF7F799D5BB9926F7146A6DCC7B4ABF478F",
+      "Required": true
+    },
+    {
+      "Url": "https://raw.githubusercontent.com/NVIDIA/DLSS/374959484e79a640feaba44c93ac8cfb0a03f5b5/lib/Windows_x86_64/rel/nvngx_dlss.dll",
+      "Feature": "core",
+      "Files": [
+        {
+          "Source": "nvngx_dlss.dll",
+          "Target": "nvngx_dlss.dll"
+        }
+      ],
+      "Archive": "file",
+      "SourceUrl": "https://github.com/NVIDIA/DLSS/tree/374959484e79a640feaba44c93ac8cfb0a03f5b5",
+      "LicenseUrl": "https://github.com/NVIDIA/DLSS/blob/374959484e79a640feaba44c93ac8cfb0a03f5b5/LICENSE.txt",
+      "Id": "nvngx_dlss",
+      "SHA256": "3975567B8943C53ACCE397F2B72380092F84F162D00B0D2C7D08A1025C563983",
+      "Required": true
+    },
+    {
+      "Id": "optiscaler_fg",
+      "Url": "https://github.com/Skynizz/optiscaler-dlss5/releases/download/v1.2.1/OptiScaler-DLSS5-1.2.1-win-x64.zip",
+      "SHA256": "0D5B24887EA2C622754DA68EFC76EF55AE42B5D3BE350A8D43CAFBABB6747EC6",
+      "Archive": "zip",
+      "Files": [
+        {
+          "Source": "DLSS5-Optimised/OptiScaler.dll",
+          "Target": "version.dll"
+        }
+      ],
+      "Required": false,
+      "Feature": "fg",
+      "SourceUrl": "https://github.com/Skynizz/optiscaler-dlss5/tree/v1.2.1",
+      "LicenseUrl": "https://github.com/Skynizz/optiscaler-dlss5/blob/v1.2.1/LICENSE"
+    },
+    {
+      "Id": "streamline_fg",
+      "Url": "https://github.com/NVIDIA-RTX/Streamline/releases/download/v2.14.1/streamline-sdk-v2.14.1.zip",
+      "SHA256": "92C4D954631A1710DA86CA3FA8D5034F2B9503838C95FC4AE977AE149319781B",
+      "Archive": "zip",
+      "Files": [
+        {
+          "Source": "bin/x64/sl.interposer.dll",
+          "Target": "OptiScaler/streamline/sl.interposer.dll"
+        },
+        {
+          "Source": "bin/x64/sl.common.dll",
+          "Target": "OptiScaler/streamline/sl.common.dll"
+        },
+        {
+          "Source": "bin/x64/sl.dlss_g.dll",
+          "Target": "OptiScaler/streamline/sl.dlss_g.dll"
+        },
+        {
+          "Source": "bin/x64/sl.pcl.dll",
+          "Target": "OptiScaler/streamline/sl.pcl.dll"
+        },
+        {
+          "Source": "bin/x64/sl.reflex.dll",
+          "Target": "OptiScaler/streamline/sl.reflex.dll"
+        },
+        {
+          "Source": "bin/x64/nvngx_dlssg.dll",
+          "Target": "OptiScaler/streamline/nvngx_dlssg.dll"
+        },
+        {
+          "Source": "license.txt",
+          "Target": "OptiScaler/streamline/licenses/Streamline-LICENSE.txt"
+        },
+        {
+          "Source": "3rd-party-licenses.md",
+          "Target": "OptiScaler/streamline/licenses/THIRD-PARTY.md"
+        },
+        {
+          "Source": "bin/x64/nvngx_dlss.license.txt",
+          "Target": "OptiScaler/streamline/licenses/NVIDIA-NGX-LICENSE.txt"
+        },
+        {
+          "Source": "bin/x64/reflex.license.txt",
+          "Target": "OptiScaler/streamline/licenses/Reflex-LICENSE.txt"
+        }
+      ],
+      "Required": false,
+      "Feature": "fg",
+      "SourceUrl": "https://github.com/NVIDIA-RTX/Streamline/releases/tag/v2.14.1",
+      "LicenseUrl": "https://github.com/NVIDIA-RTX/Streamline/blob/v2.14.1/license.txt"
+    },
+    {
+      "Id": "xess",
+      "Url": "https://github.com/intel/xess/releases/download/v3.0.2/XeSS_SDK_3.0.2.zip",
+      "SHA256": "88B8A373F30E33F3558A77A93E634F11B8132FC3047EA1A8EDEEAD32B8471990",
+      "Archive": "zip",
+      "Files": [
+        {
+          "Source": "bin/libxess.dll",
+          "Target": "OptiScaler/libxess.dll"
+        },
+        {
+          "Source": "LICENSE.txt",
+          "Target": "OptiScaler/licenses/Intel-XeSS-LICENSE.txt"
+        },
+        {
+          "Source": "third-party-programs.txt",
+          "Target": "OptiScaler/licenses/Intel-XeSS-THIRD-PARTY.txt"
+        }
+      ],
+      "Required": false,
+      "Feature": "fg",
+      "SourceUrl": "https://github.com/intel/xess/tree/8fe81bdbbaf00b3c1b733fd0d830c333dc84e6f0",
+      "LicenseUrl": "https://github.com/intel/xess/blob/8fe81bdbbaf00b3c1b733fd0d830c333dc84e6f0/LICENSE.txt"
+    }
+  ]
+}

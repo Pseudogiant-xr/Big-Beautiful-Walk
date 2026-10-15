@@ -1,0 +1,85 @@
+using System;
+using UnityEngine;
+
+namespace BigWalkDLSS;
+
+internal static class UpscalingMenu
+{
+    internal static void Draw(float x, float y, GUIStyle label, GUIStyle small, GUIStyle button)
+    {
+        bool enabled = GUI.enabled;
+        try
+        {
+            GUI.Label(new Rect(x + 25, y + 185, 900, 28), "Renderer", label);
+            int selectedBackend = BridgeSettings.NextLaunchBackend >= 0 ? BridgeSettings.NextLaunchBackend : BridgeSettings.RunningBackend;
+            for (int index = 0; index < BridgeSettings.BackendNames.Length; index++)
+            {
+                GUI.enabled = enabled && BridgeSettings.UnavailableReason(index).Length == 0;
+                if (GUI.Button(new Rect(x + 25 + index * 225, y + 217, 210, 32),
+                    (selectedBackend == index ? "● " : "") + BridgeSettings.BackendNames[index], button))
+                    BridgeSettings.SelectBackend(index);
+            }
+            GUI.enabled = enabled;
+            bool pending = BridgeSettings.NextLaunchBackend >= 0 && BridgeSettings.NextLaunchBackend != BridgeSettings.RunningBackend;
+            if (pending)
+            {
+                Color colour = GUI.color;
+                GUI.color = new Color(.1f, .25f, .34f, 1);
+                GUI.DrawTexture(new Rect(x + 25, y + 252, 900, 32), Texture2D.whiteTexture);
+                GUI.color = colour;
+                GUI.Label(new Rect(x + 38, y + 255, 875, 26), "Restart required · Restart Big Walk to use " + UpscalingPresentation.BackendName(BridgeSettings.NextLaunchBackend) + ".", label);
+            }
+            GUI.Label(new Rect(x + 25, y + 284, 900, 32), BridgeSettings.UnavailableReason(3), small);
+            GUI.Label(new Rect(x + 25, y + 321, 900, 28), Plugin.RendererStatus, label);
+            GUI.enabled = enabled && Plugin.Compatible && Plugin.NativeLoaded;
+            bool nextEnabled = GUI.Toggle(new Rect(x + 25, y + 355, 570, 28), Plugin.Enabled.Value,
+                UpscalingPresentation.ToggleLabel(BridgeSettings.RunningBackend, Plugin.QualityMode.Value), label);
+            if (nextEnabled != Plugin.Enabled.Value) { Plugin.Enabled.Value = nextEnabled; Plugin.ResetHistory(); }
+            if (GUI.Button(new Rect(x + 690, y + 355, 235, 28), "Retry upscaler", button)) Plugin.ResetHistory();
+            int quality = Choice(x, y + 393, "Quality mode", Plugin.QualityMode.Value,
+                UpscalingOptions.QualityValues, UpscalingPresentation.QualityNames(BridgeSettings.RunningBackend), label, button);
+            if (quality != Plugin.QualityMode.Value)
+            {
+                Plugin.QualityMode.Value = quality;
+                Plugin.RenderScale.Value = UpscalingOptions.Scale(quality);
+                Plugin.ResetHistory();
+            }
+            GUI.enabled = enabled;
+            string nativeMode = BridgeSettings.RunningBackend == 0 ? "DLAA" : "Native AA";
+            GUI.Label(new Rect(x + 25, y + 428, 900, 35),
+                $"Render resolution: {Plugin.RenderScale.Value * 100:0.#}% per dimension. Changes apply immediately. {nativeMode} and Ultra Quality are experimental.", small);
+            if (BridgeSettings.RunningBackend == 0)
+            {
+                GUI.enabled = enabled && Plugin.Compatible && Plugin.NativeLoaded;
+                int preset = Choice(x, y + 471, "Model preset", Plugin.Preset.Value,
+                    UpscalingOptions.PresetValues, UpscalingOptions.PresetNames, label, button);
+                if (preset != Plugin.Preset.Value) { Plugin.Preset.Value = preset; Plugin.ResetHistory(); }
+                GUI.enabled = enabled;
+                GUI.Label(new Rect(x + 25, y + 505, 900, 31), "Requested DLSS model preset. Your driver or DLSS runtime may use a different model.", small);
+                if (BridgeSettings.PresetOverride)
+                {
+                    GUI.Label(new Rect(x + 25, y + 540, 555, 37), "OptiScaler controls the model preset until you restart with Home presets enabled.", small);
+                    if (GUI.Button(new Rect(x + 590, y + 541, 335, 31), "Use Home presets after restart", button)) BridgeSettings.UseHomePresets();
+                }
+            }
+            else if (BridgeSettings.UnavailableReason(2).Length > 0)
+                GUI.Label(new Rect(x + 25, y + 471, 900, 42), BridgeSettings.UnavailableReason(2), small);
+            GUI.Label(new Rect(x + 25, y + 584, 715, 36), BridgeSettings.Message, small);
+            if (GUI.Button(new Rect(x + 750, y + 584, 175, 31), "Refresh settings", button)) BridgeSettings.Reload();
+            GUI.Label(new Rect(x + 25, y + 625, 900, 28),
+                "Open the OptiScaler menu (usually F10) for Frame Generation and Neural Rendering controls.", small);
+        }
+        finally { GUI.enabled = enabled; }
+    }
+
+    private static int Choice(float x, float y, string title, int current, int[] values, string[] names, GUIStyle label, GUIStyle button)
+    {
+        int index = Array.IndexOf(values, current);
+        int next = index;
+        GUI.Label(new Rect(x + 25, y, 280, 28), title, label);
+        if (GUI.Button(new Rect(x + 325, y, 34, 28), "‹", button)) next = index < 0 ? 0 : (index + values.Length - 1) % values.Length;
+        GUI.Label(new Rect(x + 375, y, 485, 28), index < 0 ? "Custom setting" : names[index], label);
+        if (GUI.Button(new Rect(x + 875, y, 34, 28), "›", button)) next = index < 0 ? 0 : (index + 1) % values.Length;
+        return next < 0 ? current : values[next];
+    }
+}
