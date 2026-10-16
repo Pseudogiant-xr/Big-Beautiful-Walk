@@ -17,6 +17,15 @@ The public core's official SR 310.9.1 sustained DLSS evaluation in the game worl
 
 A completely fresh BepInEx installation and first-launch interop generation have not been exercised in the real game. A clean installer fixture checks file operations; it does not prove fresh bootstrap, image quality, frame pacing or compatibility on another machine. Expanded quality modes, alternative upscalers and experimental presets each need their own rendering check; see [the feature matrix](UPSCALERS.md).
 
+The final vegetation runtime is built from `4dc8555e72b25f2a7c34fa4aa38814b61356a100`. After the binding corrections, the user confirmed stable preset cycling, distant tree shadows with Extreme active and nearby foliage restoration with Game defaults. The log recorded a 1950–2000 m material fade, then restoration of 542 changed material properties and the active Flora parameter without replaying a guessed fade range. These are observations on the setup above, not universal restoration or scene-lifecycle coverage.
+
+Tested DLL SHA-256 values:
+
+- Managed: `0859D14B19B7DB03D231B35E6598CA40DEC8EB7557374EB7B67D2115CDE214A6`.
+- Native, unchanged during the vegetation corrections: `947D6EB4634AC85E3F4ECE92115B308E34C908B4DDB086B0F70B8C23E6D01914`.
+
+The managed Release build used .NET SDK 8.0.426 and `dotnet build src/managed/BigWalkDLSS.csproj -c Release -p:GameDir=<local game folder>`, exiting 0 with the existing MSB3246 game-reference warning. The native Release build previously exited 0; its ABI remains version 3 / 120 bytes. The distributed DLLs are the pair used for the final visual check; later documentation edits do not rebuild them.
+
 ## Limits
 
 - VR is unsupported. Remove or disable this graphics integration before a VR session.
@@ -27,7 +36,7 @@ A completely fresh BepInEx installation and first-launch interop generation have
 - XeSS produced a valid picture but slight flicker was reported on the tested display. The cause is unconfirmed; no VRR-specific fix is claimed.
 - NR requires a separately obtained model. Its provenance and redistribution permissions have not been established for the prototype model, so it is absent from downloads and releases.
 - Large shadow ranges and the 16384 atlas can substantially increase GPU cost. Exact GPU atlas allocation remains unverified.
-- Complete vegetation-material restoration is unverified. Use a restart and compare against an unmodified launch if a visual change persists.
+- Vegetation restoration is verified for the tested preset/default cycles. Other scenes, quality changes during an override, game updates and all material variants remain unverified; compare against an unmodified launch if a visual change persists.
 - No extra cascades beyond four, distance-field shadows, ray-traced shadows or separate near/far shadow renderer are implemented.
 
 ## Problem reports

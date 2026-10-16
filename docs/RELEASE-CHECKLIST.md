@@ -18,9 +18,9 @@ This checklist tracks the private 0.7 test candidate, unresolved public-release 
 
 - [x] CPU installer fixtures: 30 cases under Windows PowerShell 5.1 and PowerShell 7 in the author session. This does not exercise graphics runtimes or first-launch game behavior.
 - [ ] Inspect the final packaged ZIP and fixture-installed notices after the final licensing edits; confirm linked license files, installer ownership/removal behavior and absence of bundled runtime/game/model binaries.
-- [ ] Record exact 0.7 managed/native binary hashes, build commands and validation receipts for the frozen candidate.
-- [ ] Complete one fresh independent review of the final 0.7 candidate. The historical 0.6 review below does not satisfy this check.
-- [ ] Complete final restoration acceptance in the real game within an authorized test window. NVIDIA FG plus Default NR received user confirmation; AMD FG operated with poorer results and Intel interpolation reduced FPS on the tested RTX 4090. The subsequent Game defaults vegetation correction is not yet visually verified.
+- [x] Record the tested 0.7 managed/native binary hashes and build evidence in [compatibility](COMPATIBILITY.md); the release preserves that pair through subsequent documentation edits.
+- [x] Fresh independent reviews cover the 0.7 implementation and vegetation binding corrections. Findings, reviewed heads and regression results are recorded in the private pull request's review table; the historical 0.6 review is separate.
+- [x] Final restoration acceptance in the authorized real-game test: NVIDIA FG plus Default NR received user confirmation; AMD FG operated with poorer results and Intel interpolation reduced FPS on the tested RTX 4090. The user confirmed stable preset cycling, Extreme distant tree shadows and Game defaults nearby foliage restoration after the final vegetation correction.
 - [ ] Validate a fresh BepInEx installation and first-launch interop generation; the historical existing-loader tests do not satisfy this check.
 
 ## Historical private 0.6 observations
