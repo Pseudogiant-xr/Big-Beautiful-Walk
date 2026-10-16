@@ -28,6 +28,14 @@ So download it. It’s free, which is a very good price. Make Big Walk Beautiful
 
 An unofficial graphics mod for **Big Walk** on Windows. It adds DLSS Super Resolution, FSR 3.1, FSR 4 and XeSS, DLSS5 Neural Rendering, Frame Generation and an in-game graphics panel, opened with the **Home** key, with controls for upscaling, shadows, vegetation, textures and more.
 
+**Game defaults: no DLSS, no Neural Rendering**
+
+![Big Walk with the game's default graphics, no DLSS and no Neural Rendering](media/comparison-game-defaults.webp)
+
+**Big Beautiful Walk: Extreme preset with DLSS and Neural Rendering**
+
+![The same view with the Extreme preset, DLSS and Neural Rendering](media/comparison-extreme-dlss-nr.webp)
+
 This is an alpha, tested on one PC with an RTX 4090. See [compatibility](docs/COMPATIBILITY.md) for known limitations and [release readiness](docs/RELEASE-READINESS.md) for what was tested.
 
 Big Beautiful Walk is not affiliated with or endorsed by House House, Unity or NVIDIA.
