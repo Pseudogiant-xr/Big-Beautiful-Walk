@@ -1,33 +1,73 @@
 # Graphics guide
 
-Press **Home** to open Big Beautiful Walk. Graphics overrides start disabled so the game's own settings remain the baseline. Balanced, Quality and Extreme are explicit choices; compare them in the same scene before keeping one.
+Press **Home** to open Big Beautiful Walk. All graphics overrides start off, so the game's own settings stay in charge until you change something. Balanced, Quality and Extreme are presets you pick yourself. Try them in the same scene before you keep one.
 
 ## Controls
 
-Changing a control enables its override. Numeric fields commit with **Enter**; changes save after an editing pause. Unticking an override returns the captured value when another system has not changed it. A change to the game's quality preset can affect settings without overrides.
+Changing a control turns on its override. Number fields take effect when you press **Enter**. Changes save a moment after you stop editing.
 
-The graphics profile is `BepInEx/config/local.bigwalk.advanced-graphics.cfg`. The DLSS profile is `BepInEx/config/local.bigwalk.native-dlss.cfg`. Diagnostic shortcuts and capture probes are disabled by default.
+Untick an override to go back to the value the game had before. This works unless another system has changed that value in the meantime. Changing the game's own quality preset can still affect any setting you have not overridden.
+
+Your settings live in two files:
+
+- Graphics profile: `BepInEx/config/local.bigwalk.advanced-graphics.cfg`
+- DLSS profile: `BepInEx/config/local.bigwalk.native-dlss.cfg`
+
+Diagnostic shortcuts and capture probes are off by default.
 
 ## DLSS Super Resolution
 
-The default scale is `0.666667` on each dimension, corresponding to DLSS Quality, with Preset L. The panel's status distinguishes waiting for a frame from active evaluation. An FPS counter alone does not prove DLSS is active.
+By default DLSS renders at `0.666667` of your resolution on each side. That is DLSS Quality. The default render preset is L.
 
-Home's **Upscaling** controls offer DLAA, Ultra Quality, Quality, Balanced, Performance and Ultra Performance, and Default / J / K / L / M render presets plus legacy E / F. Direct DLSS quality and preset changes apply live. DLAA and Ultra Quality remain experimental until their rendering path is separately verified; a successful Quality run does not validate them.
+The panel's status line tells you whether DLSS is still waiting or is actually running. An FPS counter on its own does not tell you that DLSS is active.
 
-Alternative FSR 3.1 and XeSS backends use OptiScaler. Selecting a bridge backend writes the next-start choice and requires a restart; the panel distinguishes the current session from the next-start configuration. FSR 4 remains unavailable on the observed RTX 4090. Read the [upscaler feature matrix](UPSCALERS.md) for the exact requirements and preset limits.
+The **Upscaling** tab in Home offers these choices:
 
-The mod retains the game's post-processing around the DLSS pass. An existing OptiScaler installation may change the selected backend; inspect its status if the result differs from the direct SR path. Avoid saving competing backend choices in both menus before restarting.
+- Quality modes: DLAA, Ultra Quality, Quality, Balanced, Performance and Ultra Performance.
+- Render presets: Default, J, K, L and M, plus the legacy E and F.
+
+Quality and preset changes for direct DLSS apply straight away. DLAA and Ultra Quality stay experimental until they are tested on their own. A working Quality run does not prove they work.
+
+### FSR 3.1 and XeSS
+
+The FSR 3.1 and XeSS backends run through OptiScaler. When you pick one of these, Home saves it for the next launch and you need to restart the game. The panel shows both the backend running now and the one queued for next start. FSR 4 is not available on the tested RTX 4090. The [upscaler feature matrix](UPSCALERS.md) lists the exact requirements and preset limits.
+
+The mod keeps the game's post-processing around the DLSS pass. If you already had OptiScaler installed, it may switch the backend. If the picture differs from what direct DLSS gives you, check OptiScaler's status. Do not save different backend choices in Home and in OptiScaler before you restart.
 
 ## Shadows and vegetation
 
-Shadow distance, atlas size, cascade count and cascade boundaries work together. Large distances spread a finite shadow map over more world space. Four cascades remain the engine limit. Cascade boundaries display metres but are stored as normalized fractions; changing the total distance scales the enabled boundaries proportionally.
+Shadow distance, atlas size, cascade count and cascade boundaries work together. The shadow map has a fixed size, so a longer distance spreads it over more of the world and each area gets less detail. The engine allows at most four cascades.
 
-The experimental 16384 main atlas is offered only when the GPU reports sufficient maximum texture size. With four cascades, its quarter-atlas tiles can provide up to 8192 pixels per cascade. Doubling an 8192 atlas to 16384 uses four times the atlas storage. A single 16-bit 16384-square depth surface is approximately 512 MiB; actual allocation and frame cost have not been verified. Engine acceptance of the setting does not prove the exact GPU allocation.
+Cascade boundaries show in metres but are saved as fractions of the total distance. If you change the total distance, the boundaries you have turned on scale with it.
 
-Vegetation shadow range is also limited by the main light's shadow distance. Unity Terrain controls affect Terrain-owned details and trees; they do not necessarily affect mesh-based landscape or foliage. Extreme's 2000 m vegetation fade and Game defaults restoration were confirmed on the tested setup. Game defaults restores the game's shorter range, so distant tree shadows recede. Other scenes, quality changes during an override and all material variants remain unverified.
+### The 16384 shadow atlas
+
+The experimental 16384 main atlas only appears if your GPU reports a large enough maximum texture size. With four cascades, each cascade gets a quarter of the atlas, so up to 8192 pixels per cascade.
+
+Going from an 8192 atlas to 16384 takes four times the atlas memory. A single 16-bit, 16384-square depth surface is about 512 MiB. The real GPU allocation and the cost per frame have not been measured. The engine accepting the setting does not tell you what the GPU actually allocates.
+
+### Vegetation
+
+Vegetation shadows cannot reach further than the main light's shadow distance.
+
+The Unity Terrain controls change details and trees that belong to Unity Terrain. They may not change landscape or foliage built from ordinary meshes.
+
+Tested on one setup:
+
+- Extreme's 2000 m vegetation fade works.
+- **Game defaults** puts back the game's shorter range, so distant tree shadows fade out again.
+
+Not tested: other scenes, changing the game's quality setting while an override is on, and every material variant.
 
 ## Optional Frame Generation and Neural Rendering
 
-**F10** opens the optional OptiScaler menu. Setup's optional bridge checkbox downloads its pinned upscaler/FG dependencies; FG starts off so the user can compare it deliberately. The Neural Rendering model is not downloaded. See [the dependency policy](DEPENDENCIES.md).
+**F10** opens the optional OptiScaler menu.
 
-Frame Generation can shimmer on foliage. Neural Rendering can change the game's appearance; **Default** is the preferred style from prototype testing, while **Natural** reduced saturation. Neither feature has broad hardware or fresh-install coverage. NR is not ray tracing and does not add distance-field or ray-traced shadows.
+Setup's optional bridge checkbox downloads the pinned upscaler and Frame Generation files. Frame Generation (FG) starts off, so you can compare with and without it. The bridge checkbox does not download the Neural Rendering model. See [the dependency policy](DEPENDENCIES.md).
+
+What to expect:
+
+- FG can make foliage shimmer.
+- Neural Rendering (NR) can change how the game looks. **Default** was the preferred style in prototype testing. **Natural** reduced saturation.
+- Neither feature has been tested on a wide range of hardware or on a fresh install.
+- NR is not ray tracing. It does not add distance-field or ray-traced shadows.

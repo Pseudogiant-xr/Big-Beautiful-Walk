@@ -2,42 +2,92 @@
 
 ## Before installing
 
-Use the Windows x64 Steam version of Big Walk on a monitor, with an NVIDIA RTX GPU and DirectX 11. Close the game. Extract the whole release archive before running `Setup.exe`; do not run Setup inside the ZIP or copy only its launcher.
+You need:
 
-Install or repair the [Microsoft Visual C++ v14 Redistributable for x64](https://aka.ms/vc14/vc_redist.x64.exe) before starting the game. The native plugin needs its runtime libraries; Setup does not install this system prerequisite. [Microsoft's supported runtime guidance](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) explains the package.
+- The Windows x64 Steam version of Big Walk, played on a monitor.
+- An NVIDIA RTX GPU running DirectX 11.
+- The [Microsoft Visual C++ v14 Redistributable for x64](https://aka.ms/vc14/vc_redist.x64.exe). The native plugin needs it, and Setup does not install it. [Microsoft's runtime guidance](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) explains the package.
+- An internet connection for the first install. BepInEx may also need one the first time the game starts.
 
-Setup searches Steam libraries and lets you choose another folder. Select the folder containing `Big Walk.exe`. Administrator access is normally unnecessary. A working internet connection is needed for the first download, and BepInEx may need internet access on its first game launch.
+Close the game. Extract the whole release archive before you run `Setup.exe`. Don't run Setup from inside the ZIP, and don't copy the launcher out on its own.
+
+Setup lists the Steam libraries it finds, and you can browse to another folder. Pick the folder that contains `Big Walk.exe`. You normally don't need administrator rights.
 
 ## Install or repair
 
-Open `Setup.exe` and choose **Install / Repair**. It starts the same PowerShell installer without a terminal window. `Setup.cmd` provides console diagnostics and command-line options if needed. The installer stages and hashes its downloads before changing the game folder. It tracks installed files and stores original files under `.big-beautiful-walk` in the game folder. Preserve that folder for recovery and uninstall.
+Open `Setup.exe` and click **Install / Repair**. Setup.exe runs the PowerShell installer without a terminal window. If you want console output or command-line options, use `Setup.cmd` instead.
 
-Setup refuses unrecognized conflicting loader or runtime files rather than replacing another mod's installation. Existing configurations are preserved. The optional bridge adds OptiScaler and NVIDIA, AMD and Intel FG dependencies. A separate **Neural Rendering runtime** checkbox downloads RHI's community-hosted SF-v2 model and includes that bridge; it is roughly 111 MiB and is not an official NVIDIA SDK download. Both boxes start unchecked, and fresh FG/NR settings remain off. Bridge-only installation or repair does not add an NR model. Already-owned optional components are included in later repairs even when their boxes are unchecked. Open **Home → Frame Gen** or **Neural**, make your choice, then quit normally and restart. Setup's **FG / NR guide** opens the [feature instructions](FRAME-GENERATION.md), and **Licences** opens the component notices.
+What Setup does:
 
-Launch through Steam. The first BepInEx launch can pause while preparing interop files; `BepInEx/LogOutput.log` records progress. Fresh interop generation and a repeat launch succeeded on the tested system; allow the first launch to finish. Enter a private world, press **Home**, and expect **Upscaling active** after loading. **Waiting for a scene** at the title screen is normal. Start with Quality / Preset L and compare off/on with **F8**. Try graphics presets individually; **Game defaults** restores graphics overrides while Upscaling, Frame Gen and Neural retain separate controls. The game continues simulating while the panel is open.
+- Downloads its files to a staging area and checks their hashes before it changes the game folder.
+- Records every file it installs, and keeps the originals it replaces in `.big-beautiful-walk` in the game folder. Keep that folder: repair and uninstall need it.
+- Stops instead of overwriting loader or runtime files it doesn't recognise, so it won't replace another mod's install.
+- Keeps your existing configuration files.
+
+### Optional components
+
+Two checkboxes add optional components. Both start unchecked.
+
+- **Bridge**: OptiScaler, plus the NVIDIA, AMD and Intel frame generation runtimes.
+- **Neural Rendering model**: RHI's community-hosted SF-v2 model, about 111 MiB, plus the bridge it needs. This is not an official NVIDIA SDK download.
+
+Installing only the bridge does not add a Neural Rendering model. Once an optional component is installed, later repairs include it even if its box is unchecked. Frame generation and Neural Rendering stay off until you choose them: open **Home → Frame Gen** or **Neural**, make your choice, then quit the game normally and restart it.
+
+Setup's **FG / NR guide** button opens the [feature guide](FRAME-GENERATION.md), and **Licences** opens the component notices.
+
+### First launch
+
+1. Start the game through Steam. The first BepInEx launch can pause while it prepares interop files. `BepInEx/LogOutput.log` shows its progress. Let it finish.
+2. Load into a private world and press **Home**. After loading you should see **Upscaling active**. On the title screen it says **Waiting for a scene**, which is normal.
+3. Start with Quality and Preset L. Press **F8** to switch reconstruction off and on.
+4. Try graphics presets one at a time. **Game defaults** removes the graphics overrides. Upscaling, Frame Gen and Neural have their own controls and are not affected.
+
+The game keeps running while the panel is open.
 
 ## Diagnose
 
-Open Setup and choose **Diagnose**; this read-only action also works while the game is running. It checks installer-owned files against recorded hashes, not rendering, GPU compatibility or frame rate. For a missing owned file, close the game and use **Install / Repair**. For a conflict, preserve the changed file and investigate it before attempting repair.
+Open Setup and click **Diagnose**. It only reads files, so it also works while the game is running. It compares the files Setup installed against their recorded hashes. It does not test rendering, GPU compatibility or frame rate.
 
-Useful local logs are `BepInEx/LogOutput.log` and `BepInEx/BigWalkDLSS/native.log`. Share only relevant excerpts after removing personal paths.
+- If an installed file is missing, close the game and run **Install / Repair**.
+- If a file conflicts, keep the changed file and find out what changed it before you repair.
 
-If Home reports **Upscaler unavailable**, install or repair the x64 Visual C++ Redistributable, restart the game and check those logs. If a saved optional feature prevents startup, close the game and back up `OptiScaler.ini`. In its existing `[FrameGen]` and `[DlssNr]` sections, change each existing `Enabled` value to `false`, retaining the other keys. Edit the existing sections rather than appending duplicates. Retry the baseline before enabling one feature at a time; use Uninstall if you need to remove this integration. Repair preserves settings and cannot by itself undo a failing feature request.
+The useful logs are `BepInEx/LogOutput.log` and `BepInEx/BigWalkDLSS/native.log`. When you share them, post only the relevant lines and remove personal paths.
 
-Report reproducible problems through [GitHub Issues](https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/issues), with the mod/game version, GPU/driver, backend/provider, reproduction steps and a short redacted log excerpt.
+### If something goes wrong
+
+- **Home shows "Upscaler unavailable"**: install or repair the x64 Visual C++ Redistributable, restart the game and check the logs above.
+- **The game won't start after you turned on an optional feature**: repair keeps your settings, so it won't undo this on its own. Instead:
+  1. Close the game and back up `OptiScaler.ini` in the game folder.
+  2. In its existing `[FrameGen]` and `[DlssNr]` sections, set each existing `Enabled` value to `false`. Leave the other keys alone, and edit the existing sections instead of adding new ones.
+  3. Check the game starts with the baseline, then turn features back on one at a time.
+  4. If you want to remove the integration completely, use **Uninstall**.
+
+Report problems you can reproduce on [GitHub Issues](https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/issues). Include the mod and game versions, GPU and driver, backend or provider, the steps to reproduce, and a short log excerpt with personal details removed.
 
 ## Uninstall
 
-Close the game, run `Setup.exe`, select the same folder and choose **Uninstall**. The installer removes files it installed and restores originals it backed up. It preserves configuration files, saves, other mods and its backup folder. If an installed file has been changed externally, Setup stops rather than deleting someone else's change.
+Close the game, run `Setup.exe`, select the same folder and click **Uninstall**. Setup removes the files it installed and restores the originals it backed up. It leaves your configuration files, saves, other mods and its backup folder in place. If a file it installed has since been changed by something else, Setup stops instead of deleting that change.
 
-If Setup reports interrupted recovery, keep `.big-beautiful-walk` and run Setup again after closing the game. Do not manually delete the transaction journal or original backups.
+If Setup reports an interrupted recovery, keep `.big-beautiful-walk`, close the game and run Setup again. Don't delete the transaction journal or the original backups by hand.
 
 ## Advanced: offline and command line
 
-The same installer supports PowerShell:
+You can run the installer directly from PowerShell:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Setup.ps1 -Headless -GamePath 'E:\SteamLibrary\steamapps\common\Big Walk' -Mode Install
 ```
 
-Use `-Mode Diagnose` or `-Mode Uninstall` for those actions. Add `-Features fg` for the optional upscaler/FG bridge, or `-Features nr` for the NR model plus its required bridge. Later repairs include previously owned optional components. For offline dependencies, add `-DependencyDirectory 'E:\BBW-dependencies'`. Core requires `bepinex.zip` and `nvngx_dlss.file`. The bridge also requires `optiscaler_fg.zip`, `streamline_fg.zip`, `xess.zip`, `amd_fsr_loader.file`, `amd_fsr_framegeneration.file`, `amd_fsr_license.file` and `amd_fsr_notices.file`. The NR option additionally needs `nvidia_nr.zip`. Name files after these lock IDs and retain the locked hashes; offline mode still verifies them. All runtime/model downloads remain outside the release ZIP.
+- `-Mode Diagnose` and `-Mode Uninstall` run those actions.
+- `-Features fg` adds the optional upscaler and frame generation bridge. `-Features nr` adds the Neural Rendering model and the bridge it needs. Later repairs include optional components that are already installed.
+- `-DependencyDirectory 'E:\BBW-dependencies'` installs from local files instead of downloading. Name each file after its ID in the lock file. Setup still checks every file against the locked hash.
+
+Files needed in the dependency directory:
+
+| Install | Files |
+| --- | --- |
+| Core | `bepinex.zip`, `nvngx_dlss.file` |
+| Bridge (`fg`) | Core files, plus `optiscaler_fg.zip`, `streamline_fg.zip`, `xess.zip`, `amd_fsr_loader.file`, `amd_fsr_framegeneration.file`, `amd_fsr_license.file`, `amd_fsr_notices.file` |
+| Neural Rendering (`nr`) | Bridge files, plus `nvidia_nr.zip` |
+
+None of these runtime or model downloads are included in the release ZIP.

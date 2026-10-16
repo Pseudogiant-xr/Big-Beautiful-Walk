@@ -28,10 +28,9 @@ Sans Mono, Copyright 2003 Bitstream Inc., and public-domain DejaVu work.
 
 The managed plugin uses BepInEx, Il2CppInterop and HarmonyX. BepInEx's native
 hook library is Dobby, by jmpews and contributors, with the BepInEx fork.
-Their authors,
-versions, dependency credits and license copies are in THIRD_PARTY_NOTICES.md
-and docs/licenses. Runtime SDKs from NVIDIA, Intel and AMD retain their own
-copyrights and licenses. Big Walk is by House House.
+Their authors, versions, dependency credits and license copies are in
+THIRD_PARTY_NOTICES.md and docs/licenses. Runtime SDKs from NVIDIA, Intel and
+AMD retain their own copyrights and licenses. Big Walk is by House House.
 
 This is an unofficial mod. These credits do not imply vendor or game-author
 sponsorship or endorsement. No vendor logos are included in this notice.

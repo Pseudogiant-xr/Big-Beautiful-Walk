@@ -2,30 +2,48 @@
 
 ## 0.7.0 — alpha
 
-- Add Home profiles for NVIDIA, AMD and Intel frame generation, with dependency checks and startup/next-launch status.
-- Add Neural Rendering settings and its integration forwarder; no proprietary NR model is included.
-- Stage pinned AMD FG and Intel FG / XeLL runtimes through the optional installer.
-- Save coordinated provider settings as one lossless, backed-up INI edit.
-- Add in-app credits and install the full attribution/licence collection.
-- License original project code under Apache 2.0 while preserving Unity and vendor-specific terms and historical MIT permissions.
-- Restore vegetation material values at the override write boundary instead of replaying quality-table fade guesses; preserve subsequent game changes.
-- Repair previously owned optional bridge components during default Install / Repair, preserving edited settings.
-- Add missing Detours/JSON notices, specific Anti-Lag 2/LatencyFleX attribution and NVIDIA Reflex Low Latency feature naming.
-- Explain first-use verification, the Visual C++ prerequisite and startup recovery; link Setup to the feature guide and licences.
-- Add a separate optional NR runtime download from the RHI community mirror, pinned to the exact SF-v2 model already tested in Big Walk; keep it out of the release ZIP and disabled initially.
-- Load the background installer's built-in PowerShell modules explicitly, so a cold GUI worker can hash files and handle JSON without relying on module autoloading.
-- Add a small Setup.exe graphical launcher that opens the installer without a terminal; retain Setup.cmd for console diagnostics and command-line use.
+### Added
 
-NVIDIA FG and Default-style NR received in-world visual checks on the tested RTX 4090. AMD FG operated with poorer results; Intel FG produced interpolated frames but reduced measured FPS on this setup. Preset cycling, distant tree shadows under Extreme and nearby foliage restoration under Game defaults were confirmed after the vegetation binding corrections. The final installer/UI build also completed fresh BepInEx interop generation and a repeat launch; the user confirmed the in-world picture and Home/F10 menus, and Setup.exe opened without a blank terminal. Compatibility on other hardware remains unverified; component terms remain in `docs/LICENSING.md`.
+- Home profiles for NVIDIA, AMD and Intel frame generation. Each checks its dependencies and shows its status at startup and for the next launch.
+- Neural Rendering settings and the forwarder that connects them. No proprietary Neural Rendering model is included.
+- Optional download of the Neural Rendering model from the RHI community mirror, pinned to the exact SF-v2 model tested in Big Walk. It is separate from the release ZIP and off by default.
+- The optional bridge now installs pinned AMD FG and Intel FG / XeLL runtimes.
+- Setup.exe, a small graphical launcher that opens the installer without a terminal window. Setup.cmd stays for console diagnostics and command-line use.
+- An in-game credits page. The full attribution and licence collection is now installed with the mod.
+- Notices for Detours and nlohmann JSON, specific attribution for Anti-Lag 2 and LatencyFleX, and the correct feature name for NVIDIA Reflex Low Latency.
+- Documentation for first-launch checks, the Visual C++ prerequisite and recovering from a failed startup. Setup now links to the feature guide and the licences.
+
+### Changed
+
+- Provider settings are saved together in one INI edit that keeps every other setting and backs up the previous file.
+- Original project code is now licensed under Apache 2.0. Unity and vendor-specific terms still apply to their parts, and the earlier MIT permissions still stand.
+- Vegetation material values are now restored at the point where the override is written, instead of being guessed back from the quality table. Later changes made by the game are kept.
+- The default Install / Repair also repairs optional bridge components that were installed before, without touching edited settings.
+
+### Fixed
+
+- The background installer now loads PowerShell's built-in modules explicitly, so a freshly started GUI worker can hash files and read JSON without relying on module autoloading.
+
+### Testing
+
+Tested on one RTX 4090:
+
+- NVIDIA FG and Neural Rendering with the Default style were checked in-world and looked right.
+- AMD FG worked, with worse results.
+- Intel FG produced interpolated frames but lowered the measured frame rate.
+- Cycling presets, distant tree shadows on Extreme, and nearby foliage returning to normal on Game defaults all worked after the vegetation fixes.
+- The final build generated BepInEx interop files from a fresh install and launched again cleanly. The picture and the Home and F10 menus worked in-world, and Setup.exe opened without an empty terminal window.
+
+Other hardware has not been tested. Component licence terms are in `docs/LICENSING.md`.
 
 ## 0.6.0 — public alpha candidate
 
-- Rename the project Big Beautiful Walk and add an Overview tab with DLSS status and graphics presets.
-- Retain the game's graphics settings on first installation; enable shadow/LOD presets only by explicit selection.
-- Add a Windows setup window with Steam discovery, verified dependency downloads, diagnostics and ownership-aware removal.
-- Preserve editable profiles and shared BepInEx files used by other mods.
-- Disable renderer changes on untested game builds, unsupported graphics APIs and XR.
-- Disable intrusive diagnostic screenshots and pixel readbacks by default.
-- Keep the existing native DLSS reconstruction, stock post effects, vegetation controls and experimental 16K atlas option.
+- Renamed the project Big Beautiful Walk and added an Overview tab with DLSS status and graphics presets.
+- A first install keeps the game's own graphics settings. Shadow and LOD presets apply only when you select them.
+- Added a Windows setup window with Steam discovery, verified dependency downloads, diagnostics, and removal that only touches files Setup installed.
+- Editable profiles and BepInEx files shared with other mods are kept.
+- Renderer changes are disabled on untested game builds, unsupported graphics APIs and XR.
+- Diagnostic screenshots and pixel readbacks are off by default.
+- Kept the native DLSS reconstruction, stock post effects, vegetation controls and the experimental 16K atlas option.
 
-This candidate is tested on one RTX 4090 system. Optional FG/NR integration and third-party release obligations are described in the documentation.
+Tested on one RTX 4090 system. The documentation covers the optional FG / NR integration and third-party licence obligations.
