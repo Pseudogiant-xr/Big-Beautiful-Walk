@@ -129,6 +129,11 @@ foreach ($spec in @(@('Install / Repair','Install',20,155),@('Uninstall','Uninst
             [void]$script:setupWorker.AddScript({
                 param($Module,$Game,$Action,$Dependencies,$SelectedFeatures)
                 $ErrorActionPreference='Stop'
+                # A background runspace does not inherit the GUI's loaded modules.
+                # Use this engine's built-ins even when module autoload is unavailable.
+                foreach ($name in @('Microsoft.PowerShell.Management','Microsoft.PowerShell.Utility')) {
+                    Import-Module ([IO.Path]::Combine($PSHOME,'Modules',$name,($name+'.psd1'))) -ErrorAction Stop
+                }
                 Import-Module $Module -Force
                 Invoke-BbwSetup -GamePath $Game -Mode $Action -DependencyDirectory $Dependencies -Features $SelectedFeatures
             }).AddArgument((Join-Path $PSScriptRoot 'Setup.Core.psm1')).AddArgument($pathBox.Text).AddArgument([string]$sender.Tag).AddArgument($DependencyDirectory).AddArgument($selectedFeatures)

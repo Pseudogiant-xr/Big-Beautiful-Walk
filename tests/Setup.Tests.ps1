@@ -1,4 +1,4 @@
-param([string]$OnlineDependencyLock, [string]$CaseFilter='*', [string]$SetupCorePath=(Join-Path $PSScriptRoot '../scripts/Setup.Core.psm1'))
+param([string]$OnlineDependencyLock, [string]$CaseFilter='*', [string]$SetupCorePath=(Join-Path $PSScriptRoot '../scripts/Setup.Core.psm1'), [string]$SetupPath=(Join-Path $PSScriptRoot '../scripts/Setup.ps1'))
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version 2.0
 Import-Module $SetupCorePath -Force
@@ -68,6 +68,67 @@ try {
         $parseErrors=$null
         [void][Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot '../scripts/Setup.ps1'),[ref]$null,[ref]$parseErrors)
         Assert (@($parseErrors).Count -eq 0) 'GUI parses in Windows PowerShell'
+    }
+    Case 'production GUI worker installs repairs diagnoses and removes without module autoload' {
+        $parseErrors=$null
+        $ast=[Management.Automation.Language.Parser]::ParseFile($SetupPath,[ref]$null,[ref]$parseErrors)
+        Assert (@($parseErrors).Count -eq 0) 'GUI worker source parses'
+        $calls=@($ast.FindAll({
+            param($node)
+            $node -is [Management.Automation.Language.InvokeMemberExpressionAst] -and $node.Member.Value -eq 'AddScript'
+        },$true))
+        Assert ($calls.Count -eq 1) 'one production AddScript worker'
+        $workerBody=$calls[0].Arguments[0].ScriptBlock.GetScriptBlock().ToString()
+        foreach ($context in @('Default','NoAutoload','Cold')) {
+            $f=New-Fixture ('gui-worker-'+$context); Add-NrFixture $f
+            $modulePath=Join-Path $f.PackagePath 'scripts/Setup.Core.psm1'
+            [void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($modulePath))
+            [IO.File]::Copy([IO.Path]::GetFullPath($SetupCorePath),$modulePath)
+            $model=Join-Path $f.GamePath 'OptiScaler/nvngx_dlssnr.dll'
+            $plugin=Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll'
+            $config=Join-Path $f.GamePath 'OptiScaler.ini'
+            foreach ($action in @('Install','Install','Diagnose','Uninstall')) {
+                $worker=[PowerShell]::Create()
+                $runspace=$null
+                try {
+                    if ($context -eq 'Cold') {
+                        # Simulate a host with core commands only and no module discovery.
+                        $runspace=[Management.Automation.Runspaces.RunspaceFactory]::CreateRunspace([Management.Automation.Runspaces.InitialSessionState]::CreateDefault2())
+                        $runspace.Open()
+                        $runspace.SessionStateProxy.SetVariable('PSModuleAutoLoadingPreference','None')
+                        $worker.Runspace=$runspace
+                    } elseif ($context -eq 'NoAutoload') {
+                        [void]$worker.AddScript({ $PSModuleAutoLoadingPreference='None' }).AddStatement()
+                    }
+                    $selected=@()
+                    if (-not (Test-Path -LiteralPath $model)) { $selected=@('nr','fg') }
+                    [void]$worker.AddScript($workerBody).AddArgument($modulePath).AddArgument($f.GamePath).AddArgument($action).AddArgument($f.DependencyDirectory).AddArgument($selected)
+                    $operation=$worker.BeginInvoke()
+                    $result=$worker.EndInvoke($operation)
+                    Assert (-not $worker.HadErrors) ('GUI worker errors: '+[string]$worker.Streams.Error[0])
+                } finally {
+                    $worker.Dispose()
+                    if ($runspace) { $runspace.Dispose() }
+                }
+                if ($action -eq 'Install') {
+                    Assert ([IO.File]::ReadAllText($model) -eq 'community-model-fixture') 'GUI worker installs and repairs NR'
+                    Assert ([IO.File]::ReadAllText($plugin) -eq 'plugin-one') 'GUI worker repairs missing owned plugin'
+                    Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'version.dll')) -eq 'experimental-fg-bridge') 'GUI worker includes bridge'
+                    if ([IO.File]::ReadAllText($config) -ne 'user-NR-options') {
+                        Assert (@([regex]::Matches([IO.File]::ReadAllText($config),'(?m)^Enabled=false\r?$')).Count -eq 2) 'GUI worker defaults leave FG and NR disabled'
+                        Put $config 'user-NR-options'
+                        [IO.File]::Delete($plugin)
+                    }
+                } elseif ($action -eq 'Diagnose') {
+                    Assert (($result -join "`n") -match 'OK: OptiScaler/nvngx_dlssnr.dll') 'GUI worker diagnoses verified NR'
+                    Assert ([IO.File]::ReadAllText($config) -eq 'user-NR-options') 'GUI worker repair preserves settings'
+                } else {
+                    Assert (-not (Test-Path -LiteralPath $model) -and -not (Test-Path -LiteralPath $plugin)) 'GUI worker removes owned files'
+                    Assert ([IO.File]::ReadAllText($config) -eq 'user-NR-options') 'GUI worker uninstall preserves settings'
+                    Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'GameAssembly.dll')) -eq 'game-assembly-do-not-touch') 'GUI worker preserves game assembly'
+                }
+            }
+        }
     }
     Case 'anonymous HTTPS redirects support GitHub assets and relative locations' {
         $module=Get-Module Setup.Core
