@@ -51,6 +51,8 @@ exit $ExitCode
         if ([IO.File]::ReadAllText((Join-Path $console 'console-result.txt')) -ne 'hashed;5;64') { throw 'Setup.cmd did not run Windows PowerShell with its built-in modules.' }
         & cmd.exe /d /c "`"$setupCmd`" -ExitCode 7 < NUL" | Out-Null
         if ($LASTEXITCODE -ne 7) { throw "Setup.cmd returned $LASTEXITCODE instead of the script's exit code 7." }
+        # The deliberate exit code must not leak into the CI step's own exit status.
+        $global:LASTEXITCODE=0
     } finally { $env:PSModulePath=$savedModulePath }
     Write-Output 'PASS console wrapper: built-in modules load under an inherited PowerShell 7 module path; script exit code returned.'
 } finally {
