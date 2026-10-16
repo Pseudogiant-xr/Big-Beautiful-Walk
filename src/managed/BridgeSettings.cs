@@ -45,13 +45,9 @@ internal static class BridgeSettings
             if (IniSettings.Hash(File.ReadAllBytes(proxy)) != OptiScalerHash)
             { Message = "Renderer switching is unavailable with this installation. See the graphics guide."; NextLaunchBackend = -1; return; }
             Recognized = true;
-            IniSettings.RejectReparsePath(_iniPath);
             if (!File.Exists(_iniPath))
             { Message = "Renderer settings are missing. Repair the optional OptiScaler installation."; NextLaunchBackend = -1; return; }
-            _ini = new IniSettings(File.ReadAllBytes(_iniPath));
-            string selected = _ini.Get("Upscalers", "Dx11Upscaler") ?? "auto";
-            NextLaunchBackend = Array.FindIndex(BackendValues, value => string.Equals(value, selected, StringComparison.OrdinalIgnoreCase));
-            _ini.Get("DLSS", "RenderPresetOverride"); // Reject duplicate ownership options before enabling edits.
+            ReadSavedSettings();
             Message = "Renderer changes apply after restarting Big Walk.";
         }
         catch (Exception error) when (error is IOException || error is InvalidDataException || error is UnauthorizedAccessException || error is ArgumentException)
@@ -60,6 +56,37 @@ internal static class BridgeSettings
             NextLaunchBackend = -1;
             Message = "Settings could not be read. Refresh and try again.";
         }
+    }
+
+    // Called at most once a second while Home is open. Proxy validation stays at
+    // menu opening and writes; refreshing saved requests does not change startup state.
+    internal static void RefreshSavedSettings()
+    {
+        if (!Recognized) return;
+        try
+        {
+            if (ReadSavedSettings())
+                Message = "Saved settings reloaded. Restart Big Walk to apply bridge changes.";
+        }
+        catch (Exception error) when (error is IOException || error is InvalidDataException || error is UnauthorizedAccessException || error is ArgumentException)
+        {
+            _ini = null;
+            NextLaunchBackend = -1;
+            Message = "Saved settings could not be read. Choices cannot be saved; refresh and try again.";
+        }
+    }
+
+    private static bool ReadSavedSettings()
+    {
+        IniSettings.RejectReparsePath(_iniPath);
+        byte[] bytes = File.ReadAllBytes(_iniPath);
+        if (_ini != null && bytes.AsSpan().SequenceEqual(_ini.Original)) return false;
+        var next = new IniSettings(bytes);
+        string selected = next.Get("Upscalers", "Dx11Upscaler") ?? "auto";
+        next.Get("DLSS", "RenderPresetOverride"); // Reject duplicate ownership options before enabling edits.
+        _ini = next;
+        NextLaunchBackend = Array.FindIndex(BackendValues, value => string.Equals(value, selected, StringComparison.OrdinalIgnoreCase));
+        return true;
     }
 
     internal static string BackendName(int index) => UpscalingPresentation.BackendName(index);
@@ -124,7 +151,7 @@ internal static class BridgeSettings
 
     internal static bool WriteOptions(params (string Section, string Key, string Value)[] changes)
     {
-        if (_ini == null) return false;
+        if (_ini == null) { Message = "Choice was not saved. Refresh saved settings and try again."; return false; }
         try
         {
             string proxy = Path.Combine(_gameRoot, "version.dll");
@@ -139,7 +166,12 @@ internal static class BridgeSettings
         }
         catch (Exception error) when (error is IOException || error is InvalidDataException || error is UnauthorizedAccessException || error is ArgumentException)
         {
-            Message = "Settings changed outside this menu. Refresh and try again.";
+            // Do not rebase an already drawn profile over another writer's changes.
+            // Reload for the next deliberate choice, retaining the stale-write refusal.
+            Reload();
+            Message = _ini != null
+                ? "Choice was not saved. Saved settings reloaded; review them and choose again."
+                : "Choice was not saved. " + Message;
             return false;
         }
     }

@@ -16,6 +16,9 @@ jobs:
         run: dotnet run --project tests/BridgeChecks.csproj -c Release
       - name: Frame generation and neural rendering profiles
         run: dotnet run --project tests/FeatureChecks.csproj -c Release
+      - name: Saved bridge settings refresh
+        shell: pwsh
+        run: ./tests/Invoke-BridgeRefreshChecks.ps1
       - name: Installer recovery fixtures (Windows PowerShell)
         shell: powershell
         run: ./tests/Setup.Tests.ps1

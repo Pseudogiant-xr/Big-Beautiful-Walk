@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><EnableDefaultCompileItems>false</EnableDefaultCompileItems><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="BridgeRefreshChecks.cs" />
+    <Compile Include="../src/managed/BridgeSettings.cs" />
+    <Compile Include="../src/managed/IniSettings.cs" />
+    <Compile Include="../src/managed/FeatureSettings.cs" />
+    <Compile Include="../src/managed/FeatureOptions.cs" />
+  </ItemGroup>
+</Project>

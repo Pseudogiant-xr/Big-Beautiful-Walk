@@ -80,7 +80,7 @@ internal static class AdvancedGraphics
     private static int _quality = -1;
     private static bool _ready, _visible, _dirty, _guiFailed;
     private static bool _validateSplits;
-    private static float _editedAt, _nextTerrainScan;
+    private static float _editedAt, _nextTerrainScan, _nextBridgeRefresh;
     private static int _captureAt = -1;
     private static float _nextShadowProbe;
     private static string _shadowTexture = "not yet observed";
@@ -113,6 +113,8 @@ internal static class AdvancedGraphics
             if (_visible) Close();
             else
             {
+                BridgeSettings.Reload();
+                _nextBridgeRefresh = Time.unscaledTime + 1f;
                 _guiFailed = false;
                 _cursorLock = Cursor.lockState; _cursorVisible = Cursor.visible;
                 _visible = true; _captureAt = Time.frameCount + 5;
@@ -121,6 +123,11 @@ internal static class AdvancedGraphics
         }
         if (_visible && Input.GetKeyDown(KeyCode.Escape)) Close();
         if (_visible && Input.GetKeyDown(KeyCode.F10)) Close();
+        if (_visible && Time.unscaledTime >= _nextBridgeRefresh)
+        {
+            _nextBridgeRefresh = Time.unscaledTime + 1f;
+            BridgeSettings.RefreshSavedSettings();
+        }
         if (_dirty && Time.unscaledTime - _editedAt > 1f) Save();
         if (Plugin.Diagnostics.Value && _visible && _captureAt > 0 && Time.frameCount >= _captureAt)
         {
