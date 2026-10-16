@@ -16,6 +16,8 @@ The native bridge uses NVIDIA's DLSS/NGX SDK headers, inline helper code and lin
 
 Copyright and all other rights in NVIDIA's SDK components remain with NVIDIA and its suppliers. They are governed by the [NVIDIA RTX SDKs license](docs/licenses/NVIDIA-RTX-SDK.txt), including its supplement. The mod's license does not relicense these components. DLSS, NVIDIA RTX and NVIDIA GeForce RTX are NVIDIA marks.
 
+The [NVIDIA distribution notice](docs/licenses/NVIDIA-DISTRIBUTION-NOTICE.md) attaches those SDK-specific terms to the incorporated NVIDIA portions, while preserving the separate Apache/GPL/LGPL grants. The current NGX-bearing build is intended for systems with an NVIDIA GPU, including when selecting optional AMD or Intel algorithms; no SDK exception for NVIDIA-free systems is claimed.
+
 The standard installer downloads the unmodified NVIDIA-signed SR runtime 310.9.1 directly from an immutable [official NVIDIA SDK commit](https://github.com/NVIDIA/DLSS/tree/374959484e79a640feaba44c93ac8cfb0a03f5b5). All 23 cached NGX headers were byte-for-byte compared with that commit; this does not prove provenance of every historical binary. Runtime DLLs are absent from the release ZIP and repository, but the compiled native DLL still contains SDK material. Downloading separately does not waive NVIDIA's conditions. See [release checks](docs/RELEASE-CHECKLIST.md).
 
 ## BepInEx and its dependencies
@@ -43,7 +45,7 @@ Portions of this software are copyright © 2024 The FreeType Project (www.freety
 
 [NVIDIA Streamline 2.14.1](https://github.com/NVIDIA-RTX/Streamline/releases/tag/v2.14.1), tag commit `2122257e0fce486f91b385aa63b9a09b0a34b363`, is the official optional pin, with FG runtime 310.9.1. Its [root MIT license](docs/licenses/Streamline-LICENSE.txt), [third-party terms](docs/licenses/Streamline-THIRD-PARTY.md), [DLSS license](docs/licenses/Streamline-DLSS-LICENSE.txt) and [Reflex license](docs/licenses/NVIDIA-Reflex-LICENSE.txt) remain distinct; the Streamline MIT grant does not cover all included binaries. Our used headers carry Copyright (c) 2022-2023 NVIDIA CORPORATION and MIT terms.
 
-Cached Streamline 2.14.16, FG 310.9.16 and NR 310.8.SF-v2 prototype files do not establish redistribution rights or official SDK provenance. The NR model is excluded from the release, dependency lock and automatic download; no license grant or model compatibility assurance is asserted.
+Cached Streamline 2.14.16 and FG 310.9.16 prototype files are not the official versions pinned by this installer. The separate optional NR download uses RankFTW/RHI's community-hosted SF-v2 archive and matches the model previously tested in Big Walk. It is unsigned, excluded from this project's repository/ZIP, and does not carry a licence in its upstream archive. [The NR provenance notice](docs/licenses/RHI-Neural-Rendering-NOTICE.md) records its exact hashes and these limits; neither RHI's GPL nor this project's Apache grant relicenses the vendor model. No NVIDIA model authorization or latest-model claim is made.
 
 OptiScaler also uses Microsoft Detours headers identifying version 4.0.1 and links a prebuilt Detours library. Preserve Microsoft's [MIT copyright and permission notice](docs/licenses/OptiScaler-Detours-LICENSE.md). The linked library's exact source/build correspondence remains unverified. Its version-check code incorporates nlohmann JSON 3.12.0, Copyright (c) 2013-2025 Niels Lohmann, under [MIT](docs/licenses/OptiScaler-nlohmann-json-LICENSE.txt); this is a separate notice from Streamline's older JSON attribution.
 

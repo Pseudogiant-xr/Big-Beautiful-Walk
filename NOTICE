@@ -14,6 +14,9 @@ NVIDIA Streamline headers: Copyright (c) 2022-2023 NVIDIA CORPORATION.
 The optional OptiScaler component is by cdozdil and the OptiScaler team,
 with Neural Rendering integration by Dagherbou and optimizations by Skynizz.
 Its RenoDX-derived colour composition is by clshortfuse (Carlos Lopez Jr.).
+The optional Neural Rendering runtime download uses RankFTW's RHI community
+mirror and catalogue. No RHI downloader code is incorporated; model rights
+remain with their respective owners.
 Microsoft Detours: Copyright (c) Microsoft Corporation, MIT License.
 nlohmann JSON: Copyright (c) 2013-2025 Niels Lohmann, MIT License.
 AMD Anti-Lag 2: Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved.

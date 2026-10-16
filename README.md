@@ -4,13 +4,13 @@ Alpha candidate graphics mod for **Big Walk** on Windows. It adds DLSS Super Res
 
 This is an unofficial mod. It is not affiliated with or endorsed by House House, Unity or NVIDIA.
 
-This candidate remains private pending the rights and first-install checks in [release readiness](docs/RELEASE-READINESS.md).
+This is an experimental alpha tested on one RTX 4090 system. See [compatibility](docs/COMPATIBILITY.md) for known limitations and [release notes](docs/RELEASE-READINESS.md) for validation scope.
 
 ## Install
 
 1. Install or repair the [Microsoft Visual C++ v14 runtime for x64](https://aka.ms/vc14/vc_redist.x64.exe), then close Big Walk and extract the complete release ZIP into a separate folder. See [Microsoft's runtime guidance](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist).
 2. Open **Setup.cmd**, choose the Big Walk folder containing `Big Walk.exe`, and select **Install / Repair**.
-3. Setup downloads the pinned BepInEx loader and DLSS runtime and verifies their SHA-256 hashes. The optional bridge checkbox adds OptiScaler, NVIDIA Streamline, AMD FidelityFX FG and Intel XeSS FG / XeLL. Fresh bridge defaults leave FG and NR off. Review the [third-party terms](THIRD_PARTY_NOTICES.md) before installation.
+3. Setup downloads the pinned BepInEx loader and DLSS runtime and verifies their SHA-256 hashes. The optional bridge adds alternative upscalers and NVIDIA/AMD/Intel frame generation. A separate **Neural Rendering runtime** option adds RHI's community-hosted SF-v2 model and the bridge it needs. Both options start unchecked; fresh FG and NR settings remain off. Component sources and terms are in [the notices](THIRD_PARTY_NOTICES.md).
 4. Launch Big Walk normally on your monitor. The first BepInEx launch can take longer while it prepares local interop files.
 5. Enter a private world, press **Home**, and look for **Upscaling active**. **Waiting for a scene** at the title screen is normal. Start with DLSS Quality / Preset L; **F8** compares reconstruction off/on.
 6. Try graphics presets individually. **Game defaults** restores graphics overrides; upscaling, FG and NR have separate controls. Use **Home → Frame Gen** or **Neural**, then quit normally and restart to apply their saved requests.
@@ -25,7 +25,7 @@ Use **Diagnose** in Setup to check installed files, or **Uninstall** with the ga
 - DLSS quality choices from Ultra Performance through native DLAA, with selectable render presets; Quality / Preset L is the tested baseline. DLAA and Ultra Quality are experimental.
 - Optional graphics overrides, including shadow cascades, vegetation shadow range and an experimental 16384-pixel main shadow atlas.
 - Home offers NVIDIA, AMD and Intel **Frame Gen** profiles and **Neural** settings through the optional bridge. Changes are saved for a restart. On the tested RTX 4090, NVIDIA FG gave the preferred result; AMD FG was functional with quality/performance limitations, while Intel FG produced frames but reduced reported FPS. See the [FG / NR guide](docs/FRAME-GENERATION.md).
-- Neural Rendering requires a separately obtained model; the installer supplies the integration forwarder, without a model. NVIDIA FG plus the user's existing model with Default style received a visual check. The October 16 faster model is not bundled or claimed as tested.
+- Neural Rendering can use the optional RHI community download or an existing compatible model. That pinned download matches the model previously tested with NVIDIA FG and Default style. The October 16 faster model is not claimed as tested; [the NR guide](docs/FRAME-GENERATION.md#neural-rendering) identifies the supplied version and source.
 - Home also offers optional FSR 3.1 and XeSS backend choices when their bridge requirements are available. FSR 4 is shown as unsupported on the tested RTX 4090. See the [feature matrix](docs/UPSCALERS.md) for prerequisites and individual test status.
 
 The public core's official NVIDIA SR 310.9.1 runtime sustained DLSS evaluation in the game world with an existing BepInEx installation. The Home menu and Quality / Game defaults choices were visually confirmed on Big Walk 1.6.0 (Steam build 25723723), Unity 6000.3.17f1, an RTX 4090 and driver 617.42. A completely fresh BepInEx installation and first-launch interop generation have not been tested in the real game. See the [compatibility notes](docs/COMPATIBILITY.md).

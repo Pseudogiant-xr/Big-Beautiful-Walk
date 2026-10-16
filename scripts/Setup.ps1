@@ -9,12 +9,15 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [Windows.Forms.Application]::EnableVisualStyles()
 $hasFg=$false
+$hasNr=$false
 try {
     $releaseLock=Get-Content -LiteralPath (Join-Path (Split-Path $PSScriptRoot -Parent) 'packaging/dependencies.lock.json') -Raw | ConvertFrom-Json
     $hasFg=@($releaseLock.Dependencies | Where-Object { $_.Feature -eq 'fg' }).Count -gt 0
+    $hasNr=@($releaseLock.Dependencies | Where-Object { $_.Feature -eq 'nr' }).Count -gt 0
 } catch { }
 $optionalHeight=0
 if ($hasFg) { $optionalHeight=32 }
+if ($hasNr) { $optionalHeight+=32 }
 $form = New-Object Windows.Forms.Form
 $form.Text = 'Big Beautiful Walk - Setup 0.7.0'
 $form.ClientSize = New-Object Drawing.Size(690,(470+$optionalHeight))
@@ -48,7 +51,7 @@ $hint.SetBounds(20,84,650,38)
 $status=New-Object Windows.Forms.TextBox
 $status.Multiline=$true
 $status.ReadOnly=$true
-$status.TabIndex=8
+$status.TabIndex=9
 $status.ScrollBars='Vertical'
 $status.SetBounds(20,(170+$optionalHeight),650,270)
 $status.Anchor='Top,Bottom,Left,Right'
@@ -62,9 +65,18 @@ if ($hasFg) {
     $form.Controls.Add($fgCheck)
     $status.Text='Ready. The optional bridge adds NVIDIA, AMD and Intel Frame Generation runtimes and Home controls; fresh defaults leave FG and NR off. Neural Rendering needs a separately obtained model. Install/Repair also repairs previously installed optional components when this box is off. Diagnose only reads files. Read the guides and licences before installing.'
 }
+$nrCheck=New-Object Windows.Forms.CheckBox
+$nrCheck.Text='Install community RHI SF-v2 Neural Rendering model (~111 MiB download; includes bridge)'
+$nrCheck.SetBounds(20,(122+$(if ($hasFg) {32} else {0})),650,28)
+$nrCheck.Checked=$false
+$nrCheck.TabIndex=3
+if ($hasNr) {
+    $form.Controls.Add($nrCheck)
+    $status.Text='Ready. Optional bridge and community RHI SF-v2 NR model downloads are separate choices. The unsigned model is distributed by RHI; read the guides and NVIDIA terms. Selecting NR includes the bridge. Fresh defaults leave FG and NR off. Install/Repair retains previously installed optional components. Diagnose only reads files.'
+}
 $guide=New-Object Windows.Forms.Button
 $guide.Text='FG / NR guide'
-$guide.TabIndex=6
+$guide.TabIndex=7
 $guide.SetBounds(460,(125+$optionalHeight),100,32)
 $guide.Add_Click({
     try { Start-Process -FilePath (Join-Path (Split-Path $PSScriptRoot -Parent) 'docs/FRAME-GENERATION.md') }
@@ -73,7 +85,7 @@ $guide.Add_Click({
 $form.Controls.Add($guide)
 $licences=New-Object Windows.Forms.Button
 $licences.Text='Licences'
-$licences.TabIndex=7
+$licences.TabIndex=8
 $licences.SetBounds(568,(125+$optionalHeight),102,32)
 $licences.Add_Click({
     try { Start-Process -FilePath (Join-Path (Split-Path $PSScriptRoot -Parent) 'THIRD_PARTY_NOTICES.md') }
@@ -96,22 +108,23 @@ $timer.Add_Tick({
     finally {
         $script:setupWorker.Dispose(); $script:setupWorker=$null; $script:setupOperation=$null
         foreach ($control in $buttons) { $control.Enabled=$true }
-        $browse.Enabled=$true; $pathBox.Enabled=$true; $fgCheck.Enabled=$true
+        $browse.Enabled=$true; $pathBox.Enabled=$true; $fgCheck.Enabled=$true; $nrCheck.Enabled=$true
     }
 })
 foreach ($spec in @(@('Install / Repair','Install',20,155),@('Uninstall','Uninstall',190,120),@('Diagnose','Diagnose',325,120))) {
     $button=New-Object Windows.Forms.Button
     $button.Text=$spec[0]; $button.Tag=$spec[1]
-    $button.TabIndex=3+$buttons.Count
+    $button.TabIndex=4+$buttons.Count
     $button.SetBounds([int]$spec[2],(125+$optionalHeight),[int]$spec[3],32)
     $button.Add_Click({
         param($sender,$eventArgs)
         foreach ($control in $buttons) { $control.Enabled=$false }
-        $browse.Enabled=$false; $pathBox.Enabled=$false; $fgCheck.Enabled=$false
+        $browse.Enabled=$false; $pathBox.Enabled=$false; $fgCheck.Enabled=$false; $nrCheck.Enabled=$false
         $status.Text='Working - checking files and downloading verified dependencies if needed. Please leave Setup open; this may take a few minutes.'
         try {
-            $selectedFeatures=@($Features | Where-Object { $_ -ne 'fg' })
+            $selectedFeatures=@($Features | Where-Object { $_ -notin @('fg','nr') })
             if ($hasFg -and $fgCheck.Checked) { $selectedFeatures+='fg' }
+            if ($hasNr -and $nrCheck.Checked) { $selectedFeatures+='nr' }
             $script:setupWorker=[PowerShell]::Create()
             [void]$script:setupWorker.AddScript({
                 param($Module,$Game,$Action,$Dependencies,$SelectedFeatures)
@@ -125,7 +138,7 @@ foreach ($spec in @(@('Install / Repair','Install',20,155),@('Uninstall','Uninst
             $status.Text='Setup could not start.' + [Environment]::NewLine + $_.Exception.Message
             if ($script:setupWorker) { $script:setupWorker.Dispose(); $script:setupWorker=$null }
             foreach ($control in $buttons) { $control.Enabled=$true }
-            $browse.Enabled=$true; $pathBox.Enabled=$true; $fgCheck.Enabled=$true
+            $browse.Enabled=$true; $pathBox.Enabled=$true; $fgCheck.Enabled=$true; $nrCheck.Enabled=$true
         }
     })
     $buttons += $button

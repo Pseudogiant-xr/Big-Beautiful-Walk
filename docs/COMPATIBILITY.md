@@ -30,11 +30,11 @@ The managed Release build used .NET SDK 8.0.426 and `dotnet build src/managed/Bi
 
 - VR is unsupported. Remove or disable this graphics integration before a VR session.
 - Version 0.7's controls and three FG routes were exercised on the observed RTX 4090. NVIDIA FG and Default-style NR received positive visual checks; AMD FG was functional but inferior in the user's comparison, and Intel FG produced frames with a net performance regression. Other hardware, all backend/FG combinations and AMD/Intel FG plus NR remain unverified. See [FRAME-GENERATION.md](FRAME-GENERATION.md).
-- DirectX 12, Vulkan, Linux/Proton, AMD/Intel GPUs and other RTX generations are unverified.
+- DirectX 12, Vulkan, Linux/Proton and other RTX generations are unverified. This release requires a system with an NVIDIA GPU, including when selecting FSR or XeSS; AMD/Intel-only systems are outside the present build's SDK scope and supported configuration.
 - Game or Unity updates may change the rendering hooks. Preserve your installer backups before updating.
 - FG can shimmer on grass and foliage; generated-frame rate is different from the game's rendered-frame rate.
 - XeSS produced a valid picture but slight flicker was reported on the tested display. The cause is unconfirmed; no VRR-specific fix is claimed.
-- NR requires a separately obtained model. Its provenance and redistribution permissions have not been established for the prototype model, so it is absent from downloads and releases.
+- NR requires a model. Setup can optionally download RHI's unsigned community SF-v2 variant, which matches the model already tested here; it remains outside the release ZIP. Its mirror/source and absent distribution-grant evidence are recorded in [the notice](licenses/RHI-Neural-Rendering-NOTICE.md). Other/newer models remain unverified.
 - Large shadow ranges and the 16384 atlas can substantially increase GPU cost. Exact GPU atlas allocation remains unverified.
 - Vegetation restoration is verified for the tested preset/default cycles. Other scenes, quality changes during an override, game updates and all material variants remain unverified; compare against an unmodified launch if a visual change persists.
 - No extra cascades beyond four, distance-field shadows, ray-traced shadows or separate near/far shadow renderer are implemented.

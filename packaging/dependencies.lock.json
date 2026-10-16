@@ -958,6 +958,22 @@
       "LicenseUrl": "https://github.com/Skynizz/optiscaler-dlss5/blob/v1.2.1/LICENSE"
     },
     {
+      "Id": "nvidia_nr",
+      "Url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssnr-310.8.SF-v2/nvngx_dlssnr_310.8.SF-v2.zip",
+      "SHA256": "1DA35941894994EB087E017577829E492454E9BAE3A6A9397027069CEB74955C",
+      "Archive": "zip",
+      "Files": [
+        {
+          "Source": "nvngx_dlssnr.dll",
+          "Target": "OptiScaler/nvngx_dlssnr.dll"
+        }
+      ],
+      "Required": false,
+      "Feature": "nr",
+      "SourceUrl": "https://github.com/RankFTW/rhi-repo/releases/tag/dlssnr-310.8.SF-v2",
+      "LicenseUrl": "https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/blob/feat/frame-generation-neural-controls/docs/licenses/RHI-Neural-Rendering-NOTICE.md"
+    },
+    {
       "Id": "streamline_fg",
       "Url": "https://github.com/NVIDIA-RTX/Streamline/releases/download/v2.14.1/streamline-sdk-v2.14.1.zip",
       "SHA256": "92C4D954631A1710DA86CA3FA8D5034F2B9503838C95FC4AE977AE149319781B",

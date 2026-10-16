@@ -53,6 +53,16 @@ function Add-FgFixture($Fixture) {
     Put $lockPath ($lock | ConvertTo-Json -Depth 8)
     Put (Join-Path $Fixture.PackagePath 'payload/defaults/OptiScaler.ini') '[OptiFG] FGType=off'
 }
+function Add-NrFixture($Fixture) {
+    Add-FgFixture $Fixture
+    $model=Join-Path $Fixture.DependencyDirectory 'nvidia_nr.file'
+    Put $model 'community-model-fixture'
+    $lockPath=Join-Path $Fixture.PackagePath 'packaging/dependencies.lock.json'
+    $lock=Get-Content $lockPath -Raw | ConvertFrom-Json
+    $lock.Dependencies+=@{Id='nvidia_nr';Url='https://example.org/nvngx_dlssnr.dll';SHA256=(Get-FileHash $model).Hash;Archive='file';Required=$false;Feature='nr';Files=@(@{Source='nvngx_dlssnr.dll';Target='OptiScaler/nvngx_dlssnr.dll'})}
+    Put $lockPath ($lock | ConvertTo-Json -Depth 8)
+    Put (Join-Path $Fixture.PackagePath 'payload/defaults/OptiScaler.ini') "[OptiFG]`r`nEnabled=false`r`n[NeuralRendering]`r`nEnabled=false"
+}
 try {
     Case 'Windows PowerShell parses the GUI entry point' {
         $parseErrors=$null
@@ -377,6 +387,64 @@ try {
         Assert ([IO.File]::ReadAllText($config) -eq 'existing-custom-settings') 'optional install preserves existing Opti bytes'
         Uninstall $f | Out-Null
         Assert ([IO.File]::ReadAllText($config) -eq 'existing-custom-settings') 'optional uninstall preserves existing Opti bytes'
+    }
+    Case 'optional NR implies bridge repairs ownership and preserves disabled defaults' {
+        $f=New-Fixture 'optional-nr'; Add-NrFixture $f
+        $message=Invoke-BbwSetup @f -Mode Install -Features nr
+        $model=Join-Path $f.GamePath 'OptiScaler/nvngx_dlssnr.dll'
+        $bridge=Join-Path $f.GamePath 'version.dll'
+        $config=Join-Path $f.GamePath 'OptiScaler.ini'
+        Assert ([IO.File]::ReadAllText($model) -eq 'community-model-fixture') 'NR model installed'
+        Assert ([IO.File]::ReadAllText($bridge) -eq 'experimental-fg-bridge') 'NR includes bridge on fresh install'
+        Assert (@([regex]::Matches([IO.File]::ReadAllText($config),'(?m)^Enabled=false\r?$')).Count -eq 2) 'fresh FG and NR remain disabled'
+        Assert ($message -match 'community RHI SF-v2' -and $message -match 'does not enable Neural Rendering') 'completion identifies optional model without claiming enabled NR'
+        $manifest=Get-Content (Join-Path $f.GamePath '.big-beautiful-walk/manifest.json') -Raw | ConvertFrom-Json
+        Assert (@($manifest.Entries | Where-Object { $_.Role -eq 'nvidia_nr' }).Count -eq 1) 'NR ownership recorded'
+        Put $config 'existing-NR-options'
+        # Change verified fixture inputs to prove unchecked repair selects both owned packs.
+        $modelInput=Join-Path $f.DependencyDirectory 'nvidia_nr.file'; Put $modelInput 'verified-model-update'
+        $bridgeInput=Join-Path $f.DependencyDirectory 'fg_bridge.file'; Put $bridgeInput 'verified-bridge-update'
+        $lockPath=Join-Path $f.PackagePath 'packaging/dependencies.lock.json'
+        $lock=Get-Content $lockPath -Raw | ConvertFrom-Json
+        @($lock.Dependencies | Where-Object { $_.Id -eq 'nvidia_nr' })[0].SHA256=(Get-FileHash $modelInput).Hash
+        @($lock.Dependencies | Where-Object { $_.Id -eq 'fg_bridge' })[0].SHA256=(Get-FileHash $bridgeInput).Hash
+        Put $lockPath ($lock | ConvertTo-Json -Depth 8)
+        Install $f | Out-Null
+        Assert ([IO.File]::ReadAllText($model) -eq 'verified-model-update') 'unchecked repair includes owned NR'
+        Assert ([IO.File]::ReadAllText($bridge) -eq 'verified-bridge-update') 'unchecked NR repair retains bridge'
+        Uninstall $f | Out-Null
+        Assert (-not (Test-Path $model) -and -not (Test-Path $bridge)) 'owned model and bridge removed'
+        Assert ([IO.File]::ReadAllText($config) -eq 'existing-NR-options') 'NR settings preserved through repair and removal'
+    }
+    Case 'FG-only repair never opts into available NR model' {
+        $f=New-Fixture 'fg-without-nr'; Add-NrFixture $f
+        Invoke-BbwSetup @f -Mode Install -Features fg | Out-Null
+        Install $f | Out-Null
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'OptiScaler/nvngx_dlssnr.dll'))) 'available NR model remains unselected on FG-only repair'
+        $manifest=Get-Content (Join-Path $f.GamePath '.big-beautiful-walk/manifest.json') -Raw | ConvertFrom-Json
+        Assert (@($manifest.Entries | Where-Object { $_.Role -eq 'nvidia_nr' }).Count -eq 0) 'FG ownership does not claim NR'
+        Uninstall $f | Out-Null
+    }
+    Case 'optional NR preserves exact preexisting model and refuses changed owned model' {
+        $f=New-Fixture 'nr-existing'; Add-NrFixture $f
+        $model=Join-Path $f.GamePath 'OptiScaler/nvngx_dlssnr.dll'; Put $model 'community-model-fixture'
+        $config=Join-Path $f.GamePath 'OptiScaler.ini'; Put $config 'preexisting-NR-options'
+        Invoke-BbwSetup @f -Mode Install -Features nr | Out-Null
+        Uninstall $f | Out-Null
+        Assert ([IO.File]::ReadAllText($model) -eq 'community-model-fixture') 'exact preexisting model remains unowned and preserved'
+        Assert ([IO.File]::ReadAllText($config) -eq 'preexisting-NR-options') 'preexisting NR config preserved'
+        $f=New-Fixture 'nr-changed'; Add-NrFixture $f
+        Invoke-BbwSetup @f -Mode Install -Features nr | Out-Null
+        $model=Join-Path $f.GamePath 'OptiScaler/nvngx_dlssnr.dll'; Put $model 'changed-model'
+        Expect-Failure { Install $f } 'changed after installation'
+        Expect-Failure { Uninstall $f } 'changed after installation'
+        Assert ([IO.File]::ReadAllText($model) -eq 'changed-model') 'modified owned model is never overwritten or removed'
+        Assert (Test-Path (Join-Path $f.GamePath 'version.dll')) 'changed NR model prevents partial bridge removal'
+        $f=New-Fixture 'nr-collision'; Add-NrFixture $f
+        $model=Join-Path $f.GamePath 'OptiScaler/nvngx_dlssnr.dll'; Put $model 'different-preexisting-model'
+        Expect-Failure { Invoke-BbwSetup @f -Mode Install -Features nr } 'Existing file collision'
+        Assert ([IO.File]::ReadAllText($model) -eq 'different-preexisting-model') 'different preexisting model is preserved'
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'version.dll'))) 'model collision prevents partial bridge install'
     }
     Case 'missing and hash-invalid dependencies fail before mutation' {
         $f=New-Fixture 'missing'; Remove-Item (Join-Path $f.DependencyDirectory 'nvngx_dlss.file')

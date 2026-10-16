@@ -1,33 +1,33 @@
 # Public release readiness
 
-The current candidate is private. Technical acceptance of the existing rendering build is separate from permission to distribute the complete integration. This audit does not clear a public release or authorize vendor contact.
+The alpha uses the tested rendering integration and upstream dependency downloads. It preserves component licences and credits, without a custom OptiScaler fork or a vendor-contact workflow. The repository and release remain private until the publisher chooses to publish; this document does not claim exhaustive legal clearance or vendor approval.
 
 ## Rights and attribution
 
-| Area | Verified treatment | Remaining release condition |
+| Area | Delivered treatment | Scope / known limitation |
 | --- | --- | --- |
 | Original code | Apache-2.0 grant, scoped NOTICE and historical MIT rights are preserved. | Keep third-party exceptions explicit; do not label the entire binary/dependency stack Apache-only. |
 | Unity adaptation | UCL header, licence and upstream notices accompany `StockPostProcessing.cs`; it is excluded from the Apache grant. | Section 1 coverage remains unverified. No Unity outreach or licence-activation workflow is planned; retaining notices does not establish that coverage. |
-| NVIDIA DLSS/NGX | Incorporated SDK material is excluded from the Apache grant; source-code attribution and SDK notices are present. | Resolve commercial-game plug-in notification applicability, concrete application credit/Mark treatment and protective SDK distribution terms. Notification is distinct from general release approval. |
+| NVIDIA DLSS/NGX | Incorporated SDK material is excluded from Apache; attribution, full terms and an SDK-specific downstream notice are present. SR/FG downloads use NVIDIA's own endpoints. | The current build requires a system with an NVIDIA GPU. No notification or Mark approval is recorded; the contractual conditions remain in the assessment, with no outreach planned. |
 | NVIDIA Reflex | Its separate licence and feature attribution are present; the pinned NVIDIA FG provider requests low-latency mode. | Verify actual initialization, marker/sleep integration and applicable UI guidelines. The generic F10 Low Latency page describes a different path; a DLL or mode request is insufficient proof. |
-| OptiScaler GPL | Exact upstream version, source-archive link and library notices are recorded. | Establish the combined-work/separate-work basis and any corresponding-source obligations. Verify preferred source/build material for prebuilt libraries; a source-archive label is insufficient. |
-| Intel SDK | Original binary hashes, licence and third-party notices are preserved. | Assess the actual XeSS/XeLL API, loader/lifetime and module-handle interception against the operation-alteration restriction. No single INI flag disables all those paths. |
+| OptiScaler GPL | The unchanged upstream binary is an optional download; GPL text, authors, exact version and source/build directions accompany it. | The core works independently through NGX. Some upstream prebuilt-source correspondence remains unverified; this release does not claim to rebuild or relicense OptiScaler or settle every combined-work question. |
+| Intel SDK | Original binary hashes, licence and third-party notices are preserved, with the tested upstream bridge. | Real export detours are distinct from ordinary loader/API use. The upstream detour/operation condition is documented; no custom hook-removal build or vendor exception is claimed. |
 | AMD binaries | Binary exceptions and notices remain separate from the older MIT source grant. | Preserve the applicable restrictions and assess any GPL combination; no broader open-source grant is claimed. |
 | LGPL loader libraries | BepInEx/Il2CppInterop are external shared references, with notices and replacement/debugging freedoms preserved. | Keep that mechanism and source-delivery obligations if a future package conveys their binaries. |
 | Native/prebuilt provenance | The loader's Dobby DLL matches BepInEx/Dobby v1.0.5 byte for byte; its source pin and Apache licence are recorded. | OptiScaler's linked prebuilt-library source correspondence remains incomplete; do not turn direct downloads into an exhaustive source/rights claim. |
 | Additional credits | Detours, JSON, Anti-Lag 2 and LatencyFleX notices supplement the existing inventory. | Recheck the actual frozen ZIP and installed notice payload after changes. Attribution does not cure a missing permission. |
-| NR model | Excluded from the repository, release ZIP and automatic downloads. | Do not add a model or download URL without an authorized source and applicable terms. |
+| NR model | A separate opt-in downloads the hash-pinned RHI community SF-v2 model; it remains outside the repository/ZIP and starts disabled. | It exactly matches the previously tested model, is unsigned and has no licence in its archive. No official NVIDIA download, distribution grant or latest-model claim is asserted. |
 
 The [licensing assessment](LICENSING.md) distinguishes binding clauses, interpretations and options. It does not treat every factual vendor reference as a marketing approval request, or a mod DLL as automatically prohibited standalone SDK distribution.
 
-## First-time user checks
+## Validation scope
 
 The previously accepted runtime passed in-world checks on the recorded RTX 4090/DX11 system. Preset cycling, distant shadows and Game defaults restoration were confirmed. The audit's installer and UI-copy changes need their own frozen-build checks; historical observations do not validate a new binary.
 
-Before public release:
+Keep the following coverage limits visible for the alpha:
 
-- Rehearse a genuinely clean BepInEx installation and first-launch interop generation in an authorized test session, preserving the working installation and profiles. Confirm private-world Home status, Quality/Preset L, F8 comparison and ordinary removal/recovery.
-- Check Setup and Home at the intended Windows DPI, resolution and input method. Verify the first-use guide, licences, queued restart state, error text and keyboard/cursor behavior.
+- A genuinely clean BepInEx first launch remains untested in the real game. Existing-loader rendering acceptance and disposable installation tests cover different behavior.
+- The latest Setup choices and UI-copy changes need visual/DPI acceptance; no fresh real-game test is claimed for those edits.
 - Compare NVIDIA FG and NR with a baseline in the same moving view; keep AMD/Intel performance limits explicit. Verify Reflex separately instead of inferring it from FG presents.
 - Run installer selection/recovery tests, the complete pinned-dependency fixture and package/installed-notice audits on the frozen candidate. Keep exact binary/source identities and CI results distinct.
 

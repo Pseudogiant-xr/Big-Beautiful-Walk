@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.0 — private test candidate
+## 0.7.0 — alpha candidate
 
 - Add Home profiles for NVIDIA, AMD and Intel frame generation, with dependency checks and startup/next-launch status.
 - Add Neural Rendering settings and its integration forwarder; no proprietary NR model is included.
@@ -12,8 +12,9 @@
 - Repair previously owned optional bridge components during default Install / Repair, preserving edited settings.
 - Add missing Detours/JSON notices, specific Anti-Lag 2/LatencyFleX attribution and NVIDIA Reflex Low Latency feature naming.
 - Explain first-use verification, the Visual C++ prerequisite and startup recovery; link Setup to the feature guide and licences.
+- Add a separate optional NR runtime download from the RHI community mirror, pinned to the exact SF-v2 model already tested in Big Walk; keep it out of the release ZIP and disabled initially.
 
-NVIDIA FG and Default-style NR received in-world visual checks on the tested RTX 4090. AMD FG operated with poorer results; Intel FG produced interpolated frames but reduced measured FPS on this setup. Preset cycling, distant tree shadows under Extreme and nearby foliage restoration under Game defaults were confirmed after the vegetation binding corrections. Publication remains private pending the permission questions in `docs/LICENSING.md`.
+NVIDIA FG and Default-style NR received in-world visual checks on the tested RTX 4090. AMD FG operated with poorer results; Intel FG produced interpolated frames but reduced measured FPS on this setup. Preset cycling, distant tree shadows under Extreme and nearby foliage restoration under Game defaults were confirmed after the vegetation binding corrections. These tests do not establish fresh-loader bootstrap or compatibility on other hardware; component terms remain in `docs/LICENSING.md`.
 
 ## 0.6.0 — public alpha candidate
 

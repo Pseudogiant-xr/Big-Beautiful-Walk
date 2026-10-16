@@ -237,6 +237,8 @@ function Get-BbwRepairFeatures([object[]]$Dependencies, [string[]]$Requested, [s
             $selected.Add([string]$dependency.Feature)
         }
     }
+    # The NR model uses the optional bridge and its disabled-by-default config.
+    if ($selected -contains 'nr' -and $selected -notcontains 'fg') { $selected.Add('fg') }
     return $selected.ToArray()
 }
 
@@ -396,12 +398,10 @@ function Invoke-BbwSetup {
         if ($Mode -eq 'Install') {
             # Repair components already recorded as ours, even when the optional
             # checkbox was not selected again. File presence is not ownership.
-            if ($owned.Count -gt 0) {
-                $dependencyLock = Read-BbwJson (Resolve-BbwPath $PackagePath 'packaging/dependencies.lock.json')
-                if ($dependencyLock -and $dependencyLock.PSObject.Properties['Dependencies']) {
-                    $roles = @($owned.Values | Where-Object { $_.PSObject.Properties['Role'] } | ForEach-Object { [string]$_.Role })
-                    $Features = @(Get-BbwRepairFeatures $dependencyLock.Dependencies $Features $roles)
-                }
+            $dependencyLock = Read-BbwJson (Resolve-BbwPath $PackagePath 'packaging/dependencies.lock.json')
+            if ($dependencyLock -and $dependencyLock.PSObject.Properties['Dependencies']) {
+                $roles = @($owned.Values | Where-Object { $_.PSObject.Properties['Role'] } | ForEach-Object { [string]$_.Role })
+                $Features = @(Get-BbwRepairFeatures $dependencyLock.Dependencies $Features $roles)
             }
             $items = @(Get-BbwStage $PackagePath $stage $DependencyDirectory $Features)
             $targets = @{}
@@ -494,6 +494,7 @@ function Invoke-BbwSetup {
         if ($Mode -eq 'Install') {
             $message='Install/Repair completed. Existing settings and other mods were preserved. Start Big Walk through Steam when ready.'
             if ($Features -contains 'fg') { $message+=' The optional upscaler and Frame Generation bridge was installed or repaired. Fresh defaults leave Frame Generation off; Neural Rendering also starts off. Open Home, then Frame Gen or Neural; see docs/FRAME-GENERATION.md for restart and comparison steps.' }
+            if ($Features -contains 'nr') { $message+=' The community RHI SF-v2 Neural Rendering model was installed or repaired; this does not enable Neural Rendering.' }
             return $message
         }
         return 'Uninstall completed. Your settings, saves and other mods were preserved; installer backups remain in .big-beautiful-walk.'

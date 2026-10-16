@@ -1,6 +1,6 @@
 # Upscalers and presets
 
-The core path uses NVIDIA DLSS Super Resolution. Alternative backends require the optional OptiScaler bridge and, for XeSS or the FSR API, additional upstream runtimes. A backend appearing in a menu or loading a DLL does not prove that it produced the displayed frame.
+The core path uses NVIDIA DLSS Super Resolution. Alternative backends require the optional OptiScaler bridge and, for XeSS or the FSR API, additional upstream runtimes. This release requires a system with an NVIDIA GPU even when selecting FSR or XeSS; algorithm support on other vendors' hardware is distinct from this build's supported configuration. A backend appearing in a menu or loading a DLL does not prove that it produced the displayed frame.
 
 ## Backend availability
 
