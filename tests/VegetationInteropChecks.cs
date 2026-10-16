@@ -34,6 +34,8 @@ internal static class Program
                 Check(material.GetFloat("_DitherDistanceMaxValue") == next, "Native material adapter did not apply the requested distance");
                 Check(manager.Settings.MaxShadowDistance.value == next, "Active parameter adapter did not apply");
             }
+            Time.unscaledTime += 2; VegetationShadows.Tick();
+            Check(manager.HelperCalls == 3, "Unchanged materials unexpectedly retriggered the fade helper");
             enabled = false; VegetationShadows.Tick();
             Check(material.GetFloat("_DitherShadowMode") == 0 && material.GetFloat("_DitherDistanceMaxValue") == 0, "Raw material values did not restore");
             Check(!material.IsKeywordEnabled("TVE_DITHER_SHADOW") && material.GetShaderPassEnabled("ShadowCaster"), "Keyword/pass state did not restore");
@@ -87,6 +89,10 @@ internal sealed class TerrainQualityManager
             material.SetFloat("_DitherShadowMode", 1); material.SetFloat("_DitherDistanceMinValue", min); material.SetFloat("_DitherDistanceMaxValue", max);
             material.EnableKeyword("TVE_DITHER_SHADOW"); material.EnableKeyword("TVE_DITHER"); material.SetShaderPassEnabled("ShadowCaster", false);
         }
+        // Simulate the installed Harmony postfix so change detection is tested
+        // without forcing a reapply through unset fade readback values.
+        typeof(VegetationShadows).GetMethod("FadePostfix", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .Invoke(null, new object[] { min, max });
     }
     internal sealed class Quality { internal float vegShadowDitherDistanceMin = 0, vegShadowDitherDistanceMax = 0; }
 }
