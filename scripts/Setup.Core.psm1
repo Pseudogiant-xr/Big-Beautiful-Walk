@@ -6,8 +6,52 @@ function Get-BbwHash([string]$Path) {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
 }
 
+function Get-BbwFinalPath([string]$Path) {
+    # One spelling per file or folder: junctions, symbolic links, subst drives and 8.3 names
+    # all resolve to the same final path, so the running-game check and the installer lock
+    # cannot be bypassed by choosing an alias of the game folder.
+    $full=[IO.Path]::GetFullPath($Path)
+    if (-not ('BigBeautifulWalk.FinalPath' -as [type])) {
+        Add-Type -Language CSharp -TypeDefinition @'
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Text;
+namespace BigBeautifulWalk {
+    public static class FinalPath {
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern IntPtr CreateFileW(string name, uint access, uint share, IntPtr security, uint disposition, uint flags, IntPtr template);
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern uint GetFinalPathNameByHandleW(IntPtr handle, StringBuilder path, uint length, uint flags);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr handle);
+        public static string Resolve(string path) {
+            // No access rights are requested; backup semantics allow opening directories.
+            IntPtr handle = CreateFileW(path, 0, 7, IntPtr.Zero, 3, 0x02000000, IntPtr.Zero);
+            if (handle == new IntPtr(-1)) throw new Win32Exception(Marshal.GetLastWin32Error());
+            try {
+                var buffer = new StringBuilder(1024);
+                uint length = GetFinalPathNameByHandleW(handle, buffer, (uint)buffer.Capacity, 0);
+                if (length > buffer.Capacity) {
+                    buffer = new StringBuilder((int)length);
+                    length = GetFinalPathNameByHandleW(handle, buffer, (uint)buffer.Capacity, 0);
+                }
+                if (length == 0 || length > buffer.Capacity) throw new Win32Exception(Marshal.GetLastWin32Error());
+                string result = buffer.ToString();
+                if (result.StartsWith(@"\\?\UNC\", StringComparison.Ordinal)) return @"\\" + result.Substring(8);
+                if (result.StartsWith(@"\\?\", StringComparison.Ordinal)) return result.Substring(4);
+                return result;
+            } finally { CloseHandle(handle); }
+        }
+    }
+}
+'@
+    }
+    return [BigBeautifulWalk.FinalPath]::Resolve($full).TrimEnd('\','/')
+}
+
 function Get-BbwMutexName([string]$GamePath) {
-    $normalized=[IO.Path]::GetFullPath($GamePath).TrimEnd('\','/').ToUpperInvariant()
+    $normalized=(Get-BbwFinalPath $GamePath).ToUpperInvariant()
     $sha=[Security.Cryptography.SHA256]::Create()
     try { $key=[BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($normalized))).Replace('-','') }
     finally { $sha.Dispose() }
@@ -22,8 +66,10 @@ function Resolve-BbwPath([string]$Root, [string]$Relative) {
     $base = [IO.Path]::GetFullPath($Root).TrimEnd('\','/')
     $path = [IO.Path]::GetFullPath((Join-Path $base $Relative))
     if (-not $path.StartsWith($base + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw "Path escapes its directory: $Relative" }
+    # Check only the components below the chosen root. Folders above it (a Steam library
+    # behind a junction, a synced Desktop) are the user's choice and are not written to.
     $cursor = $path
-    while ($cursor) {
+    while ($cursor -and $cursor.Length -gt $base.Length) {
         if (Test-Path -LiteralPath $cursor) {
             if ((Get-Item -LiteralPath $cursor -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Symbolic links and junctions are not supported: $cursor" }
         }
@@ -107,7 +153,7 @@ function Test-BbwGame([string]$GamePath) {
 }
 
 function Assert-BbwGameClosed([string]$GamePath) {
-    $expected=[IO.Path]::GetFullPath((Join-Path $GamePath 'Big Walk.exe'))
+    $expected=Get-BbwFinalPath (Join-Path $GamePath 'Big Walk.exe')
     foreach ($process in [Diagnostics.Process]::GetProcessesByName('Big Walk')) {
         try {
             try { $executable=$process.MainModule.FileName }
@@ -116,7 +162,8 @@ function Assert-BbwGameClosed([string]$GamePath) {
                 throw 'Close Big Walk before installing or uninstalling. Setup cannot verify the location of a running Big Walk process; retry after closing it.'
             }
             if ([string]::IsNullOrWhiteSpace($executable)) { throw 'Close Big Walk before installing or uninstalling. Setup could not verify a running game process.' }
-            if ([IO.Path]::GetFullPath($executable).Equals($expected,[StringComparison]::OrdinalIgnoreCase)) { throw 'Close Big Walk before installing or uninstalling, then try again. No game files were changed.' }
+            try { $running=Get-BbwFinalPath $executable } catch { $running=[IO.Path]::GetFullPath($executable) }
+            if ($running.Equals($expected,[StringComparison]::OrdinalIgnoreCase)) { throw 'Close Big Walk before installing or uninstalling, then try again. No game files were changed.' }
         } finally { $process.Dispose() }
     }
 }
@@ -165,7 +212,9 @@ function Expand-BbwZip([string]$Archive, [string]$Destination) {
     } finally { $zip.Dispose() }
 }
 
-function Invoke-BbwDownloadRequest([uri]$Uri, [string]$Destination, [int]$TimeoutMilliseconds) {
+function Invoke-BbwDownloadRequest([uri]$Uri, [string]$Destination, [int]$TimeoutMilliseconds, [int]$TotalMilliseconds=1800000) {
+    # $TimeoutMilliseconds bounds each wait for a response or for more data, so a slow but
+    # moving download continues. $TotalMilliseconds is a generous cap for the whole transfer.
     $request=[Net.HttpWebRequest]::Create($Uri)
     $request.AllowAutoRedirect=$false
     $request.Method='GET'
@@ -174,7 +223,7 @@ function Invoke-BbwDownloadRequest([uri]$Uri, [string]$Destination, [int]$Timeou
     $request.PreAuthenticate=$false
     $request.Timeout=$TimeoutMilliseconds
     $request.ReadWriteTimeout=$TimeoutMilliseconds
-    $request.UserAgent='BigBeautifulWalk-Setup/0.6.0'
+    $request.UserAgent='BigBeautifulWalk-Setup/0.7.0'
     $response=$null
     $elapsed=[Diagnostics.Stopwatch]::StartNew()
     try {
@@ -186,10 +235,9 @@ function Invoke-BbwDownloadRequest([uri]$Uri, [string]$Destination, [int]$Timeou
         $output=[IO.File]::Open($Destination,[IO.FileMode]::Create,[IO.FileAccess]::Write,[IO.FileShare]::None)
         try {
             $buffer=New-Object byte[] 65536
+            if ($responseStream.CanTimeout) { $responseStream.ReadTimeout=$TimeoutMilliseconds }
             while ($true) {
-                $remaining=$TimeoutMilliseconds-[int]$elapsed.ElapsedMilliseconds
-                if ($remaining -le 0) { throw 'Download timed out.' }
-                if ($responseStream.CanTimeout) { $responseStream.ReadTimeout=$remaining }
+                if ($elapsed.ElapsedMilliseconds -ge $TotalMilliseconds) { throw 'Download timed out.' }
                 $read=$responseStream.Read($buffer,0,$buffer.Length)
                 if (-not $read) { break }
                 $output.Write($buffer,0,$read)
@@ -198,7 +246,7 @@ function Invoke-BbwDownloadRequest([uri]$Uri, [string]$Destination, [int]$Timeou
         return [pscustomobject]@{Status=200;Location=$null}
     } catch {
         # Asset redirects can contain signed query strings; never echo them.
-        throw "HTTPS download from $($Uri.DnsSafeHost) failed. Check your connection and retry; no game files were changed."
+        throw "HTTPS download from $($Uri.DnsSafeHost) failed or stalled. Check your connection and retry, or install offline with -DependencyDirectory (see docs/INSTALLATION.md); no game files were changed."
     } finally { if ($response) { $response.Dispose() } }
 }
 
@@ -209,12 +257,13 @@ function Receive-BbwDownload([uri]$Uri, [string]$Destination, [scriptblock]$Tran
     $redirects=0
     while ($true) {
         if ($current.Scheme -ne 'https' -or $current.UserInfo) { throw 'Dependency download rejected: every URL must use anonymous HTTPS.' }
-        $remaining=180000-[int]$elapsed.ElapsedMilliseconds
-        if ($remaining -le 0) { throw 'Dependency download exceeded the 180-second timeout. Retry when your connection is ready.' }
+        $remaining=1800000-[int]$elapsed.ElapsedMilliseconds
+        if ($remaining -le 0) { throw 'Dependency download exceeded 30 minutes. Retry when your connection is ready, or install offline with -DependencyDirectory (see docs/INSTALLATION.md).' }
         # Every hop is a new anonymous request: no cookies or authorization
         # headers cross origins. The locked SHA256 remains the content authority.
-        if ($Transport) { $response=& $Transport $current $Destination $remaining }
-        else { $response=Invoke-BbwDownloadRequest $current $Destination $remaining }
+        $stall=[Math]::Min(60000,$remaining)
+        if ($Transport) { $response=& $Transport $current $Destination $stall }
+        else { $response=Invoke-BbwDownloadRequest $current $Destination $stall $remaining }
         if ($response.Status -eq 200) { return }
         if ($response.Status -notin @(301,302,303,307,308)) { throw 'Dependency download returned an unsupported HTTP status.' }
         if ($redirects -ge 8) { throw 'Dependency download exceeded eight HTTPS redirects. Obtain the release dependencies manually and retry offline.' }
@@ -344,7 +393,7 @@ function Invoke-BbwSetup {
           [string]$PackagePath=(Split-Path $PSScriptRoot -Parent),
           [string]$DependencyDirectory, [string[]]$Features=@(), [int]$FaultAfter=0)
     Test-BbwGame $GamePath
-    $GamePath = [IO.Path]::GetFullPath($GamePath)
+    $GamePath = Get-BbwFinalPath $GamePath
     $state = Resolve-BbwPath $GamePath '.big-beautiful-walk'
     $manifestPath = Resolve-BbwPath $state 'manifest.json'
     $journalPath = Resolve-BbwPath $state 'journal.json'
@@ -507,9 +556,14 @@ function Invoke-BbwSetup {
     } finally {
         if ($locked) { $mutex.ReleaseMutex() }
         $mutex.Dispose()
-        $tempRoot=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\','/') + [IO.Path]::DirectorySeparatorChar
-        if (-not [IO.Path]::GetFullPath($stage).StartsWith($tempRoot,[StringComparison]::OrdinalIgnoreCase)) { throw 'Unsafe temporary cleanup path.' }
-        if ([IO.Directory]::Exists($stage)) { Remove-Item -LiteralPath $stage -Recurse -Force }
+        # Best effort: a temporary file held open (for example by an antivirus scan) must not
+        # replace the real outcome. Only a staging folder under %TEMP% is ever deleted.
+        try {
+            $tempRoot=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\','/') + [IO.Path]::DirectorySeparatorChar
+            if ([IO.Path]::GetFullPath($stage).StartsWith($tempRoot,[StringComparison]::OrdinalIgnoreCase) -and [IO.Directory]::Exists($stage)) {
+                Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction Stop
+            }
+        } catch { Write-Warning "Setup could not remove its temporary folder: $stage" }
     }
 }
 

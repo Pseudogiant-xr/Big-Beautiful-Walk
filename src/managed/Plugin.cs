@@ -44,13 +44,14 @@ public sealed class Plugin : BasePlugin
     private static UniversalRenderPipelineAsset? _asset;
     private static float _originalScale;
     private static int _originalMsaa;
-    private static float _originalShadowDistance;
     private static UpscalingFilterSelection _originalFilter;
     private static bool _wasEnabled;
     private static bool _loggedCamera;
     private static int _hookCount;
     private static int _lastHookFrame;
     private static bool _faulted;
+    // Session-only: a failed stock-effects pass must not persist RestorePostEffects=false.
+    private static bool _stockFaulted;
     private static IntPtr _renderEvent;
     private static int _historyEpoch;
     private static int _primaryCameraId;
@@ -117,12 +118,44 @@ public sealed class Plugin : BasePlugin
         bool resolveToDebugScreen, bool enableColorEndingIfNeeded)
     {
         if (!Compatible || !NativeLoaded || !Enabled.Value || _faulted || UnityEngine.XR.XRSettings.enabled) return true;
+        try
+        {
+            return RenderReplacement(__instance, renderGraph, frameData, activeCameraColorTexture, ref lutTexture,
+                ref overlayUITexture, ref postProcessingTarget, hasFinalPass, enableColorEndingIfNeeded);
+        }
+        catch (Exception error)
+        {
+            // Latch so Tick restores the game's renderer and removes the patch instead of failing every frame.
+            _faulted = true;
+            Instance.Log.LogError($"DLSS post-processing hook failed; restoring the game's renderer: {error}");
+            return true;
+        }
+    }
+
+    private static bool RenderReplacement(PostProcessPassRenderGraph __instance, RenderGraph renderGraph,
+        ContextContainer frameData, TextureHandle activeCameraColorTexture, ref TextureHandle lutTexture,
+        ref TextureHandle overlayUITexture, ref TextureHandle postProcessingTarget, bool hasFinalPass,
+        bool enableColorEndingIfNeeded)
+    {
         var resources = frameData.Get<UniversalResourceData>();
         var camera = frameData.Get<UniversalCameraData>();
         TextureHandle output = activeCameraColorTexture;
-        bool stock = RestorePostEffects.Value && StockPostProcessing.Prepare(__instance, frameData, camera,
-            hasFinalPass, enableColorEndingIfNeeded, lutTexture.IsValid());
-        if (stock) StockPostProcessing.BeforeDlss(__instance, renderGraph, resources, camera, ref output);
+        bool stock = false;
+        if (RestorePostEffects.Value && !_stockFaulted)
+        {
+            try
+            {
+                stock = StockPostProcessing.Prepare(__instance, frameData, camera,
+                    hasFinalPass, enableColorEndingIfNeeded, lutTexture.IsValid());
+                if (stock) StockPostProcessing.BeforeDlss(__instance, renderGraph, resources, camera, ref output);
+            }
+            catch (Exception error)
+            {
+                StockFailed(error);
+                stock = false;
+                output = activeCameraColorTexture;
+            }
+        }
         TextureHandle input = output;
         RenderStp(__instance, renderGraph, resources, camera, ref input, ref output);
         if (stock)
@@ -133,11 +166,7 @@ public sealed class Plugin : BasePlugin
                     ref output, ref postProcessingTarget, ref lutTexture, ref overlayUITexture);
                 return false;
             }
-            catch (Exception error)
-            {
-                Instance.Log.LogError($"Stock post-processing setup failed: {error}");
-                RestorePostEffects.Value = false;
-            }
+            catch (Exception error) { StockFailed(error); }
         }
         // This integration owns the post-processing slot. Calling the original STP method
         // through this IL2CPP build's by-ref trampoline crashed during the first probe.
@@ -165,6 +194,12 @@ public sealed class Plugin : BasePlugin
         return false;
     }
 
+    private static void StockFailed(Exception error)
+    {
+        _stockFaulted = true;
+        Instance.Log.LogError($"Stock post-processing setup failed; continuing without stock effects until Retry upscaler, F7 or restart: {error}");
+    }
+
     internal static void Tick()
     {
         if (Input.GetKeyDown(KeyCode.F8)) { Enabled.Value = !Enabled.Value; _historyEpoch++; }
@@ -172,6 +207,7 @@ public sealed class Plugin : BasePlugin
         if (Diagnostics.Value && Input.GetKeyDown(KeyCode.F7))
         {
             RestorePostEffects.Value = !RestorePostEffects.Value;
+            _stockFaulted = false;
             _historyEpoch++;
             Instance.Log.LogInfo($"Stock post-processing enabled={RestorePostEffects.Value}.");
         }
@@ -190,8 +226,7 @@ public sealed class Plugin : BasePlugin
             _originalScale = asset.renderScale;
             _originalMsaa = asset.msaaSampleCount;
             _originalFilter = asset.upscalingFilter;
-            _originalShadowDistance = asset.shadowDistance;
-            Instance.Log.LogInfo($"Shadow range original={_originalShadowDistance:F1}, cascades={asset.shadowCascadeCount}, splits={asset.cascade4Split}, atlas={asset.mainLightShadowmapResolution}.");
+            Instance.Log.LogInfo($"Shadow range original={asset.shadowDistance:F1}, cascades={asset.shadowCascadeCount}, splits={asset.cascade4Split}, atlas={asset.mainLightShadowmapResolution}.");
         }
         if (_asset.Pointer != asset.Pointer)
         {
@@ -378,13 +413,19 @@ public sealed class Plugin : BasePlugin
             _asset.renderScale = _originalScale;
             _asset.upscalingFilter = _originalFilter;
             _asset.msaaSampleCount = _originalMsaa;
-            _asset.shadowDistance = _originalShadowDistance;
+            // shadowDistance is owned by Advanced Graphics' override; restoring a snapshot here could revive a disabled override.
         }
         foreach (var snapshot in Cameras.Values) snapshot.Restore();
         Cameras.Clear();
         _asset = null;
         _wasEnabled = false;
         Instance.Log.LogInfo("Original runtime graphics settings restored.");
+    }
+
+    internal static void RetryUpscaler()
+    {
+        _stockFaulted = false;
+        ResetHistory();
     }
 
     internal static void ResetHistory()

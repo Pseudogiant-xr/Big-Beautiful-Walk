@@ -971,7 +971,7 @@
       "Required": false,
       "Feature": "nr",
       "SourceUrl": "https://github.com/RankFTW/rhi-repo/releases/tag/dlssnr-310.8.SF-v2",
-      "LicenseUrl": "https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/blob/feat/frame-generation-neural-controls/docs/licenses/RHI-Neural-Rendering-NOTICE.md"
+      "LicenseUrl": "https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/blob/v0.7.0-alpha/docs/licenses/RHI-Neural-Rendering-NOTICE.md"
     },
     {
       "Id": "streamline_fg",
