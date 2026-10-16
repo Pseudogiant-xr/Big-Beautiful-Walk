@@ -1,0 +1,37 @@
+Big Beautiful Walk
+Copyright 2026 Big Beautiful Walk contributors
+
+Independently authored project material is licensed under the Apache License,
+Version 2.0. Third-party material keeps its own terms. In particular,
+src/managed/StockPostProcessing.cs is a Unity Graphics adaptation under the
+Unity Companion License; compiled NVIDIA SDK material is not Apache-licensed.
+See THIRD_PARTY_NOTICES.md and docs/LICENSING.md for scope and sources.
+
+Unity Graphics adaptation: Copyright (c) 2020 Unity Technologies ApS.
+This software contains source code provided by NVIDIA Corporation.
+NVIDIA Streamline headers: Copyright (c) 2022-2023 NVIDIA CORPORATION.
+
+The optional OptiScaler component is by cdozdil and the OptiScaler team,
+with Neural Rendering integration by Dagherbou and optimizations by Skynizz.
+Its RenoDX-derived colour composition is by clshortfuse (Carlos Lopez Jr.).
+The optional Neural Rendering runtime download uses RankFTW's RHI community
+mirror and catalogue. No RHI downloader code is incorporated; model rights
+remain with their respective owners.
+Microsoft Detours: Copyright (c) Microsoft Corporation, MIT License.
+nlohmann JSON: Copyright (c) 2013-2025 Niels Lohmann, MIT License.
+AMD Anti-Lag 2: Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved.
+LatencyFleX: Copyright 2021 Tatsuyuki Ishi, Apache License 2.0.
+Portions of this software are copyright (c) 2024 The FreeType Project
+(www.freetype.org). All rights reserved.
+Hack font: Copyright 2018 Source Foundry Authors; includes Bitstream Vera
+Sans Mono, Copyright 2003 Bitstream Inc., and public-domain DejaVu work.
+
+The managed plugin uses BepInEx, Il2CppInterop and HarmonyX. BepInEx's native
+hook library is Dobby, by jmpews and contributors, with the BepInEx fork.
+Their authors,
+versions, dependency credits and license copies are in THIRD_PARTY_NOTICES.md
+and docs/licenses. Runtime SDKs from NVIDIA, Intel and AMD retain their own
+copyrights and licenses. Big Walk is by House House.
+
+This is an unofficial mod. These credits do not imply vendor or game-author
+sponsorship or endorsement. No vendor logos are included in this notice.

@@ -306,7 +306,7 @@ void __stdcall RenderEvent(int eventId, void* pointer) {
 
 extern "C" __declspec(dllexport) void BW_Initialize(const wchar_t* data, const wchar_t* runtime) {
     dataDirectory = data; runtimeDirectory = runtime;
-    Log("Big Beautiful Walk native 0.6.0 loaded; frame ABI=%zu", sizeof(Frame));
+    Log("Big Beautiful Walk native 0.7.0 loaded; frame ABI=%zu", sizeof(Frame));
 }
 extern "C" __declspec(dllexport) int BW_FrameSize() { return sizeof(Frame); }
 extern "C" __declspec(dllexport) int BW_Status() { return retryRequested.load() ? 0 : status.load(); }

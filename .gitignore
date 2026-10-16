@@ -6,6 +6,7 @@ payload/
 .cache/
 work/
 *.dll
+*.exe
 *.lib
 *.pdb
 *.exp

@@ -13,7 +13,8 @@ namespace BigWalkDLSS;
 
 internal static class AdvancedGraphics
 {
-    private enum Page { Overview, Upscaling, Geometry, Shadows, Vegetation, Terrain, Textures }
+    private enum Page { Overview, Upscaling, FrameGen, Neural, Geometry, Shadows, Vegetation, Terrain, Textures, Credits }
+    private static readonly string[] TabNames = { "Overview", "Upscaling", "Frame Gen", "Neural", "Geometry", "Shadows", "Vegetation", "Terrain", "Textures" };
     private enum Kind { Number, Integer, Toggle, Choice }
     private enum Owner { Global, Pipeline, Camera, Terrain, Vegetation }
     private sealed class Setting
@@ -79,7 +80,7 @@ internal static class AdvancedGraphics
     private static int _quality = -1;
     private static bool _ready, _visible, _dirty, _guiFailed;
     private static bool _validateSplits;
-    private static float _editedAt, _nextTerrainScan;
+    private static float _editedAt, _nextTerrainScan, _nextBridgeRefresh;
     private static int _captureAt = -1;
     private static float _nextShadowProbe;
     private static string _shadowTexture = "not yet observed";
@@ -89,7 +90,8 @@ internal static class AdvancedGraphics
     private static CursorLockMode _cursorLock;
     private static bool _cursorVisible;
     private static string _editing = "", _message = "Changes apply live. Profiles save after you finish editing.";
-    private static GUIStyle? _title, _label, _small, _button, _field;
+    private static GUIStyle? _title, _label, _small, _button, _field, _tab, _toggle;
+    internal static GUIStyle ToggleStyle => _toggle!;
 
     internal static void Initialize()
     {
@@ -111,6 +113,8 @@ internal static class AdvancedGraphics
             if (_visible) Close();
             else
             {
+                BridgeSettings.Reload();
+                _nextBridgeRefresh = Time.unscaledTime + 1f;
                 _guiFailed = false;
                 _cursorLock = Cursor.lockState; _cursorVisible = Cursor.visible;
                 _visible = true; _captureAt = Time.frameCount + 5;
@@ -119,6 +123,11 @@ internal static class AdvancedGraphics
         }
         if (_visible && Input.GetKeyDown(KeyCode.Escape)) Close();
         if (_visible && Input.GetKeyDown(KeyCode.F10)) Close();
+        if (_visible && Time.unscaledTime >= _nextBridgeRefresh)
+        {
+            _nextBridgeRefresh = Time.unscaledTime + 1f;
+            BridgeSettings.RefreshSavedSettings();
+        }
         if (_dirty && Time.unscaledTime - _editedAt > 1f) Save();
         if (Plugin.Diagnostics.Value && _visible && _captureAt > 0 && Time.frameCount >= _captureAt)
         {
@@ -508,11 +517,11 @@ internal static class AdvancedGraphics
             $"Selected: {UpscalingPresentation.BackendName(BridgeSettings.RunningBackend)}  •  {UpscalingPresentation.QualityName(BridgeSettings.RunningBackend, Plugin.QualityMode.Value)}  •  {SystemInfo.graphicsDeviceName}", _small);
         GUI.enabled = Plugin.Compatible && Plugin.NativeLoaded;
         bool sr = GUI.Toggle(new Rect(x + 25, y + 292, 480, 30), Plugin.Enabled.Value,
-            UpscalingPresentation.ToggleLabel(BridgeSettings.RunningBackend, Plugin.QualityMode.Value), _label);
+            UpscalingPresentation.ToggleLabel(BridgeSettings.RunningBackend, Plugin.QualityMode.Value), _toggle);
         if (sr != Plugin.Enabled.Value) { Plugin.Enabled.Value = sr; Plugin.ResetHistory(); }
         if (GUI.Button(new Rect(x + 610, y + 289, 290, 34), "Change upscaler / quality", _button)) _page = Page.Upscaling;
         GUI.Label(new Rect(x + 25, y + 333, 900, 45),
-            BridgeSettings.Recognized ? "F8 toggles reconstruction. F10 opens extra upscaler, frame generation and neural rendering options." :
+            BridgeSettings.Recognized ? "F8 toggles reconstruction. Frame Gen and Neural tabs save requests for the next launch. F10 opens experimental controls." :
                 "F8 toggles reconstruction. Setup's optional upscaler pack adds FSR 3.1, XeSS and frame generation controls.", _small);
         GUI.enabled = _ready;
         GUI.Label(new Rect(x + 25, y + 398, 900, 34), "Graphics presets replace all custom graphics overrides. Your upscaler choice stays as selected.", _small);
@@ -537,8 +546,11 @@ internal static class AdvancedGraphics
             {
                 _title = new GUIStyle(GUI.skin.label) { fontSize = 25, fontStyle = FontStyle.Bold };
                 _label = new GUIStyle(GUI.skin.label) { fontSize = 16 };
+                _toggle = new GUIStyle(GUI.skin.toggle) { fontSize = 16 };
+                _toggle.normal.textColor = Color.white; _toggle.onNormal.textColor = Color.white;
                 _small = new GUIStyle(GUI.skin.label) { fontSize = 13, wordWrap = true };
                 _button = new GUIStyle(GUI.skin.button) { fontSize = 15 };
+                _tab = new GUIStyle(_button) { fontSize = 13, padding = new RectOffset(4, 4, 4, 4) };
                 _field = new GUIStyle(GUI.skin.textField) { fontSize = 16, alignment = TextAnchor.MiddleRight };
                 _title.normal.textColor = Color.white; _label.normal.textColor = Color.white;
                 _small.normal.textColor = new Color(.76f, .81f, .85f, 1);
@@ -555,15 +567,21 @@ internal static class AdvancedGraphics
                 ? "Home closes this panel  •  F10 opens extra upscaler controls"
                 : "Home closes this panel  •  More upscalers are available through Setup", _label);
             if (GUI.Button(new Rect(x + 905, y + 18, 32, 32), "×", _button)) Close();
-            for (int i = 0; i < 7; i++)
-                if (GUI.Button(new Rect(x + 25 + i * 129, y + 98, 122, 35), (_page == (Page)i ? "● " : "") + ((Page)i), _button))
+            for (int i = 0; i < TabNames.Length; i++)
+                if (GUI.Button(new Rect(x + 25 + i * 101, y + 98, 94, 35), (_page == (Page)i ? "● " : "") + TabNames[i], _tab))
                 { _page = (Page)i; _scroll = Vector2.zero; }
-            bool graphicsPage = _page != Page.Overview && _page != Page.Upscaling;
+            bool graphicsPage = _page >= Page.Geometry && _page <= Page.Textures;
+            bool featurePage = _page == Page.FrameGen || _page == Page.Neural;
             GUI.Label(new Rect(x + 25, y + 145, 900, 37), graphicsPage
                 ? "Change a setting to enable its override. Untick its box to return control to the game."
+                : featurePage ? "Optional features start off. Changes save for the next launch and require a restart; runtime support remains unverified."
+                : _page == Page.Credits ? "Libraries and community work used by Big Beautiful Walk."
                 : "Choose a renderer and quality level, or customise the game's graphics. Changes save automatically.", _small);
             if (_page == Page.Overview) DrawOverview(x, y);
             else if (_page == Page.Upscaling) UpscalingMenu.Draw(x, y, _label!, _small!, _button!);
+            else if (_page == Page.FrameGen) FeatureMenu.DrawFrameGen(x, y, _label!, _small!, _button!);
+            else if (_page == Page.Neural) FeatureMenu.DrawNeural(x, y, _label!, _small!, _button!);
+            else if (_page == Page.Credits) CreditsMenu.Draw(x, y, _label!, _small!, _button!);
             else if (!_ready) GUI.Label(new Rect(x + 25, y + 200, 900, 70), Plugin.Compatible ? "Waiting for the game's rendering pipeline…" : Plugin.SupportMessage, _label);
             else
             {
@@ -605,8 +623,12 @@ internal static class AdvancedGraphics
             {
                 Plugin.QualityMode.Value = 2; Plugin.RenderScale.Value = .666667f; Plugin.Preset.Value = 12; Plugin.ResetHistory();
             }
+            else if (_page == Page.Overview && GUI.Button(new Rect(x + 25, y + 680, 260, 36), "Credits and licences", _button)) _page = Page.Credits;
+            else if (featurePage && GUI.Button(new Rect(x + 25, y + 680, 260, 36), "Refresh saved settings", _button)) BridgeSettings.Reload();
             if (!graphicsPage && GUI.Button(new Rect(x + 735, y + 680, 190, 36), "Done", _button)) Close();
-            GUI.Label(new Rect(x + 25, y + 724, 905, 28), graphicsPage ? _message : "Settings save automatically. The world continues running while this panel is open.", _small);
+            GUI.Label(new Rect(x + 25, y + 724, 905, 28), graphicsPage ? _message : featurePage
+                ? "Settings save automatically for the next launch. The world continues running while this panel is open."
+                : "Settings save automatically. The world continues running while this panel is open.", _small);
         }
         catch (Exception error) { _guiFailed = true; Log("GUI unavailable: " + error); Close(); }
         finally { GUI.matrix = matrix; GUI.color = colour; GUI.enabled = enabled; }
@@ -627,7 +649,7 @@ internal static class AdvancedGraphics
         if (!float.IsFinite(value)) value = setting.Min;
         if (setting.Kind == Kind.Toggle)
         {
-            bool next = GUI.Toggle(new Rect(310, y + 2, 245, 27), value > .5f, value > .5f ? "Enabled" : "Disabled", _label);
+            bool next = GUI.Toggle(new Rect(310, y + 2, 245, 27), value > .5f, value > .5f ? "Enabled" : "Disabled", _toggle);
             if (next != (value > .5f)) setting.Set(next ? 1 : 0);
         }
         else if (setting.Kind == Kind.Choice)

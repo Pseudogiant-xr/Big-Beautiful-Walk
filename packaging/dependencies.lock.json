@@ -946,12 +946,32 @@
         {
           "Source": "DLSS5-Optimised/OptiScaler.dll",
           "Target": "version.dll"
+        },
+        {
+          "Source": "DLSS5-Optimised/nvngx.dll_dlssnr.dll",
+          "Target": "OptiScaler/nvngx.dll_dlssnr.dll"
         }
       ],
       "Required": false,
       "Feature": "fg",
       "SourceUrl": "https://github.com/Skynizz/optiscaler-dlss5/tree/v1.2.1",
       "LicenseUrl": "https://github.com/Skynizz/optiscaler-dlss5/blob/v1.2.1/LICENSE"
+    },
+    {
+      "Id": "nvidia_nr",
+      "Url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssnr-310.8.SF-v2/nvngx_dlssnr_310.8.SF-v2.zip",
+      "SHA256": "1DA35941894994EB087E017577829E492454E9BAE3A6A9397027069CEB74955C",
+      "Archive": "zip",
+      "Files": [
+        {
+          "Source": "nvngx_dlssnr.dll",
+          "Target": "OptiScaler/nvngx_dlssnr.dll"
+        }
+      ],
+      "Required": false,
+      "Feature": "nr",
+      "SourceUrl": "https://github.com/RankFTW/rhi-repo/releases/tag/dlssnr-310.8.SF-v2",
+      "LicenseUrl": "https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/blob/feat/frame-generation-neural-controls/docs/licenses/RHI-Neural-Rendering-NOTICE.md"
     },
     {
       "Id": "streamline_fg",
@@ -1016,6 +1036,14 @@
           "Target": "OptiScaler/libxess.dll"
         },
         {
+          "Source": "bin/libxess_fg.dll",
+          "Target": "OptiScaler/libxess_fg.dll"
+        },
+        {
+          "Source": "bin/libxell.dll",
+          "Target": "OptiScaler/libxell.dll"
+        },
+        {
           "Source": "LICENSE.txt",
           "Target": "OptiScaler/licenses/Intel-XeSS-LICENSE.txt"
         },
@@ -1028,6 +1056,70 @@
       "Feature": "fg",
       "SourceUrl": "https://github.com/intel/xess/tree/8fe81bdbbaf00b3c1b733fd0d830c333dc84e6f0",
       "LicenseUrl": "https://github.com/intel/xess/blob/8fe81bdbbaf00b3c1b733fd0d830c333dc84e6f0/LICENSE.txt"
+    },
+    {
+      "Id": "amd_fsr_loader",
+      "Url": "https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/FidelityFX/signedbin/amd_fidelityfx_loader_dx12.dll",
+      "SHA256": "E2D85AA05A9BD9ED8B38935FDF5199372CCA6F74C12015143BB6F945EE1608AA",
+      "Archive": "file",
+      "Files": [
+        {
+          "Source": "amd_fidelityfx_loader_dx12.dll",
+          "Target": "OptiScaler/amd_fidelityfx_loader_dx12.dll"
+        }
+      ],
+      "Required": false,
+      "Feature": "fg",
+      "SourceUrl": "https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/tree/60f4ea81909200d8542eca14dccb2628b763a9a3",
+      "LicenseUrl": "https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/docs/license.md"
+    },
+    {
+      "Id": "amd_fsr_framegeneration",
+      "Url": "https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/60f4ea81909200d8542eca14dccb2628b763a9a3/Kits/FidelityFX/signedbin/amd_fidelityfx_framegeneration_dx12.dll",
+      "SHA256": "02297BEEDD285E822D3A64F314CF00FAF378DCEC0EDC47FF0C4DD71B3A8C2F18",
+      "Archive": "file",
+      "Files": [
+        {
+          "Source": "amd_fidelityfx_framegeneration_dx12.dll",
+          "Target": "OptiScaler/amd_fidelityfx_framegeneration_dx12.dll"
+        }
+      ],
+      "Required": false,
+      "Feature": "fg",
+      "SourceUrl": "https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/tree/60f4ea81909200d8542eca14dccb2628b763a9a3",
+      "LicenseUrl": "https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/docs/license.md"
+    },
+    {
+      "Id": "amd_fsr_license",
+      "Url": "https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/60f4ea81909200d8542eca14dccb2628b763a9a3/docs/license.md",
+      "SHA256": "6757F2FEC461238DA6F84F83536EC195E8C036B1773A06F6F34301B9ED8C0963",
+      "Archive": "file",
+      "Files": [
+        {
+          "Source": "AMD-FSR-SDK-license.md",
+          "Target": "OptiScaler/licenses/AMD-FSR-SDK-LICENSE.md"
+        }
+      ],
+      "Required": false,
+      "Feature": "fg",
+      "SourceUrl": "https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/tree/60f4ea81909200d8542eca14dccb2628b763a9a3",
+      "LicenseUrl": "https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/docs/license.md"
+    },
+    {
+      "Id": "amd_fsr_notices",
+      "Url": "https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/60f4ea81909200d8542eca14dccb2628b763a9a3/3rdpartynotice.md",
+      "SHA256": "94401A90486D1B53B528BB7F845A7B8DAF7227B60EB7C0FC3B8C5571BA202A27",
+      "Archive": "file",
+      "Files": [
+        {
+          "Source": "AMD-third-party-notices.md",
+          "Target": "OptiScaler/licenses/AMD-FSR-SDK-THIRD-PARTY.md"
+        }
+      ],
+      "Required": false,
+      "Feature": "fg",
+      "SourceUrl": "https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/tree/60f4ea81909200d8542eca14dccb2628b763a9a3",
+      "LicenseUrl": "https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK/blob/60f4ea81909200d8542eca14dccb2628b763a9a3/docs/license.md"
     }
   ]
 }

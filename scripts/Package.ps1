@@ -13,9 +13,10 @@ foreach ($path in @($ManagedDll,$NativeDll)) {
 $destinationPath = [IO.Path]::GetFullPath($Destination)
 if (Test-Path -LiteralPath $destinationPath) { throw 'Choose a new, empty destination folder.' }
 [void][IO.Directory]::CreateDirectory($destinationPath)
-foreach ($name in @('README.md','LICENSE','THIRD_PARTY_NOTICES.md','CHANGELOG.md','Setup.cmd')) {
+foreach ($name in @('README.md','LICENSE','NOTICE','THIRD_PARTY_NOTICES.md','CHANGELOG.md','Setup.cmd')) {
     Copy-Item -LiteralPath (Join-Path $root $name) -Destination $destinationPath
 }
+& (Join-Path $PSScriptRoot 'Build-Setup.ps1') -Destination (Join-Path $destinationPath 'Setup.exe')
 foreach ($folder in @('src','scripts','docs','tests','packaging')) {
     $sourceRoot = Join-Path $root $folder
     foreach ($file in Get-ChildItem -LiteralPath $sourceRoot -Recurse -File) {

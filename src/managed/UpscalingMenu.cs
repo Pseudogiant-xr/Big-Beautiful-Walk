@@ -33,7 +33,7 @@ internal static class UpscalingMenu
             GUI.Label(new Rect(x + 25, y + 321, 900, 28), Plugin.RendererStatus, label);
             GUI.enabled = enabled && Plugin.Compatible && Plugin.NativeLoaded;
             bool nextEnabled = GUI.Toggle(new Rect(x + 25, y + 355, 570, 28), Plugin.Enabled.Value,
-                UpscalingPresentation.ToggleLabel(BridgeSettings.RunningBackend, Plugin.QualityMode.Value), label);
+                UpscalingPresentation.ToggleLabel(BridgeSettings.RunningBackend, Plugin.QualityMode.Value), AdvancedGraphics.ToggleStyle);
             if (nextEnabled != Plugin.Enabled.Value) { Plugin.Enabled.Value = nextEnabled; Plugin.ResetHistory(); }
             if (GUI.Button(new Rect(x + 690, y + 355, 235, 28), "Retry upscaler", button)) Plugin.ResetHistory();
             int quality = Choice(x, y + 393, "Quality mode", Plugin.QualityMode.Value,
@@ -67,7 +67,7 @@ internal static class UpscalingMenu
             GUI.Label(new Rect(x + 25, y + 584, 715, 36), BridgeSettings.Message, small);
             if (GUI.Button(new Rect(x + 750, y + 584, 175, 31), "Refresh settings", button)) BridgeSettings.Reload();
             GUI.Label(new Rect(x + 25, y + 625, 900, 28),
-                "Open the OptiScaler menu (usually F10) for Frame Generation and Neural Rendering controls.", small);
+                "Use the Frame Gen and Neural tabs for optional features after restart. F10 contains advanced experimental controls.", small);
         }
         finally { GUI.enabled = enabled; }
     }

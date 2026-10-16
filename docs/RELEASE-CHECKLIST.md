@@ -1,28 +1,44 @@
 # Release checklist
 
-This checklist records public-alpha validation and unresolved dependency terms. It is not a legal-clearance statement. The presence of a license copy, a checksum or an upstream download does not prove every distribution condition has been satisfied.
+This checklist records the alpha's delivered licence/attribution handling, validation coverage and historical observations. Checkmarks describe the named work, not a blanket legal-clearance statement. Known SDK and upstream-source conditions remain in the assessment; no Unity or NVIDIA outreach is planned. Historical runtime observations do not validate a new binary.
 
 ## License review
 
-- [ ] Confirm the intended source-license grant for independently authored code. `StockPostProcessing.cs` and Unity-derived portions remain outside that grant under the Unity Companion License.
-- [ ] Confirm the Unity Companion Use condition is met for the adapted file. [UCL v1.4 section 1](https://unity.com/legal/licenses/unity-companion-license) requires a valid Engine License for the described exercise of its grant; section 3.2 addresses ownership of derivative works, and section 5 requires license/copyright notices. Copies are in `docs/licenses`.
-- [ ] Resolve NVIDIA SDK incorporation and attribution requirements for the proposed public mod release. [NVIDIA RTX SDK license](https://github.com/NVIDIA/DLSS/blob/374959484e79a640feaba44c93ac8cfb0a03f5b5/LICENSE.txt), section 1(c), permits object-code incorporation subject to its conditions; section 2 sets distribution requirements; section 4(b) restricts standalone SDK distribution; section 4(e) limits imposing open-source obligations on the SDK. The supplement's sections 7.1(a)-(c) and 7.2(c) cover attribution, marks and approval requirements. Avoiding bundled runtimes and vendor logos does not by itself settle these obligations.
-- [ ] Check the actual outgoing ZIP and repository for game assemblies, generated interop assemblies, game assets, copied game source, proprietary runtime DLLs, personal paths, configuration dumps and private logs.
-- [x] Preserve upstream notices and license exceptions with the candidate; no blanket MIT claim is made.
-- [ ] Keep optional OptiScaler's GPL source/notice obligations separate from NVIDIA's proprietary runtime terms. Do not infer compatibility between those terms or permission for the cached NR model. [Skynizz's release](https://github.com/Skynizz/optiscaler-dlss5/releases/tag/v1.2.1) explicitly excludes the NR model.
+- [x] Owner-requested Apache-2.0 grant applied to independently authored material; full canonical `LICENSE`, scoped `NOTICE`, historical 0.6 MIT copy and third-party exceptions are preserved. This is a mixed-license project; `StockPostProcessing.cs` remains UCL and NVIDIA SDK portions retain NVIDIA terms. See [the licensing assessment](LICENSING.md).
+- [x] Preserve the Unity adaptation's UCL header, licence and upstream notices, outside the Apache grant. [UCL v1.4 section 1](https://unity.com/legal/licenses/unity-companion-license) coverage remains unverified; this checked item records notice preservation, not satisfaction of that condition. No Unity outreach or licence-activation workflow is planned.
+- [x] Retain NVIDIA SDK terms, attribution and the [SDK-specific distribution notice](licenses/NVIDIA-DISTRIBUTION-NOTICE.md). [The assessment](LICENSING.md#nvidia-sdk-incorporation-and-attribution) records the actual notification/Mark conditions; no notification or approval is represented as complete, and no vendor-contact workflow is pending.
+- [x] Recheck the actual public-release ZIP and repository for game assemblies, generated interop assemblies, game assets, copied game source, proprietary runtime DLLs, personal paths, configuration dumps and private logs.
+- [x] Add the verified principal BepInEx/Il2CppInterop/HarmonyX, OptiScaler/RenoDX, Streamline, Intel, AMD, FreeType/font and transitive-library notices. License origins and saved-file hashes are in [SOURCES.md](licenses/SOURCES.md); loader binary provenance limits remain explicit in [the inventory](licenses/BepInEx-DEPENDENCIES.md).
+- [x] Recheck the final public-release ZIP and installed notice payload for `LICENSE`, `NOTICE`, `THIRD_PARTY_NOTICES.md` and all linked `docs/licenses` files, plus the applicable downloaded SDK notices. Source-tree presence alone does not prove packaging preserved them.
+- [x] Keep OptiScaler an unchanged upstream download with GPL text, source directions, credits and replacement rights. Document the independent core and source-correspondence limits without relicensing GPL material or claiming downloading alone settles the combined-work boundary.
+- [x] Preserve Intel/AMD binary terms and document the actual Intel export-detour limitation, separately from ordinary API/loading behavior; no SDK exception or custom fork is claimed.
+- [ ] Complete NVIDIA Reflex integration/UI verification, including successful enablement and marker/sleep operation with FG; a DLL, credit or saved request is insufficient.
+- [x] Keep NR binaries out of the repository/ZIP. Make the RHI community model a separate unchecked download, pinned to the previously tested bytes; preserve [source, signature and licence limits](licenses/RHI-Neural-Rendering-NOTICE.md). Bridge-only installation/repair must not opt into it.
 
-## Validation
+## Private 0.7 validation
+
+- [x] CPU installer fixtures: 35 guarded cases and 12 memory-only feature-selection cases under Windows PowerShell 5.1 and PowerShell 7, including separate NR opt-in/repair/collision behavior. These do not exercise graphics runtimes or first-launch game behavior.
+- [x] Recheck the release ZIP and fixture-installed notices: 128 packaged files with complete checksums, 54 notice/source files and 50 upstream snapshot hashes; FG and NR install/repair/uninstall fixtures passed with 313/314 installed hashes and 148 notice links each. Only the project DLL pair and Setup.exe are packaged.
+- [x] Record the previously accepted rendering pair and build evidence in the release's compatibility documentation. The later C4E1/947D pair has separate package checksums and completed fresh bootstrap; the user confirmed the picture, movement and Home/F10 menus in-world. It is distinct from the previously accepted 0859/947D pair.
+- [x] Fresh independent reviews cover the 0.7 implementation and vegetation binding corrections. Findings, reviewed heads and regression results are recorded in the pull request's review table; the historical 0.6 review is separate.
+- [x] Final restoration acceptance in the authorized real-game test: NVIDIA FG plus Default NR received user confirmation; AMD FG operated with poorer results and Intel interpolation reduced FPS on the tested RTX 4090. The user confirmed stable preset cycling, Extreme distant tree shadows and Game defaults nearby foliage restoration after the final vegetation correction.
+- [x] Fresh BepInEx 755 downloaded Unity libraries, processed metadata 39, generated 158 interop assemblies, loaded Big Beautiful Walk 0.7.0 and sustained DLSS evaluation. A repeat launch reused those files successfully.
+- [x] Visually check the revised Setup/Home interface on the tested desktop. The real Setup GUI completed installation; the new managed UI is installed and evaluating. The user confirmed Home/F10 and the picture in-world. The user separately confirmed Setup.exe opens without a blank terminal; other DPI configurations are unverified.
+
+## Historical private 0.6 observations
+
+These checks describe the earlier private 0.6 line through `ccef38a`, not a public release or validation of the new 0.7 head. Preserve the original observation scope and known limitations.
 
 - [x] Core dependency URLs retrieved and SHA-256 computed; NVIDIA SR signature verified during preparation. Exact pins are in `packaging/dependencies.lock.json`.
 - [x] Installer fixture checks complete for install, repair, interrupted recovery, conflicts and uninstall; a real GitHub download and a complete packaged install/remove with all locked dependencies also passed.
 - [x] Official SR 310.9.1 sustained DLSS evaluation in the game world with the existing BepInEx installation; Home menu and Quality / Game defaults choices visually confirmed on the observed setup.
 - [ ] A completely fresh BepInEx installation and first-launch interop generation complete in the real game. The existing-loader test does not satisfy this check.
-- [ ] All graphics presets, live save and restoration exercised on the final release build.
+- [ ] All graphics presets, live save and restoration exercised on that candidate.
 - [x] Expanded quality modes and preset choices visually confirmed; FSR 3.1 and XeSS each initialized, sustained reconstruction and received visual checks. Official FG runtime recorded generated-frame presents. FSR 4 remains unavailable on the RTX 4090. XeSS flicker and FG shimmer remain known limitations.
-- [ ] Final validation records the exact mod binary hashes together with game build, Unity version, GPU, driver and graphics API.
+- [ ] Historical validation records exact mod binary hashes together with game build, Unity version, GPU, driver and graphics API.
 - [x] Documentation describes the optional upscaler/FG pack, manual NR prerequisites, VR exclusion and known visual/performance limits.
 - [x] Independent review completed; three installer findings received fixes and regression coverage, with 27 cases passing under Windows PowerShell 5.1 and PowerShell 7.
 
 ## Release scope
 
-The core is DLSS Super Resolution plus the graphics panel. The optional checkbox downloads pinned FSR 3.1/XeSS/FG bridge dependencies; fresh FG defaults remain off. NR requires a separately obtained model and is not installed automatically. A complete fresh BepInEx first launch, broader hardware coverage and exact GPU allocation of the experimental 16384 shadow atlas remain unverified.
+The alpha core is DLSS Super Resolution plus the graphics panel. Its optional bridge downloads pinned OptiScaler with built-in native FSR 3.1, official NVIDIA Streamline/DLSS FG, Intel XeSS SR/FG/XeLL and selected official AMD loader/FG files. The separate NR option downloads the RHI community model and includes the bridge it needs. Fresh FG/NR defaults remain off. Model distribution authorization is unverified; its source is not presented as an official NVIDIA release. Fresh BepInEx bootstrap succeeded on the recorded system; broader hardware coverage and exact GPU allocation of the experimental 16384 atlas remain unverified.

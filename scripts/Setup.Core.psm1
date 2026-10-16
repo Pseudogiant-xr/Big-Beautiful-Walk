@@ -227,12 +227,44 @@ function Receive-BbwDownload([uri]$Uri, [string]$Destination, [scriptblock]$Tran
     }
 }
 
+function Get-BbwRepairFeatures([object[]]$Dependencies, [string[]]$Requested, [string[]]$OwnedRoles) {
+    $selected = New-Object 'Collections.Generic.List[string]'
+    foreach ($feature in $Requested) {
+        if ($selected -notcontains $feature) { $selected.Add($feature) }
+    }
+    foreach ($dependency in $Dependencies) {
+        if ($dependency.Feature -and $dependency.Feature -ne 'core' -and $OwnedRoles -contains $dependency.Id -and $selected -notcontains $dependency.Feature) {
+            $selected.Add([string]$dependency.Feature)
+        }
+    }
+    # The NR model uses the optional bridge and its disabled-by-default config.
+    if ($selected -contains 'nr' -and $selected -notcontains 'fg') { $selected.Add('fg') }
+    return $selected.ToArray()
+}
+
 function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyDirectory, [string[]]$Features) {
     $items = New-Object 'Collections.Generic.List[object]'
     foreach ($name in @('BigWalkDLSS.dll','BigWalkDLSSNative.dll')) {
         $source = Resolve-BbwPath $PackagePath "payload/BigWalkDLSS/$name"
         if (-not [IO.File]::Exists($source)) { throw "Release payload is incomplete: missing $name. Extract the complete release ZIP and run Setup.cmd again." }
         $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/plugins/BigWalkDLSS/$name"; FreshOnly=$false; Role='plugin' })
+    }
+    foreach ($name in @('LICENSE','NOTICE','THIRD_PARTY_NOTICES.md')) {
+        $source = Resolve-BbwPath $PackagePath $name
+        if (-not [IO.File]::Exists($source)) { throw "Release notices are incomplete: missing $name. Extract the complete release ZIP and retry." }
+        $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/BigWalkDLSS/notices/$name"; FreshOnly=$false; Role='notices' })
+    }
+    foreach ($name in @('LICENSING.md','RELEASE-CHECKLIST.md','UPSCALERS.md')) {
+        $source = Resolve-BbwPath $PackagePath "docs/$name"
+        if (-not [IO.File]::Exists($source)) { throw "Release notices are incomplete: missing docs/$name. Extract the complete release ZIP and retry." }
+        $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/BigWalkDLSS/notices/docs/$name"; FreshOnly=$false; Role='notices' })
+    }
+    $licenses = Resolve-BbwPath $PackagePath 'docs/licenses'
+    if (-not [IO.Directory]::Exists($licenses)) { throw 'Release licenses are missing. Extract the complete release ZIP and retry.' }
+    foreach ($file in Get-ChildItem -LiteralPath $licenses -Recurse -File) {
+        $relative = $file.FullName.Substring($licenses.Length + 1).Replace('\','/')
+        $source = Resolve-BbwPath $licenses $relative
+        $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/BigWalkDLSS/notices/docs/licenses/$relative"; FreshOnly=$false; Role='notices' })
     }
     $lock = Read-BbwJson (Resolve-BbwPath $PackagePath 'packaging/dependencies.lock.json')
     if (-not $lock -or -not $lock.PSObject.Properties['SchemaVersion'] -or $lock.SchemaVersion -ne 1 -or -not $lock.PSObject.Properties['Dependencies']) { throw 'Dependency lock is missing or incomplete. This alpha cannot install until official dependency URLs and SHA256 hashes are supplied in packaging/dependencies.lock.json.' }
@@ -364,6 +396,13 @@ function Invoke-BbwSetup {
         $plans = New-Object 'Collections.Generic.List[object]'
         $entries = New-Object 'Collections.Generic.List[object]'
         if ($Mode -eq 'Install') {
+            # Repair components already recorded as ours, even when the optional
+            # checkbox was not selected again. File presence is not ownership.
+            $dependencyLock = Read-BbwJson (Resolve-BbwPath $PackagePath 'packaging/dependencies.lock.json')
+            if ($dependencyLock -and $dependencyLock.PSObject.Properties['Dependencies']) {
+                $roles = @($owned.Values | Where-Object { $_.PSObject.Properties['Role'] } | ForEach-Object { [string]$_.Role })
+                $Features = @(Get-BbwRepairFeatures $dependencyLock.Dependencies $Features $roles)
+            }
             $items = @(Get-BbwStage $PackagePath $stage $DependencyDirectory $Features)
             $targets = @{}
             $payloadIndex=0
@@ -407,7 +446,13 @@ function Invoke-BbwSetup {
         } else {
             $otherPlugins=Test-BbwOtherPlugins $GamePath
             foreach ($entry in @($manifest.Entries)) {
-                if ((Test-BbwEditable $entry) -or ($otherPlugins -and (Get-BbwRole $entry) -eq 'bepinex')) { continue }
+                if (Test-BbwEditable $entry) { continue }
+                if ($otherPlugins -and (Get-BbwRole $entry) -in @('bepinex','notices')) {
+                    # Preserve ownership with the shared files, so a later repair can
+                    # update notices and a later uninstall can remove our loader safely.
+                    $entries.Add($entry)
+                    continue
+                }
                 $beforeHash=Get-BbwHash (Resolve-BbwPath $GamePath $entry.Target)
                 if (-not $beforeHash -and -not $entry.OriginalHash) { continue }
                 $source = $null
@@ -443,12 +488,13 @@ function Invoke-BbwSetup {
             $applied++
             if ($FaultAfter -gt 0 -and $applied -eq $FaultAfter) { throw 'Injected transaction failure.' }
         }
-        if ($Mode -eq 'Install') { Write-BbwJson $manifestPath ([pscustomobject]@{ SchemaVersion=1; Version='0.6.0'; Entries=@($entries.ToArray()) }) }
+        if ($Mode -eq 'Install' -or $entries.Count -gt 0) { Write-BbwJson $manifestPath ([pscustomobject]@{ SchemaVersion=1; Version='0.7.0'; Entries=@($entries.ToArray()) }) }
         elseif ([IO.File]::Exists($manifestPath)) { [IO.File]::Delete($manifestPath) }
         [IO.File]::Delete($journalPath)
         if ($Mode -eq 'Install') {
             $message='Install/Repair completed. Existing settings and other mods were preserved. Start Big Walk through Steam when ready.'
-            if ($Features -contains 'fg') { $message+=' The optional Frame Generation bridge was installed. Fresh defaults leave Frame Generation off; follow docs/DEPENDENCIES.md to configure it.' }
+            if ($Features -contains 'fg') { $message+=' The optional upscaler and Frame Generation bridge was installed or repaired. Fresh defaults leave Frame Generation off; Neural Rendering also starts off. Open Home, then Frame Gen or Neural; see docs/FRAME-GENERATION.md for restart and comparison steps.' }
+            if ($Features -contains 'nr') { $message+=' The community RHI SF-v2 Neural Rendering model was installed or repaired; this does not enable Neural Rendering.' }
             return $message
         }
         return 'Uninstall completed. Your settings, saves and other mods were preserved; installer backups remain in .big-beautiful-walk.'

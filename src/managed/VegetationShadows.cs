@@ -12,19 +12,27 @@ namespace BigWalkDLSS;
 
 internal static class VegetationShadows
 {
-    private sealed class Snapshot
+    private sealed class ParameterSnapshot
     {
-        internal FloraRenderSettings Settings = null!;
-        internal float Distance;
-        internal bool Override;
+        internal OverrideProperty<float> Distance = null!;
+        internal OverrideProperty<bool> Override = null!;
     }
-    private static readonly Dictionary<IntPtr, Snapshot> Originals = new();
+    private sealed class MaterialSnapshot
+    {
+        internal Material Material = null!;
+        internal readonly List<IOverrideProperty> Properties = new();
+    }
+    private static readonly Dictionary<IntPtr, ParameterSnapshot> Parameters = new();
+    private static readonly Dictionary<IntPtr, MaterialSnapshot> Materials = new();
+    private static readonly string[] FadeProperties = { "_DitherShadowMode", "_DitherDistanceMinValue", "_DitherDistanceMaxValue" };
+    private static readonly int[] FadePropertyIds = Array.ConvertAll(FadeProperties, name => Shader.PropertyToID(name));
+    private static readonly string[] FadeKeywords = { "TVE_DITHER_SHADOW", "TVE_DITHER" };
     internal static Func<bool> Enabled = () => false;
     internal static Func<float> Distance = () => 2000;
     internal static Func<float> FadeWidth = () => 50;
     private static float _lastMin = float.NaN, _lastMax = float.NaN;
-    private static float _originalMin, _originalMax;
-    private static bool _haveOriginalFade, _internalCall, _wasEnabled;
+    private static bool _internalCall, _wasEnabled, _materialApplied;
+    private static bool _reportedMaterials;
     private static float _nextScan;
     private static IntPtr _reportedManager;
     private static string _lastReport = "";
@@ -53,28 +61,35 @@ internal static class VegetationShadows
     private static void Apply(FloraRenderSettings settings)
     {
         if (settings == null || settings.MaxShadowDistance == null) return;
-        if (!Originals.ContainsKey(settings.Pointer))
+        var parameter = settings.MaxShadowDistance;
+        if (!Parameters.TryGetValue(parameter.Pointer, out var snapshot))
         {
-            Originals[settings.Pointer] = new Snapshot { Settings = settings, Distance = settings.MaxShadowDistance.value, Override = settings.MaxShadowDistance.overrideState };
-            Log($"captured Flora settings {settings.name}: distance={settings.MaxShadowDistance.value:0.###}, override={settings.MaxShadowDistance.overrideState}, min shadow LOD={settings.MinShadowLOD.value}");
+            snapshot = new ParameterSnapshot
+            {
+                Distance = new OverrideProperty<float>(() => parameter.value, value => parameter.value = value),
+                Override = new OverrideProperty<bool>(() => parameter.overrideState, value => parameter.overrideState = value)
+            };
+            Parameters.Add(parameter.Pointer, snapshot);
+            Log($"captured active Flora parameter: distance={parameter.value:0.###}, override={parameter.overrideState}");
         }
-        settings.MaxShadowDistance.overrideState = true;
-        if (!Mathf.Approximately(settings.MaxShadowDistance.value, WantedDistance)) settings.MaxShadowDistance.value = WantedDistance;
+        snapshot.Distance.Observe(); snapshot.Override.Observe();
+        parameter.overrideState = true;
+        if (!Mathf.Approximately(parameter.value, WantedDistance)) parameter.value = WantedDistance;
+        snapshot.Distance.Applied(); snapshot.Override.Applied();
     }
     private static void SettingsReturned(FloraRenderSettings __result)
     {
-        if (!Enabled()) return;
+        if (!Enabled() || !Ready) return;
         try { Apply(__result); } catch (Exception error) { Log("settings hook failed: " + error.Message); }
     }
-    private static void FadePrefix(ref float __0, ref float __1)
+    private static void FadePrefix(float __0, float __1)
     {
         if (!_internalCall)
         {
-            _originalMin = __0; _originalMax = __1; _haveOriginalFade = true;
             Log($"game vegetation shadow fade={__0:0.###}..{__1:0.###}m");
+            // Let the game finish its write, then observe it before reapplying our override.
+            _materialApplied = false;
         }
-        if (!Enabled()) return;
-        __1 = WantedDistance; __0 = Mathf.Max(0, __1 - WantedWidth);
     }
     private static void FadePostfix(float __0, float __1) { _lastMin = __0; _lastMax = __1; }
     internal static float CurrentDistance
@@ -92,6 +107,12 @@ internal static class VegetationShadows
     {
         try
         {
+            if (!Enabled())
+            {
+                if (_wasEnabled || Parameters.Count > 0 || Materials.Count > 0) Restore();
+                _wasEnabled = false;
+                return;
+            }
             var manager = TerrainQualityManager.instance;
             if (manager == null || !manager._initialized) return;
             if (_reportedManager != manager.Pointer)
@@ -101,34 +122,84 @@ internal static class VegetationShadows
                 int index = Mathf.Clamp(QualitySettings.GetQualityLevel(), 0, quality.Length - 1);
                 var q = quality[index];
                 Log($"quality {index}: vegetation fade={q.vegShadowDitherDistanceMin:0.###}..{q.vegShadowDitherDistanceMax:0.###}m, shadow flag={manager.currentShadowsValue}");
-                if (!_haveOriginalFade) { _originalMin = q.vegShadowDitherDistanceMin; _originalMax = q.vegShadowDitherDistanceMax; _haveOriginalFade = true; }
                 ReportPrefabs(manager);
             }
-            if (!Enabled()) { if (_wasEnabled) Restore(); _wasEnabled = false; return; }
             _wasEnabled = true;
+            bool materialChanged = false;
             if (Time.unscaledTime >= _nextScan)
             {
                 _nextScan = Time.unscaledTime + 1;
-                foreach (var item in Resources.FindObjectsOfTypeAll(Il2CppType.Of<FloraRenderSettings>()))
-                {
-                    var settings = item.TryCast<FloraRenderSettings>();
-                    if (settings != null) Apply(settings);
-                }
+                materialChanged = MaterialsChanged(manager.floraQualityData);
             }
             var current = manager.GetFloraRenderSettings();
             if (current != null) Apply(current);
-            foreach (var snapshot in Originals.Values) if (snapshot.Settings != null) Apply(snapshot.Settings);
             float start = Mathf.Max(0, WantedDistance - WantedWidth);
-            if ((!Mathf.Approximately(_lastMin, start) || !Mathf.Approximately(_lastMax, WantedDistance)) && manager.floraQualityData != null)
+            if ((!_materialApplied || materialChanged || !Mathf.Approximately(_lastMin, start) || !Mathf.Approximately(_lastMax, WantedDistance)) && manager.floraQualityData != null)
             {
+                ObserveMaterials(manager.floraQualityData);
                 _internalCall = true;
-                try { manager.ApplyVegetationShadowDither(start, WantedDistance, manager.floraQualityData); }
-                finally { _internalCall = false; }
+                try { manager.ApplyVegetationShadowDither(start, WantedDistance, manager.floraQualityData); _materialApplied = true; }
+                finally
+                {
+                    _internalCall = false;
+                    foreach (var snapshot in Materials.Values)
+                        if (snapshot.Material != null) foreach (var property in snapshot.Properties) property.Applied();
+                }
             }
-            string report = $"active: Flora distance={(current != null ? current.MaxShadowDistance.value : 0):0.###}m, material fade={_lastMin:0.###}..{_lastMax:0.###}m, settings objects={Originals.Count}";
+            string report = $"active: Flora distance={(current != null ? current.MaxShadowDistance.value : 0):0.###}m, material fade={_lastMin:0.###}..{_lastMax:0.###}m, parameters={Parameters.Count}, materials={Materials.Count}";
             if (report != _lastReport) { _lastReport = report; Log(report); }
         }
         catch (Exception error) { Log("update failed: " + error); }
+    }
+
+    private static bool MaterialsChanged(HouseFloraQualityData data)
+    {
+        if (data == null || data.allFloraMaterials == null) return false;
+        var materials = data.allFloraMaterials;
+        // Avoid marshalling the generated value-type enumerator across the
+        // IL2CPP/CoreCLR boundary; native Count/index access needs no enumerator.
+        for (int i = 0; i < materials.Count; i++)
+        {
+            var material = materials[i];
+            if (material == null) continue;
+            if (!Materials.TryGetValue(material.Pointer, out var snapshot)) return true;
+            foreach (var property in snapshot.Properties) if (property.Changed()) return true;
+        }
+        return false;
+    }
+
+    private static void ObserveMaterials(HouseFloraQualityData data)
+    {
+        if (data.allFloraMaterials == null) return;
+        var materials = data.allFloraMaterials;
+        int samples = 0;
+        for (int materialIndex = 0; materialIndex < materials.Count; materialIndex++)
+        {
+            var material = materials[materialIndex];
+            if (material == null) continue;
+            if (!Materials.TryGetValue(material.Pointer, out var snapshot))
+            {
+                snapshot = new MaterialSnapshot { Material = material };
+                foreach (int id in FadePropertyIds)
+                    if (material.HasProperty(id)) snapshot.Properties.Add(new OverrideProperty<float>(() => material.GetFloat(id), value => material.SetFloat(id, value)));
+                foreach (string name in FadeKeywords)
+                    snapshot.Properties.Add(new OverrideProperty<bool>(() => material.IsKeywordEnabled(name), value => { if (value) material.EnableKeyword(name); else material.DisableKeyword(name); }));
+                snapshot.Properties.Add(new OverrideProperty<bool>(() => MaterialPassState.ReadShadowCaster(material), value => material.SetShaderPassEnabled("ShadowCaster", value)));
+                Materials.Add(material.Pointer, snapshot);
+            }
+            if (!_reportedMaterials && samples < 2 && material.HasProperty(FadePropertyIds[0]))
+            {
+                samples++;
+                string values = "";
+                for (int i = 0; i < FadePropertyIds.Length; i++)
+                    if (material.HasProperty(FadePropertyIds[i])) values += $" {FadeProperties[i]}={material.GetFloat(FadePropertyIds[i]):0.###}";
+                Log($"material baseline {material.name}:{values}, TVE_DITHER_SHADOW={material.IsKeywordEnabled("TVE_DITHER_SHADOW")}, TVE_DITHER={material.IsKeywordEnabled("TVE_DITHER")}");
+            }
+        }
+        // Observe the complete touched set before the helper can change any shared material.
+        foreach (var snapshot in Materials.Values)
+            if (snapshot.Material != null) foreach (var property in snapshot.Properties) property.Observe();
+        if (!_reportedMaterials) { Log($"material baseline captured: materials={Materials.Count}; raw properties retained, no quality-table fade fallback"); _reportedMaterials = true; }
     }
 
     private static void ReportPrefabs(TerrainQualityManager manager)
@@ -163,35 +234,36 @@ internal static class VegetationShadows
                         }
                     }
                 }
-            foreach (var item in UnityEngine.Object.FindObjectsOfType(Il2CppType.Of<Light>()))
-            {
-                var light = item.TryCast<Light>();
-                if (light == null || light.type != LightType.Directional) continue;
-                var distances = light.layerShadowCullDistances;
-                for (int layer = 0; layer < distances.Length; layer++)
-                    if (distances[layer] > 0) Log($"directional {light.name}: layer {layer}/{LayerMask.LayerToName(layer)} shadow cap={distances[layer]:0.###}m");
-            }
         }
         catch (Exception error) { Log("prefab diagnostics: " + error.Message); }
     }
 
     private static void Restore()
     {
-        foreach (var snapshot in Originals.Values)
+        int parameters = 0, properties = 0, touched = 0;
+        foreach (var snapshot in Parameters.Values)
         {
-            if (snapshot.Settings == null) continue;
-            snapshot.Settings.MaxShadowDistance.value = snapshot.Distance;
-            snapshot.Settings.MaxShadowDistance.overrideState = snapshot.Override;
+            try
+            {
+                bool distance = snapshot.Distance.Restore();
+                bool state = snapshot.Override.Restore();
+                if (distance || state) parameters++;
+            }
+            catch (Exception error) { Log("parameter restore failed: " + error.Message); }
         }
-        Originals.Clear();
-        var manager = TerrainQualityManager.instance;
-        if (manager != null && manager.floraQualityData != null && _haveOriginalFade)
-        {
-            _internalCall = true;
-            try { manager.ApplyVegetationShadowDither(_originalMin, _originalMax, manager.floraQualityData); }
-            finally { _internalCall = false; }
-        }
-        _lastReport = ""; Log("captured Flora caps and vegetation material fade restored");
+        foreach (var snapshot in Materials.Values)
+            if (snapshot.Material != null)
+                foreach (var property in snapshot.Properties)
+                {
+                    touched++;
+                    try { if (property.Restore()) properties++; }
+                    catch (Exception error) { Log("material restore failed: " + error.Message); }
+                }
+        Parameters.Clear(); Materials.Clear();
+        _materialApplied = _reportedMaterials = false;
+        _lastMin = _lastMax = float.NaN;
+        _lastReport = "";
+        Log($"restored owned Flora parameters={parameters}, material properties={properties}/{touched}; no fade-helper replay");
     }
     internal static void Shutdown() { Restore(); _harmony.UnpatchSelf(); }
 }

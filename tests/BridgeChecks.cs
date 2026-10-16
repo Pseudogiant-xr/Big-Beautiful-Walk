@@ -24,6 +24,14 @@ var next = new IniSettings(changed);
 byte[] ownership = next.WithValue("DLSS", "RenderPresetOverride", "false");
 Check(Encoding.UTF8.GetString(ownership, 3, ownership.Length - 3) == original.Replace("dlss_12", "fsr31").Replace("RenderPresetOverride=true", "RenderPresetOverride=false"), "Ownership edit changed other preset options");
 Check(new IniSettings(bytes).Original.SequenceEqual(bytes), "Original snapshot changed");
+var profile = new IniSettings(bytes).WithValues(("FrameGen", "Enabled", "true"), ("FrameGen", "FGOutput", "XeFG"),
+    ("FrameGen", "FGInput", "Upscaler"), ("FrameGen", "FGNvngxReplacement", "None"));
+Check(new IniSettings(profile).Get("FrameGen", "Enabled") == "true" && new IniSettings(profile).Get("FrameGen", "FGOutput") == "XeFG", "Provider profile did not stage every option");
+Check(Encoding.UTF8.GetString(profile).Contains("Other=keep\r\n"), "Batch changed unrelated values");
+Reject(() => new IniSettings(bytes).WithValues(("FrameGen", "Enabled", "true"), ("FRAMEGEN", "ENABLED", "false")), "Conflicting batch accepted");
+var ambiguousLater = new IniSettings(Encoding.UTF8.GetBytes("[FrameGen]\nEnabled=false\nFGOutput=DLSSG\nFGOutput=XeFG\n"));
+Reject(() => ambiguousLater.WithValues(("FrameGen", "Enabled", "true"), ("FrameGen", "FGOutput", "FSRFG")), "Malformed later option accepted");
+Check(ambiguousLater.Get("FrameGen", "Enabled") == "false", "Failed profile mutated original snapshot");
 foreach (Encoding encoding in new Encoding[] { new UnicodeEncoding(false, true, true), new UnicodeEncoding(true, true, true) })
 {
     byte[] encoded = encoding.GetPreamble().Concat(encoding.GetBytes(original)).ToArray();
