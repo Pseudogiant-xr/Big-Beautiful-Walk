@@ -1,6 +1,6 @@
 # Public release readiness
 
-The alpha uses the tested rendering integration and upstream dependency downloads. It preserves component licences and credits, without a custom OptiScaler fork or a vendor-contact workflow. The repository and release remain private until the publisher chooses to publish; this document does not claim exhaustive legal clearance or vendor approval.
+The alpha uses the tested rendering integration and upstream dependency downloads. It preserves component licences and credits, without a custom OptiScaler fork or a vendor-contact workflow. Publication remains a maintainer decision; this document does not claim exhaustive legal clearance or vendor approval.
 
 ## Rights and attribution
 
@@ -22,12 +22,12 @@ The [licensing assessment](LICENSING.md) distinguishes binding clauses, interpre
 
 ## Validation scope
 
-The previously accepted runtime passed in-world checks on the recorded RTX 4090/DX11 system. Preset cycling, distant shadows and Game defaults restoration were confirmed. The later C4E1 managed / unchanged 947D native pair completed a fresh BepInEx bootstrap and repeat launch with sustained DLSS evaluation. Final visual acceptance remains pending; historical observations do not validate other binaries.
+The previously accepted runtime passed in-world checks on the recorded RTX 4090/DX11 system. Preset cycling, distant shadows and Game defaults restoration were confirmed. The later C4E1 managed / unchanged 947D native pair completed a fresh BepInEx bootstrap and repeat launch with sustained DLSS evaluation. The user confirmed the picture, movement and Home/F10 menus in a private world; historical observations do not validate other binaries.
 
 Keep the following coverage limits visible for the alpha:
 
 - Fresh bootstrap succeeded on the recorded system: Unity libraries downloaded, metadata 39 processed and 158 interop assemblies generated. This remains a one-system check.
-- The real GUI install completed after its worker fix, with 312 immutable installed hashes verified. Setup.exe terminal-window absence and final Home/F10 visual acceptance remain pending; other DPI configurations are unverified.
+- The real GUI install completed after its worker fix, with 312 immutable installed hashes verified. The user confirmed Home/F10 in-world. The user separately confirmed Setup.exe opens without a blank terminal; other DPI configurations are unverified.
 - Compare NVIDIA FG and NR with a baseline in the same moving view; keep AMD/Intel performance limits explicit. Verify Reflex separately instead of inferring it from FG presents.
 - Run installer selection/recovery tests, the complete pinned-dependency fixture and package/installed-notice audits on the frozen candidate. Keep exact binary/source identities and CI results distinct.
 

@@ -4,7 +4,7 @@ Observed on Windows x64, Big Walk application version `1.6.0 2609301522` (Steam 
 
 ## Rendering and interface
 
-The accepted private 0.7 rendering runtime is managed source `4dc8555`, with the unchanged native ABI 3 / 120-byte pair and hashes recorded in [compatibility](COMPATIBILITY.md). The later pre-release audit changes installer behavior, documentation and UI wording. Its C4E1 managed / unchanged 947D native pair subsequently completed fresh bootstrap and sustained DLSS evaluation; final picture/menu acceptance is pending. Historical observations below retain their original scope.
+The accepted private 0.7 rendering runtime is managed source `4dc8555`, with the unchanged native ABI 3 / 120-byte pair and hashes recorded in [compatibility](COMPATIBILITY.md). The later pre-release audit changes installer behavior, documentation and UI wording. Its C4E1 managed / unchanged 947D native pair subsequently completed fresh bootstrap and sustained DLSS evaluation; the user subsequently confirmed the picture, movement and Home/F10 menus in a private world. Historical observations below retain their original scope.
 
 - Official SR 310.9.1 sustained in-world reconstruction with the existing BepInEx loader.
 - All six quality choices produced a valid picture in the user's test, including native-resolution DLAA and Ultra Quality. Preset choices were accepted by the API and visually exercised; this does not prove the effective model under driver overrides.
@@ -20,9 +20,9 @@ The accepted private 0.7 rendering runtime is managed source `4dc8555`, with the
 
 The real Setup GUI installed the optional bridge and NR model after correcting a background-runspace module initialization failure. All 312 noneditable installed files matched their manifest hashes; the two editable settings files changed during normal use. Four protected game files retained their original hashes, and no transaction journal remained. The previous installation was backed up before testing.
 
-On 16 October 2026, a new BepInEx 755 installation downloaded Unity 6000.3.17 libraries, processed metadata version 39 with Cpp2IL and generated 158 interop assemblies without using the previous cache. It loaded one Big Beautiful Walk 0.7.0 plugin and sustained DLSS evaluation. A subsequent launch reused those assemblies successfully. Final private-world picture and Home/F10 acceptance remain pending.
+On 16 October 2026, a new BepInEx 755 installation downloaded Unity 6000.3.17 libraries, processed metadata version 39 with Cpp2IL and generated 158 interop assemblies without using the previous cache. It loaded one Big Beautiful Walk 0.7.0 plugin and sustained DLSS evaluation. A subsequent launch reused those assemblies successfully. The user confirmed the picture, movement and Home/F10 menus in a private world; the observed exits/restarts were deliberate.
 
-The source-included x64 GUI launcher passes `Launcher.Tests.ps1` under Windows PowerShell 5.1 and PowerShell 7, exit 0, including a package path containing spaces and an ampersand. The test verifies GUI PE format and child-script execution. Visual confirmation that Setup.exe opens without a terminal remains pending; that is not inferred from the test.
+The source-included x64 GUI launcher passes `Launcher.Tests.ps1` under Windows PowerShell 5.1 and PowerShell 7, exit 0, including a package path containing spaces and an ampersand. The test verifies GUI PE format and child-script execution. The user separately confirmed that the real Setup.exe opens normally without the blank terminal window.
 
 ## Build and recovery checks
 
@@ -36,8 +36,8 @@ The later separate NR-download change passed 34 guarded installer cases and 12 m
 
 The production GUI-worker regression brings the guarded installer suite to 35 cases in each shell, exit 0. It extracts the real worker body and exercises install, unchecked repair, diagnose and uninstall in normal, autoload-disabled and cold Core-only runspaces. The old body reproduces the missing-command failure; explicit engine-local Management/Utility imports correct it.
 
-Production vegetation tests cover 12 ownership assertions and 16 interop assertions. Their Unity stubs do not replace real-game acceptance. The full `Dependencies.Tests.ps1` fixture verifies every pinned dependency, installed file hash, notice link, repair and removal without executing its disposable game files. Its accepted 0.7 run verified 302 installed hashes and 103 links; notice additions require a new package run and new observed counts.
+Production vegetation tests cover 12 ownership assertions and 16 interop assertions. Their Unity stubs do not replace real-game acceptance. The full `Dependencies.Tests.ps1` fixture verifies every pinned dependency, installed file hash, notice link, repair and removal without executing its disposable game files. The final 0.7 FG-only fixture verified 313 installed hashes and 148 notice links; the NR fixture verified 314 hashes and 148 links. Both completed installation, unchecked repair and removal, exit 0. The release ZIP audit verified 128 files, complete checksums, 54 notice/source files and 50 upstream snapshot hashes, with only the project DLL pair and Setup.exe packaged.
 
 An independent source review found three installer issues; each received a regression case and fix. Hosted CI covers CPU/installer checks, not rendering. The release's checksums identify the final DLLs and packaged files; no game assemblies or runtime download caches are included.
 
-The alpha's scope and known licence/validation limits are recorded in [release readiness](RELEASE-READINESS.md) and [the checklist](RELEASE-CHECKLIST.md). Final visual/DPI acceptance of the revised UI and successful Reflex verification remain unverified. This validation is not a legal-clearance statement.
+The alpha's scope and known licence/validation limits are recorded in [release readiness](RELEASE-READINESS.md) and [the checklist](RELEASE-CHECKLIST.md). Other DPI configurations and successful Reflex verification remain unverified. This validation is not a legal-clearance statement.

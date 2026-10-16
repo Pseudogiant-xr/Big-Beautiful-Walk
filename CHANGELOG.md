@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.0 — alpha candidate
+## 0.7.0 — alpha
 
 - Add Home profiles for NVIDIA, AMD and Intel frame generation, with dependency checks and startup/next-launch status.
 - Add Neural Rendering settings and its integration forwarder; no proprietary NR model is included.
@@ -16,7 +16,7 @@
 - Load the background installer's built-in PowerShell modules explicitly, so a cold GUI worker can hash files and handle JSON without relying on module autoloading.
 - Add a small Setup.exe graphical launcher that opens the installer without a terminal; retain Setup.cmd for console diagnostics and command-line use.
 
-NVIDIA FG and Default-style NR received in-world visual checks on the tested RTX 4090. AMD FG operated with poorer results; Intel FG produced interpolated frames but reduced measured FPS on this setup. Preset cycling, distant tree shadows under Extreme and nearby foliage restoration under Game defaults were confirmed after the vegetation binding corrections. These tests do not establish fresh-loader bootstrap or compatibility on other hardware; component terms remain in `docs/LICENSING.md`.
+NVIDIA FG and Default-style NR received in-world visual checks on the tested RTX 4090. AMD FG operated with poorer results; Intel FG produced interpolated frames but reduced measured FPS on this setup. Preset cycling, distant tree shadows under Extreme and nearby foliage restoration under Game defaults were confirmed after the vegetation binding corrections. The final installer/UI build also completed fresh BepInEx interop generation and a repeat launch; the user confirmed the in-world picture and Home/F10 menus, and Setup.exe opened without a blank terminal. Compatibility on other hardware remains unverified; component terms remain in `docs/LICENSING.md`.
 
 ## 0.6.0 — public alpha candidate
 

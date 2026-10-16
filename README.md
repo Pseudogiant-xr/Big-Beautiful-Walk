@@ -1,6 +1,6 @@
 # Big Beautiful Walk 0.7.0
 
-Alpha candidate graphics mod for **Big Walk** on Windows. It adds DLSS Super Resolution and a Home-key panel for upscalers, shadows, vegetation, textures and other graphics controls. Start with the game's own graphics settings, then opt into the Balanced, Quality or Extreme presets.
+Alpha graphics mod for **Big Walk** on Windows. It adds DLSS Super Resolution and a Home-key panel for upscalers, shadows, vegetation, textures and other graphics controls. Start with the game's own graphics settings, then opt into the Balanced, Quality or Extreme presets.
 
 This is an unofficial mod. It is not affiliated with or endorsed by House House, Unity or NVIDIA.
 
@@ -28,7 +28,7 @@ Use **Diagnose** in Setup to check installed files, or **Uninstall** with the ga
 - Neural Rendering can use the optional RHI community download or an existing compatible model. That pinned download matches the model previously tested with NVIDIA FG and Default style. The October 16 faster model is not claimed as tested; [the NR guide](docs/FRAME-GENERATION.md#neural-rendering) identifies the supplied version and source.
 - Home also offers optional FSR 3.1 and XeSS backend choices when their bridge requirements are available. FSR 4 is shown as unsupported on the tested RTX 4090. See the [feature matrix](docs/UPSCALERS.md) for prerequisites and individual test status.
 
-The official NVIDIA SR 310.9.1 runtime sustained in-world DLSS evaluation on Big Walk 1.6.0 (Steam build 25723723), Unity 6000.3.17f1, an RTX 4090 and driver 617.42. A fresh BepInEx installation downloaded the Unity libraries, generated 158 interop assemblies, loaded the mod and evaluated DLSS; a subsequent launch reused those files successfully. Final picture and menu acceptance for this installation is pending. See the [compatibility notes](docs/COMPATIBILITY.md).
+The official NVIDIA SR 310.9.1 runtime sustained in-world DLSS evaluation on Big Walk 1.6.0 (Steam build 25723723), Unity 6000.3.17f1, an RTX 4090 and driver 617.42. A fresh BepInEx installation downloaded the Unity libraries, generated 158 interop assemblies, loaded the mod and evaluated DLSS; a subsequent launch reused those files successfully. The user confirmed the picture, movement and Home/F10 menus in a private world after this fresh installation. See the [compatibility notes](docs/COMPATIBILITY.md).
 
 VR, distance-field shadows and ray-traced shadows are unsupported. Extreme settings can cost substantial performance and video memory.
 
