@@ -16,6 +16,8 @@ jobs:
         run: dotnet run --project tests/BridgeChecks.csproj -c Release
       - name: Frame generation and neural rendering profiles
         run: dotnet run --project tests/FeatureChecks.csproj -c Release
+      - name: Neural menu edit recovery
+        run: dotnet run --project tests/FeatureMenuChecks.csproj -c Release
       - name: Saved bridge settings refresh
         shell: pwsh
         run: ./tests/Invoke-BridgeRefreshChecks.ps1

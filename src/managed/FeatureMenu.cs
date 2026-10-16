@@ -67,27 +67,31 @@ internal static class FeatureMenu
             string unavailable = FeatureSettings.NeuralUnavailable(vendor);
             GUI.enabled = enabled && BridgeSettings.Recognized && (queued.Enabled || unavailable.Length == 0);
             bool next = GUI.Toggle(new Rect(x + 25, y + 259, 900, 29), queued.Enabled, "Enable Neural Rendering after restart", AdvancedGraphics.ToggleStyle);
-            if (next != queued.Enabled) { queued.Enabled = next; FeatureSettings.SetNeural(queued, vendor); }
+            if (next != queued.Enabled)
+            {
+                queued.Enabled = next;
+                if (!FeatureSettings.SetNeural(queued, vendor)) return;
+            }
             GUI.enabled = enabled && BridgeSettings.Recognized && (!queued.Enabled || unavailable.Length == 0);
             GUI.Label(new Rect(x + 25, y + 302, 260, 28), "Style", label);
             for (int i = 0; i < FeatureOptions.StyleNames.Length; i++)
                 if (GUI.Button(new Rect(x + 325 + i * 200, y + 300, 190, 31),
                     (queued.Style == i ? "● " : "") + FeatureOptions.StyleNames[i], button))
-                { queued.Style = i; FeatureSettings.SetNeural(queued, vendor); }
+                { queued.Style = i; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
             float intensity = Strength(x, y + 346, "Model strength", queued.Intensity, 2, label, button);
             float detail = Strength(x, y + 391, "Composed detail", queued.TransferStrength, 2, label, button);
             float colour = Strength(x, y + 436, "Composed colour", queued.ColourStrength, 4, label, button);
             if (intensity != queued.Intensity || detail != queued.TransferStrength || colour != queued.ColourStrength)
             {
                 queued.Intensity = intensity; queued.TransferStrength = detail; queued.ColourStrength = colour;
-                FeatureSettings.SetNeural(queued, vendor);
+                if (!FeatureSettings.SetNeural(queued, vendor)) return;
             }
             GUI.Label(new Rect(x + 25, y + 482, 280, 28), "Model preset", label);
             if (GUI.Button(new Rect(x + 325, y + 481, 34, 28), "‹", button))
-            { queued.Preset = (queued.Preset + 3) % 4; FeatureSettings.SetNeural(queued, vendor); }
+            { queued.Preset = (queued.Preset + 3) % 4; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
             GUI.Label(new Rect(x + 375, y + 482, 485, 28), queued.Preset + " · Model-specific", label);
             if (GUI.Button(new Rect(x + 875, y + 481, 34, 28), "›", button))
-            { queued.Preset = (queued.Preset + 1) % 4; FeatureSettings.SetNeural(queued, vendor); }
+            { queued.Preset = (queued.Preset + 1) % 4; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
             GUI.enabled = enabled;
             GUI.Label(new Rect(x + 25, y + 521, 900, 57), unavailable.Length > 0 ? unavailable :
                 "Forwarder and user model are present. Model compatibility, NVIDIA NGX initialization and visual output remain untested. Saved settings do not confirm active rendering.", small);
@@ -107,7 +111,7 @@ internal static class FeatureMenu
         if (GUI.Button(new Rect(x + 325, y, 34, 28), "−", button)) next = Math.Max(0, value - .1f);
         GUI.Label(new Rect(x + 375, y, 485, 28), value.ToString("0.0") + " / " + maximum.ToString("0") + " · 1.0 is the model default", label);
         if (GUI.Button(new Rect(x + 875, y, 34, 28), "+", button)) next = Math.Min(maximum, value + .1f);
-        return (float)Math.Round(next, 2);
+        return next == value ? value : (float)Math.Round(next, 2);
     }
 
     private static void DrawSaveNote(float x, float y, GUIStyle small)
