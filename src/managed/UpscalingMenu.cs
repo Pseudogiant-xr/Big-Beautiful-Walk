@@ -33,7 +33,7 @@ internal static class UpscalingMenu
             GUI.Label(new Rect(x + 25, y + 321, 900, 28), Plugin.RendererStatus, label);
             GUI.enabled = enabled && Plugin.Compatible && Plugin.NativeLoaded;
             bool nextEnabled = GUI.Toggle(new Rect(x + 25, y + 355, 570, 28), Plugin.Enabled.Value,
-                UpscalingPresentation.ToggleLabel(BridgeSettings.RunningBackend, Plugin.QualityMode.Value), label);
+                UpscalingPresentation.ToggleLabel(BridgeSettings.RunningBackend, Plugin.QualityMode.Value), AdvancedGraphics.ToggleStyle);
             if (nextEnabled != Plugin.Enabled.Value) { Plugin.Enabled.Value = nextEnabled; Plugin.ResetHistory(); }
             if (GUI.Button(new Rect(x + 690, y + 355, 235, 28), "Retry upscaler", button)) Plugin.ResetHistory();
             int quality = Choice(x, y + 393, "Quality mode", Plugin.QualityMode.Value,

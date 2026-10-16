@@ -90,7 +90,8 @@ internal static class AdvancedGraphics
     private static CursorLockMode _cursorLock;
     private static bool _cursorVisible;
     private static string _editing = "", _message = "Changes apply live. Profiles save after you finish editing.";
-    private static GUIStyle? _title, _label, _small, _button, _field, _tab;
+    private static GUIStyle? _title, _label, _small, _button, _field, _tab, _toggle;
+    internal static GUIStyle ToggleStyle => _toggle!;
 
     internal static void Initialize()
     {
@@ -509,7 +510,7 @@ internal static class AdvancedGraphics
             $"Selected: {UpscalingPresentation.BackendName(BridgeSettings.RunningBackend)}  •  {UpscalingPresentation.QualityName(BridgeSettings.RunningBackend, Plugin.QualityMode.Value)}  •  {SystemInfo.graphicsDeviceName}", _small);
         GUI.enabled = Plugin.Compatible && Plugin.NativeLoaded;
         bool sr = GUI.Toggle(new Rect(x + 25, y + 292, 480, 30), Plugin.Enabled.Value,
-            UpscalingPresentation.ToggleLabel(BridgeSettings.RunningBackend, Plugin.QualityMode.Value), _label);
+            UpscalingPresentation.ToggleLabel(BridgeSettings.RunningBackend, Plugin.QualityMode.Value), _toggle);
         if (sr != Plugin.Enabled.Value) { Plugin.Enabled.Value = sr; Plugin.ResetHistory(); }
         if (GUI.Button(new Rect(x + 610, y + 289, 290, 34), "Change upscaler / quality", _button)) _page = Page.Upscaling;
         GUI.Label(new Rect(x + 25, y + 333, 900, 45),
@@ -538,6 +539,8 @@ internal static class AdvancedGraphics
             {
                 _title = new GUIStyle(GUI.skin.label) { fontSize = 25, fontStyle = FontStyle.Bold };
                 _label = new GUIStyle(GUI.skin.label) { fontSize = 16 };
+                _toggle = new GUIStyle(GUI.skin.toggle) { fontSize = 16 };
+                _toggle.normal.textColor = Color.white; _toggle.onNormal.textColor = Color.white;
                 _small = new GUIStyle(GUI.skin.label) { fontSize = 13, wordWrap = true };
                 _button = new GUIStyle(GUI.skin.button) { fontSize = 15 };
                 _tab = new GUIStyle(_button) { fontSize = 13, padding = new RectOffset(4, 4, 4, 4) };
@@ -639,7 +642,7 @@ internal static class AdvancedGraphics
         if (!float.IsFinite(value)) value = setting.Min;
         if (setting.Kind == Kind.Toggle)
         {
-            bool next = GUI.Toggle(new Rect(310, y + 2, 245, 27), value > .5f, value > .5f ? "Enabled" : "Disabled", _label);
+            bool next = GUI.Toggle(new Rect(310, y + 2, 245, 27), value > .5f, value > .5f ? "Enabled" : "Disabled", _toggle);
             if (next != (value > .5f)) setting.Set(next ? 1 : 0);
         }
         else if (setting.Kind == Kind.Choice)

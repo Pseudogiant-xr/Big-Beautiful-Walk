@@ -21,7 +21,7 @@ internal static class FeatureMenu
                 (FeatureSettings.FrameGenPending ? " · Restart required" : " · No queued change"), small);
             string unavailable = FeatureSettings.FrameGenUnavailable(queued.Provider, vendor, device, _confirmedHags);
             GUI.enabled = enabled && BridgeSettings.Recognized && (queued.Enabled || unavailable.Length == 0);
-            bool next = GUI.Toggle(new Rect(x + 25, y + 268, 900, 30), queued.Enabled, "Enable Frame Generation after restart", label);
+            bool next = GUI.Toggle(new Rect(x + 25, y + 268, 900, 30), queued.Enabled, "Enable Frame Generation after restart", AdvancedGraphics.ToggleStyle);
             if (next != queued.Enabled) FeatureSettings.SetFrameGen(next, queued.Provider, vendor, device, _confirmedHags);
             GUI.enabled = enabled;
             GUI.Label(new Rect(x + 25, y + 310, 900, 27), "Provider · standard 2× (one generated frame)", label);
@@ -43,7 +43,7 @@ internal static class FeatureMenu
                 "Required files are present. Provider initialization, frame pacing and generated output are untested; this is a saved request, not an active-state report.", small);
             if (FeatureOptions.ProviderIndex(queued.Provider) == 0 && FeatureSettings.HagsMode != 1 && FeatureSettings.HagsMode != 2)
                 _confirmedHags = GUI.Toggle(new Rect(x + 25, y + 453, 900, 28), _confirmedHags,
-                    "I checked that Hardware-accelerated GPU Scheduling is enabled in Windows", small);
+                    "I checked that Hardware-accelerated GPU Scheduling is enabled in Windows", AdvancedGraphics.ToggleStyle);
             GUI.Label(new Rect(x + 25, y + 489, 900, 47), "Detected GPU: " + device +
                 ". NVIDIA requires RTX 40 Series or newer and Hardware-accelerated GPU Scheduling. No Windows or driver settings are changed here.", small);
             GUI.Label(new Rect(x + 25, y + 543, 900, 49),
@@ -66,7 +66,7 @@ internal static class FeatureMenu
                 (FeatureSettings.NeuralPending ? " · Restart required" : " · No queued change"), small);
             string unavailable = FeatureSettings.NeuralUnavailable(vendor);
             GUI.enabled = enabled && BridgeSettings.Recognized && (queued.Enabled || unavailable.Length == 0);
-            bool next = GUI.Toggle(new Rect(x + 25, y + 259, 900, 29), queued.Enabled, "Enable Neural Rendering after restart", label);
+            bool next = GUI.Toggle(new Rect(x + 25, y + 259, 900, 29), queued.Enabled, "Enable Neural Rendering after restart", AdvancedGraphics.ToggleStyle);
             if (next != queued.Enabled) { queued.Enabled = next; FeatureSettings.SetNeural(queued, vendor); }
             GUI.enabled = enabled && BridgeSettings.Recognized && (!queued.Enabled || unavailable.Length == 0);
             GUI.Label(new Rect(x + 25, y + 302, 260, 28), "Style", label);
