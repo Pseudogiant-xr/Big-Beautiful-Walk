@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using BigWalkDLSS;
 using MA.Flora;
 using UnityEngine;
@@ -20,6 +22,7 @@ internal static class Program
             var manager = new TerrainQualityManager();
             TerrainQualityManager.instance = manager;
             var material = new Material { Pointer = (IntPtr)20, name = "fixture" };
+            NativePassFixture.Materials.Add(material.Pointer, material);
             manager.floraQualityData.allFloraMaterials.Add(material);
             manager.floraQualityData.allFloraMaterials.Add(material); // Shared aliases must retain one baseline.
             bool enabled = true;
@@ -38,7 +41,7 @@ internal static class Program
             Check(manager.HelperCalls == 3, "Unchanged materials unexpectedly retriggered the fade helper");
             enabled = false; VegetationShadows.Tick();
             Check(material.GetFloat("_DitherShadowMode") == 0 && material.GetFloat("_DitherDistanceMaxValue") == 0, "Raw material values did not restore");
-            Check(!material.IsKeywordEnabled("TVE_DITHER_SHADOW") && material.GetShaderPassEnabled("ShadowCaster"), "Keyword/pass state did not restore");
+            Check(!material.IsKeywordEnabled("TVE_DITHER_SHADOW") && MaterialPassState.ReadShadowCaster(material), "Keyword/pass state did not restore");
             Check(manager.Settings.MaxShadowDistance.value == 100 && !manager.Settings.MaxShadowDistance.overrideState, "Active parameter did not restore");
             Check(manager.HelperCalls == 3, "Restore unexpectedly replayed the fade helper");
 
@@ -50,6 +53,7 @@ internal static class Program
             Check(material.GetFloat("_DitherDistanceMaxValue") == 125, "Latest outside material value was lost on restore");
             Check(manager.floraQualityData.allFloraMaterials.EnumeratorRequests == 0, "Production adapter requested the native value-type enumerator");
             Check(Light.LayerDistanceReads == 0, "Diagnostics invoked the unsafe native shadow-distance array getter");
+            Check(NativePassFixture.Reads > 0 && !NativePassFixture.BadArguments, "Native shader-pass binding did not preserve UTF-16 span/object arguments");
             Console.WriteLine($"Vegetation interop checks passed: {_checks} assertions; production Tick/restore, indexed native lists, shared materials, external changes; Unity APIs stubbed.");
         }
         finally
@@ -57,6 +61,23 @@ internal static class Program
             File.Delete(Path.Combine(root, "BigWalkDLSS", "vegetation.log"));
             Directory.Delete(Path.Combine(root, "BigWalkDLSS")); Directory.Delete(root);
         }
+    }
+}
+
+internal static class NativePassFixture
+{
+    internal static readonly Dictionary<IntPtr, Material> Materials = new();
+    internal static bool BadArguments;
+    internal static int Reads;
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+    internal static unsafe byte Read(IntPtr material, IntPtr span)
+    {
+        Reads++;
+        var begin = *(IntPtr*)span;
+        int length = *(int*)((byte*)span + 8);
+        if (length != 12 || begin == IntPtr.Zero || new string((char*)begin, 0, length) != "ShadowCaster" || !Materials.TryGetValue(material, out var value))
+        { BadArguments = true; return 0; }
+        return value.PassEnabled ? (byte)1 : (byte)0;
     }
 }
 
@@ -118,7 +139,18 @@ namespace HarmonyLib
     internal sealed class HarmonyMethod { internal HarmonyMethod(Type type, string name) { } }
     internal static class AccessTools { internal static object Method(Type type, string name) => new(); }
 }
-namespace Il2CppInterop.Runtime { internal static class Il2CppType { internal static Type Of<T>() => typeof(T); } }
+namespace Il2CppInterop.Runtime
+{
+    internal static class Il2CppType { internal static Type Of<T>() => typeof(T); }
+    internal static class IL2CPP
+    {
+        internal static unsafe T ResolveICall<T>(string name) where T : Delegate
+        {
+            if (name != "UnityEngine.Material::GetShaderPassEnabled_Injected") throw new Exception("Unexpected native binding");
+            return Marshal.GetDelegateForFunctionPointer<T>((IntPtr)(delegate* unmanaged[Cdecl]<IntPtr, IntPtr, byte>)&NativePassFixture.Read);
+        }
+    }
+}
 namespace MA.Flora
 {
     internal sealed class Parameter { internal IntPtr Pointer = (IntPtr)2; internal float value = 100; internal bool overrideState; }
@@ -132,10 +164,11 @@ namespace UnityEngine
         internal IntPtr Pointer; internal string name = "";
         internal T? TryCast<T>() where T : class => this as T;
         internal static Object[] FindObjectsOfType(Type type) => type == typeof(Light) ? new Object[] { new Light() } : Array.Empty<Object>();
+        internal static class MarshalledUnityObject { internal static IntPtr MarshalNotNull<T>(T value) where T : Object => value.Pointer; }
     }
     internal sealed class Material : Object
     {
-        private readonly Dictionary<int, float> _values = new(); private readonly HashSet<string> _keywords = new(); private bool _pass = true;
+        private readonly Dictionary<int, float> _values = new(); private readonly HashSet<string> _keywords = new(); internal bool PassEnabled = true;
         internal bool HasProperty(int id) => true;
         internal float GetFloat(int id) => _values.TryGetValue(id, out var value) ? value : 0;
         internal float GetFloat(string name) => GetFloat(Shader.PropertyToID(name));
@@ -144,8 +177,8 @@ namespace UnityEngine
         internal bool IsKeywordEnabled(string name) => _keywords.Contains(name);
         internal void EnableKeyword(string name) => _keywords.Add(name);
         internal void DisableKeyword(string name) => _keywords.Remove(name);
-        internal bool GetShaderPassEnabled(string name) => _pass;
-        internal void SetShaderPassEnabled(string name, bool value) => _pass = value;
+        internal bool GetShaderPassEnabled(string name) => throw new MissingMethodException("Il2CppSystem.ReadOnlySpan.GetPinnableReference");
+        internal void SetShaderPassEnabled(string name, bool value) => PassEnabled = value;
     }
     internal static class Shader { internal static int PropertyToID(string name) => StringComparer.Ordinal.GetHashCode(name); }
     internal static class Mathf

@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><EnableDefaultCompileItems>false</EnableDefaultCompileItems><Nullable>enable</Nullable><VegetationSource Condition="'$(VegetationSource)' == ''">../src/managed/VegetationShadows.cs</VegetationSource></PropertyGroup>
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><EnableDefaultCompileItems>false</EnableDefaultCompileItems><Nullable>enable</Nullable><AllowUnsafeBlocks>true</AllowUnsafeBlocks><VegetationSource Condition="'$(VegetationSource)' == ''">../src/managed/VegetationShadows.cs</VegetationSource></PropertyGroup>
   <ItemGroup>
     <Compile Include="VegetationInteropChecks.cs" />
     <Compile Include="$(VegetationSource)" />
     <Compile Include="../src/managed/OverrideOwnership.cs" />
+    <Compile Include="../src/managed/MaterialPassState.cs" />
   </ItemGroup>
 </Project>

@@ -184,7 +184,7 @@ internal static class VegetationShadows
                     if (material.HasProperty(id)) snapshot.Properties.Add(new OverrideProperty<float>(() => material.GetFloat(id), value => material.SetFloat(id, value)));
                 foreach (string name in FadeKeywords)
                     snapshot.Properties.Add(new OverrideProperty<bool>(() => material.IsKeywordEnabled(name), value => { if (value) material.EnableKeyword(name); else material.DisableKeyword(name); }));
-                snapshot.Properties.Add(new OverrideProperty<bool>(() => material.GetShaderPassEnabled("ShadowCaster"), value => material.SetShaderPassEnabled("ShadowCaster", value)));
+                snapshot.Properties.Add(new OverrideProperty<bool>(() => MaterialPassState.ReadShadowCaster(material), value => material.SetShaderPassEnabled("ShadowCaster", value)));
                 Materials.Add(material.Pointer, snapshot);
             }
             if (!_reportedMaterials && samples < 2 && material.HasProperty(FadePropertyIds[0]))
