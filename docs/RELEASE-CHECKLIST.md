@@ -17,13 +17,13 @@ This checklist records the alpha's delivered licence/attribution handling, valid
 
 ## Private 0.7 validation
 
-- [x] CPU installer fixtures: 34 guarded cases and 12 memory-only feature-selection cases under Windows PowerShell 5.1 and PowerShell 7, including separate NR opt-in/repair/collision behavior. These do not exercise graphics runtimes or first-launch game behavior.
+- [x] CPU installer fixtures: 35 guarded cases and 12 memory-only feature-selection cases under Windows PowerShell 5.1 and PowerShell 7, including separate NR opt-in/repair/collision behavior. These do not exercise graphics runtimes or first-launch game behavior.
 - [ ] Recheck the public-release ZIP and fixture-installed notices after any final licensing edits; confirm linked license files, installer ownership/removal behavior and absence of bundled runtime/game/model binaries.
-- [x] Record the previously accepted rendering pair and build evidence in the release's compatibility documentation. The later UI audit build has separate package checksums and still needs visual/first-bootstrap acceptance; it is not the previously accepted DLL pair.
+- [x] Record the previously accepted rendering pair and build evidence in the release's compatibility documentation. The later C4E1/947D pair has separate package checksums and completed fresh bootstrap; final visual acceptance remains pending. It is distinct from the previously accepted 0859/947D pair.
 - [x] Fresh independent reviews cover the 0.7 implementation and vegetation binding corrections. Findings, reviewed heads and regression results are recorded in the private pull request's review table; the historical 0.6 review is separate.
 - [x] Final restoration acceptance in the authorized real-game test: NVIDIA FG plus Default NR received user confirmation; AMD FG operated with poorer results and Intel interpolation reduced FPS on the tested RTX 4090. The user confirmed stable preset cycling, Extreme distant tree shadows and Game defaults nearby foliage restoration after the final vegetation correction.
-- [ ] Validate a fresh BepInEx installation and first-launch interop generation; the historical existing-loader tests do not satisfy this check.
-- [ ] Visually check the revised Setup/Home wording at the intended DPI and resolution. The hosted Setup preview was not targetable through the permitted UI interface, and the new managed UI has not been installed in the live game during this audit.
+- [x] Fresh BepInEx 755 downloaded Unity libraries, processed metadata 39, generated 158 interop assemblies, loaded Big Beautiful Walk 0.7.0 and sustained DLSS evaluation. A repeat launch reused those files successfully.
+- [ ] Visually check the revised Setup/Home wording at the intended DPI and resolution. The real Setup GUI completed installation; the new managed UI is installed and evaluating. Final Home/F10 acceptance and Setup.exe terminal-window absence remain pending; other DPI configurations are unverified.
 
 ## Historical private 0.6 observations
 
@@ -41,4 +41,4 @@ These checks describe the earlier private 0.6 line through `ccef38a`, not a publ
 
 ## Release scope
 
-The alpha core is DLSS Super Resolution plus the graphics panel. Its optional bridge downloads pinned OptiScaler with built-in native FSR 3.1, official NVIDIA Streamline/DLSS FG, Intel XeSS SR/FG/XeLL and selected official AMD loader/FG files. The separate NR option downloads the RHI community model and includes the bridge it needs. Fresh FG/NR defaults remain off. Model distribution authorization is unverified; its source is not presented as an official NVIDIA release. A fresh BepInEx first launch, broader hardware coverage and exact GPU allocation of the experimental 16384 atlas remain unverified.
+The alpha core is DLSS Super Resolution plus the graphics panel. Its optional bridge downloads pinned OptiScaler with built-in native FSR 3.1, official NVIDIA Streamline/DLSS FG, Intel XeSS SR/FG/XeLL and selected official AMD loader/FG files. The separate NR option downloads the RHI community model and includes the bridge it needs. Fresh FG/NR defaults remain off. Model distribution authorization is unverified; its source is not presented as an official NVIDIA release. Fresh BepInEx bootstrap succeeded on the recorded system; broader hardware coverage and exact GPU allocation of the experimental 16384 atlas remain unverified.

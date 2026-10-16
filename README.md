@@ -28,7 +28,7 @@ Use **Diagnose** in Setup to check installed files, or **Uninstall** with the ga
 - Neural Rendering can use the optional RHI community download or an existing compatible model. That pinned download matches the model previously tested with NVIDIA FG and Default style. The October 16 faster model is not claimed as tested; [the NR guide](docs/FRAME-GENERATION.md#neural-rendering) identifies the supplied version and source.
 - Home also offers optional FSR 3.1 and XeSS backend choices when their bridge requirements are available. FSR 4 is shown as unsupported on the tested RTX 4090. See the [feature matrix](docs/UPSCALERS.md) for prerequisites and individual test status.
 
-The public core's official NVIDIA SR 310.9.1 runtime sustained DLSS evaluation in the game world with an existing BepInEx installation. The Home menu and Quality / Game defaults choices were visually confirmed on Big Walk 1.6.0 (Steam build 25723723), Unity 6000.3.17f1, an RTX 4090 and driver 617.42. A completely fresh BepInEx installation and first-launch interop generation have not been tested in the real game. See the [compatibility notes](docs/COMPATIBILITY.md).
+The official NVIDIA SR 310.9.1 runtime sustained in-world DLSS evaluation on Big Walk 1.6.0 (Steam build 25723723), Unity 6000.3.17f1, an RTX 4090 and driver 617.42. A fresh BepInEx installation downloaded the Unity libraries, generated 158 interop assemblies, loaded the mod and evaluated DLSS; a subsequent launch reused those files successfully. Final picture and menu acceptance for this installation is pending. See the [compatibility notes](docs/COMPATIBILITY.md).
 
 VR, distance-field shadows and ray-traced shadows are unsupported. Extreme settings can cost substantial performance and video memory.
 
