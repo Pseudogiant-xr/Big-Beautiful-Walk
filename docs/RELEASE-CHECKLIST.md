@@ -19,7 +19,7 @@ This checklist tracks the private 0.7 test candidate, unresolved public-release 
 
 - [x] CPU installer fixtures: 31 guarded cases and eight memory-only feature-selection cases under Windows PowerShell 5.1 and PowerShell 7. These do not exercise graphics runtimes or first-launch game behavior.
 - [ ] Recheck the public-release ZIP and fixture-installed notices after any final licensing edits; confirm linked license files, installer ownership/removal behavior and absence of bundled runtime/game/model binaries.
-- [x] Record the tested 0.7 managed/native binary hashes and build evidence in the release's compatibility documentation; the release preserves that pair through subsequent documentation edits.
+- [x] Record the previously accepted rendering pair and build evidence in the release's compatibility documentation. The later UI audit build has separate package checksums and still needs visual/first-bootstrap acceptance; it is not the previously accepted DLL pair.
 - [x] Fresh independent reviews cover the 0.7 implementation and vegetation binding corrections. Findings, reviewed heads and regression results are recorded in the private pull request's review table; the historical 0.6 review is separate.
 - [x] Final restoration acceptance in the authorized real-game test: NVIDIA FG plus Default NR received user confirmation; AMD FG operated with poorer results and Intel interpolation reduced FPS on the tested RTX 4090. The user confirmed stable preset cycling, Extreme distant tree shadows and Game defaults nearby foliage restoration after the final vegetation correction.
 - [ ] Validate a fresh BepInEx installation and first-launch interop generation; the historical existing-loader tests do not satisfy this check.
