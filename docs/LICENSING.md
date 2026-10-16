@@ -20,6 +20,8 @@ The earlier 0.6 candidate at `ccef38a` used MIT for independently authored mater
 
 **Question/options:** does the author's actual Engine License and this authoring/distribution context satisfy section 1? Record the applicable entitlement and context; otherwise obtain specific permission or independently replace/remove the adaptation. Merely changing its license header is insufficient.
 
+The release publisher has reported no Unity Engine licence. No qualifying entitlement has therefore been established for this candidate. [Unity Personal](https://unity.com/products/unity-personal) is available to eligible users, but eligibility and whether its grant covers this mod's authoring/distribution context must be checked; account creation alone is not recorded as clearance or a retroactive cure. Keep the adaptation out of a cleared-release claim until that condition is resolved, permission is obtained, or the adapted code is independently replaced/removed.
+
 ## NVIDIA SDK incorporation and attribution
 
 **Binding text:** the pinned [DLSS license](https://github.com/NVIDIA/DLSS/blob/374959484e79a640feaba44c93ac8cfb0a03f5b5/LICENSE.txt), base section 1(c), allows SDK incorporation in application object code subject to its conditions. Section 2 requires material additional functionality, source-derived attribution, protective terms for SDK distribution and its other conditions. Section 4(b) prohibits standalone SDK redistribution; 4(e) prohibits making SDK portions subject to the described open-source obligations. Section 8.2 preserves developer application rights subject to NVIDIA's rights.
@@ -46,7 +48,7 @@ The supplement has several distinct requirements:
 
 **Question/options:** if it forms a GPL-covered combined work, satisfy GPLv3 for that work rather than claim exclusive Apache licensing. Apache licensing of our own portions is compatible in that direction. NVIDIA's SDK restriction, the UCL adaptation and Intel/AMD binary terms remain additional boundaries that a GPL declaration cannot override; any linking exception must come from the relevant rightsholders. Establish a supportable separation/compliance basis, obtain necessary permissions, or omit the optional integration from a public candidate. Source availability alone does not resolve incompatible terms.
 
-The exact release offers [full corresponding source with submodules](https://github.com/Skynizz/optiscaler-dlss5/releases/tag/v1.2.1); GitHub's automatic source archive omits them. If redistributing the DLL, use a GPL-compliant source-delivery method and verify upstream prebuilt-library/source correspondence. Its GPL declaration does not convert proprietary SDK components to GPL.
+The exact release offers a [source archive with submodules](https://github.com/Skynizz/optiscaler-dlss5/releases/tag/v1.2.1); GitHub's automatic source archive omits them. Its label alone does not establish complete corresponding source: the pinned project also links prebuilt Detours, FreeType and FSR libraries whose exact preferred-source/build correspondence remains unverified. If conveying the DLL, use a GPL-compliant source-delivery method and verify that correspondence and availability. Its GPL declaration does not convert proprietary SDK components to GPL.
 
 ## BepInEx and LGPL libraries
 
@@ -58,9 +60,17 @@ Build-755's archive contains no license/notice files. Accompanying project notic
 
 **Intel binding text:** the [pinned license](https://github.com/intel/xess/blob/8fe81bdbbaf00b3c1b733fd0d830c333dc84e6f0/LICENSE.txt) allows binary use/redistribution without modification, with notices and non-endorsement conditions, and prohibits alteration of the software or its operation, including during execution. Separate third-party terms also apply. The same package covers SR, FG and XeLL files.
 
-**Interpretation/question:** published API calls are not automatically binary modification. Interceptor spoofing/patching or operational changes, if used, need assessment against Intel's actual restriction. Keep DLLs unmodified, preserve notices and establish the code paths used; a valid signature does not prove every hook is permitted.
+**Observed code path:** the pinned [XeSS proxy](https://github.com/Skynizz/optiscaler-dlss5/blob/6bfc4389c25054ef6747df6e6b1b470e9541c4da/OptiScaler/proxies/XeSS_Proxy.h#L429) attaches API detours with `EnableXeSSInputs` enabled by default. Normal [initialization](https://github.com/Skynizz/optiscaler-dlss5/blob/6bfc4389c25054ef6747df6e6b1b470e9541c4da/OptiScaler/dllmain.cpp#L1411) also installs [XeLL API hooks](https://github.com/Skynizz/optiscaler-dlss5/blob/6bfc4389c25054ef6747df6e6b1b470e9541c4da/OptiScaler/hooks/Xell_Hooks.cpp#L11). Separate loader/lifetime and module-handle substitutions occur in `LibraryLoad_Hooks.cpp` and `Kernel_Hooks.cpp`. These are actual paths to assess, not a hypothetical possibility.
+
+**Interpretation/options:** ordinary published API calls are not automatically binary modification. Intel's restriction also names alteration of operation during execution, so intact disk hashes do not settle these interception paths. `[Inputs] EnableXeSSInputs=false` bypasses XeSS input detours while leaving output exports available, but does not disable XeLL or loader/lifetime interception. No single INI switch was found to disable all relevant paths. A feature-preserving upstream/source change may be possible, but requires source/GPL compliance and new runtime tests; it is not implemented or claimed cleared here. Resolve the actual integration permission, establish a compatible path, or omit the affected public integration.
 
 **AMD binding text/treatment:** older FidelityFX source has MIT terms. Newer SDK [binary exceptions](licenses/AMD-FSR-SDK-LICENSE.md) separately grant conditional unmodified-binary redistribution with [notices](licenses/AMD-FSR-SDK-THIRD-PARTY.md). Signed loader/upscaler/FG binaries do not become MIT or Apache merely because other SDK files are open source. Hardware/API compatibility is a separate technical matter.
+
+## NVIDIA Reflex attribution and integration
+
+The optional pack includes `sl.reflex.dll` and its [separate licence](licenses/NVIDIA-Reflex-LICENSE.txt). Reflex supplement section 3.1 requires feature attribution following the supplied UI guidelines; it does not contain the RTX supplement's two-week sample/prior-approval procedure. Those distinct terms must not be collapsed into a blanket approval rule.
+
+The pinned [NVIDIA FG provider](https://github.com/Skynizz/optiscaler-dlss5/blob/6bfc4389c25054ef6747df6e6b1b470e9541c4da/OptiScaler/framegen/dlssg/DLSSG_Dx12.cpp#L300) requests Reflex low-latency mode. Home and Credits name **NVIDIA Reflex Low Latency**, while distinguishing a request from verified runtime state. The [RTX UI guidelines](https://github.com/NVIDIA-RTX/Streamline/blob/2122257e0fce486f91b385aa63b9a09b0a34b363/docs/RTX%20UI%20Developer%20Guidelines.pdf), including FG/Reflex pairing and feature naming, still need a concrete integration/UI check; installing a DLL or adding a credit is not proof of successful Reflex operation.
 
 ## Neural Rendering model
 
@@ -69,3 +79,5 @@ The optional fork excludes `nvngx_dlssnr.dll`. The prototype's user-provided RHI
 ## Release records
 
 [SOURCES.md](licenses/SOURCES.md) records saved license origins/hashes. [RELEASE-CHECKLIST.md](RELEASE-CHECKLIST.md) separates unfinished release conditions from technical observations. The private 0.7 candidate is not a public release and has no asserted vendor approvals or exhaustive legal clearance.
+
+The [official multiplayer EULA](https://bigwalk.game/eula/) prohibits disrupting other players and infringing their rights. The reviewed official game pages did not establish express rendering-mod permission or a blanket mod ban. This project retains its unofficial/non-endorsement statement and excludes game assets, game assemblies and generated interop files; no additional House House approval requirement is invented from the fan-merchandise policy.

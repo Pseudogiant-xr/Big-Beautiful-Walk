@@ -14,6 +14,10 @@ NVIDIA Streamline headers: Copyright (c) 2022-2023 NVIDIA CORPORATION.
 The optional OptiScaler component is by cdozdil and the OptiScaler team,
 with Neural Rendering integration by Dagherbou and optimizations by Skynizz.
 Its RenoDX-derived colour composition is by clshortfuse (Carlos Lopez Jr.).
+Microsoft Detours: Copyright (c) Microsoft Corporation, MIT License.
+nlohmann JSON: Copyright (c) 2013-2025 Niels Lohmann, MIT License.
+AMD Anti-Lag 2: Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved.
+LatencyFleX: Copyright 2021 Tatsuyuki Ishi, Apache License 2.0.
 Portions of this software are copyright (c) 2024 The FreeType Project
 (www.freetype.org). All rights reserved.
 Hack font: Copyright 2018 Source Foundry Authors; includes Bitstream Vera

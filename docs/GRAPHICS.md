@@ -24,7 +24,7 @@ Shadow distance, atlas size, cascade count and cascade boundaries work together.
 
 The experimental 16384 main atlas is offered only when the GPU reports sufficient maximum texture size. With four cascades, its quarter-atlas tiles can provide up to 8192 pixels per cascade. Doubling an 8192 atlas to 16384 uses four times the atlas storage. A single 16-bit 16384-square depth surface is approximately 512 MiB; actual allocation and frame cost have not been verified. Engine acceptance of the setting does not prove the exact GPU allocation.
 
-Vegetation shadow range is also limited by the main light's shadow distance. Unity Terrain controls affect Terrain-owned details and trees; they do not necessarily affect mesh-based landscape or foliage. Restoring vegetation settings disables the override, but complete visual restoration of every vegetation material has not been established.
+Vegetation shadow range is also limited by the main light's shadow distance. Unity Terrain controls affect Terrain-owned details and trees; they do not necessarily affect mesh-based landscape or foliage. Extreme's 2000 m vegetation fade and Game defaults restoration were confirmed on the tested setup. Game defaults restores the game's shorter range, so distant tree shadows recede. Other scenes, quality changes during an override and all material variants remain unverified.
 
 ## Optional Frame Generation and Neural Rendering
 

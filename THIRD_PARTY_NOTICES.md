@@ -45,6 +45,12 @@ Portions of this software are copyright © 2024 The FreeType Project (www.freety
 
 Cached Streamline 2.14.16, FG 310.9.16 and NR 310.8.SF-v2 prototype files do not establish redistribution rights or official SDK provenance. The NR model is excluded from the release, dependency lock and automatic download; no license grant or model compatibility assurance is asserted.
 
+OptiScaler also uses Microsoft Detours headers identifying version 4.0.1 and links a prebuilt Detours library. Preserve Microsoft's [MIT copyright and permission notice](docs/licenses/OptiScaler-Detours-LICENSE.md). The linked library's exact source/build correspondence remains unverified. Its version-check code incorporates nlohmann JSON 3.12.0, Copyright (c) 2013-2025 Niels Lohmann, under [MIT](docs/licenses/OptiScaler-nlohmann-json-LICENSE.txt); this is a separate notice from Streamline's older JSON attribution.
+
+NVIDIA Reflex Low Latency is used by the optional NVIDIA FG route. The pinned bridge requests Reflex low-latency mode when enabling NVIDIA FG; this is a source-backed request, not proof that Reflex initialized in a particular launch. Preserve the [Reflex terms](docs/licenses/NVIDIA-Reflex-LICENSE.txt) and assess the applicable [RTX UI guidelines](https://github.com/NVIDIA-RTX/Streamline/blob/2122257e0fce486f91b385aa63b9a09b0a34b363/docs/RTX%20UI%20Developer%20Guidelines.pdf), including latency-feature attribution and FG pairing.
+
+The bridge also incorporates AMD Anti-Lag 2 header code, Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved., under its [MIT notice](docs/licenses/OptiScaler-AMD-AntiLag2-LICENSE.txt), and LatencyFleX header code, Copyright 2021 Tatsuyuki Ishi, under [Apache-2.0](LICENSE), with the [retained header notice](docs/licenses/OptiScaler-LatencyFleX-NOTICE.txt). These credits identify incorporated material; they do not assert that either latency mode is active in this mod.
+
 ## Game content
 
 Big Walk, game assemblies, generated game interop assemblies and assets are not distributed. Building locally requires the developer's own installed game and generated interop references. Do not commit these files, copied game source or personal configuration/log dumps.

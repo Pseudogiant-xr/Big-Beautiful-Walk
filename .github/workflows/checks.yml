@@ -28,6 +28,12 @@ jobs:
       - name: Installer recovery fixtures (Windows PowerShell)
         shell: powershell
         run: ./tests/Setup.Tests.ps1
+      - name: Installer optional-feature selection (Windows PowerShell)
+        shell: powershell
+        run: ./tests/SetupSelection.Tests.ps1
       - name: Installer recovery fixtures (PowerShell 7)
         shell: pwsh
         run: ./tests/Setup.Tests.ps1
+      - name: Installer optional-feature selection (PowerShell 7)
+        shell: pwsh
+        run: ./tests/SetupSelection.Tests.ps1

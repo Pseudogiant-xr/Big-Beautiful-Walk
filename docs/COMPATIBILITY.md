@@ -17,14 +17,14 @@ The public core's official SR 310.9.1 sustained DLSS evaluation in the game worl
 
 A completely fresh BepInEx installation and first-launch interop generation have not been exercised in the real game. A clean installer fixture checks file operations; it does not prove fresh bootstrap, image quality, frame pacing or compatibility on another machine. Expanded quality modes, alternative upscalers and experimental presets each need their own rendering check; see [the feature matrix](UPSCALERS.md).
 
-The final vegetation runtime is built from `4dc8555e72b25f2a7c34fa4aa38814b61356a100`. After the binding corrections, the user confirmed stable preset cycling, distant tree shadows with Extreme active and nearby foliage restoration with Game defaults. The log recorded a 1950–2000 m material fade, then restoration of 542 changed material properties and the active Flora parameter without replaying a guessed fade range. These are observations on the setup above, not universal restoration or scene-lifecycle coverage.
+The previously accepted vegetation runtime is built from `4dc8555e72b25f2a7c34fa4aa38814b61356a100`. After the binding corrections, the user confirmed stable preset cycling, distant tree shadows with Extreme active and nearby foliage restoration with Game defaults. The log recorded a 1950–2000 m material fade, then restoration of 542 changed material properties and the active Flora parameter without replaying a guessed fade range. These are observations on the setup above, not universal restoration or scene-lifecycle coverage.
 
-Tested DLL SHA-256 values:
+Previously accepted DLL SHA-256 values:
 
 - Managed: `0859D14B19B7DB03D231B35E6598CA40DEC8EB7557374EB7B67D2115CDE214A6`.
 - Native, unchanged during the vegetation corrections: `947D6EB4634AC85E3F4ECE92115B308E34C908B4DDB086B0F70B8C23E6D01914`.
 
-The managed Release build used .NET SDK 8.0.426 and `dotnet build src/managed/BigWalkDLSS.csproj -c Release -p:GameDir=<local game folder>`, exiting 0 with the existing MSB3246 game-reference warning. The native Release build previously exited 0; its ABI remains version 3 / 120 bytes. The distributed DLLs are the pair used for the final visual check; later documentation edits do not rebuild them.
+The managed Release build used .NET SDK 8.0.426 and `dotnet build src/managed/BigWalkDLSS.csproj -c Release -p:GameDir=<local game folder>`, exiting 0 with the existing MSB3246 game-reference warning. The native Release build previously exited 0; its ABI remains version 3 / 120 bytes. These hashes identify the accepted pair retained in the live installation. The later pre-release audit revises installer behavior and managed UI wording; its new build still requires visual and first-bootstrap acceptance, with package identities recorded separately in `SHA256SUMS.txt`.
 
 ## Limits
 
@@ -41,4 +41,4 @@ The managed Release build used .NET SDK 8.0.426 and `dotnet build src/managed/Bi
 
 ## Problem reports
 
-Include version 0.7.0, your game version/build, GPU/driver, API, whether OptiScaler is installed, the selected graphics preset, steps to reproduce and relevant log excerpts. For a crash or missing panel, run Setup's **Diagnose** first. Do not upload game assemblies, proprietary DLLs, full personal configuration dumps or unredacted logs.
+Open a [GitHub issue](https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/issues) with version 0.7.0, your game version/build, GPU/driver, API, whether OptiScaler is installed, the selected graphics preset, steps to reproduce and relevant log excerpts. For a crash or missing panel, run Setup's **Diagnose** first. Do not upload game assemblies, proprietary DLLs, full personal configuration dumps or unredacted logs.

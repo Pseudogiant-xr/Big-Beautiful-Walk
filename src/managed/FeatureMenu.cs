@@ -25,7 +25,7 @@ internal static class FeatureMenu
             if (next != queued.Enabled) FeatureSettings.SetFrameGen(next, queued.Provider, vendor, device, _confirmedHags);
             GUI.enabled = enabled;
             GUI.Label(new Rect(x + 25, y + 310, 900, 27), "Provider · standard 2× (one generated frame)", label);
-            string[] names = { "NVIDIA DLSS", "AMD FSR", "Intel XeSS" };
+            string[] names = { "NVIDIA DLSS Frame Generation", "AMD FSR Frame Generation", "Intel XeSS Frame Generation" };
             for (int i = 0; i < names.Length; i++)
             {
                 string provider = FeatureOptions.ProviderValues[i];
@@ -40,7 +40,9 @@ internal static class FeatureMenu
             }
             GUI.enabled = enabled;
             GUI.Label(new Rect(x + 25, y + 391, 900, 56), unavailable.Length > 0 ? unavailable :
-                "Required files are present. Provider initialization, frame pacing and generated output are untested; this is a saved request, not an active-state report.", small);
+                FeatureOptions.ProviderIndex(queued.Provider) == 0
+                    ? "Files ready. NVIDIA FG also requests NVIDIA Reflex Low Latency. Check FG in F10; this panel does not confirm Reflex initialization."
+                    : "Files ready. Check provider initialization and active Frame Generation in F10 and the logs. This panel shows saved requests; compare smoothness and controls in the same view.", small);
             if (FeatureOptions.ProviderIndex(queued.Provider) == 0 && FeatureSettings.HagsMode != 1 && FeatureSettings.HagsMode != 2)
                 _confirmedHags = GUI.Toggle(new Rect(x + 25, y + 453, 900, 28), _confirmedHags,
                     "I checked that Hardware-accelerated GPU Scheduling is enabled in Windows", AdvancedGraphics.ToggleStyle);
@@ -94,7 +96,7 @@ internal static class FeatureMenu
             { queued.Preset = (queued.Preset + 1) % 4; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
             GUI.enabled = enabled;
             GUI.Label(new Rect(x + 25, y + 521, 900, 57), unavailable.Length > 0 ? unavailable :
-                "Forwarder and user model are present. Model compatibility, NVIDIA NGX initialization and visual output remain untested. Saved settings do not confirm active rendering.", small);
+                "Forwarder and user model are present. Confirm model initialization in F10 and the logs, then compare the picture. Saved settings do not confirm active rendering.", small);
             GUI.Label(new Rect(x + 25, y + 582, 900, 39),
                 "For a new install, place your compatible model at OptiScaler/nvngx_dlssnr.dll; existing game-root files are also recognized. Advanced codec and cache options are in F10.", small);
             DrawSaveNote(x, y, small);

@@ -227,6 +227,19 @@ function Receive-BbwDownload([uri]$Uri, [string]$Destination, [scriptblock]$Tran
     }
 }
 
+function Get-BbwRepairFeatures([object[]]$Dependencies, [string[]]$Requested, [string[]]$OwnedRoles) {
+    $selected = New-Object 'Collections.Generic.List[string]'
+    foreach ($feature in $Requested) {
+        if ($selected -notcontains $feature) { $selected.Add($feature) }
+    }
+    foreach ($dependency in $Dependencies) {
+        if ($dependency.Feature -and $dependency.Feature -ne 'core' -and $OwnedRoles -contains $dependency.Id -and $selected -notcontains $dependency.Feature) {
+            $selected.Add([string]$dependency.Feature)
+        }
+    }
+    return $selected.ToArray()
+}
+
 function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyDirectory, [string[]]$Features) {
     $items = New-Object 'Collections.Generic.List[object]'
     foreach ($name in @('BigWalkDLSS.dll','BigWalkDLSSNative.dll')) {
@@ -381,6 +394,15 @@ function Invoke-BbwSetup {
         $plans = New-Object 'Collections.Generic.List[object]'
         $entries = New-Object 'Collections.Generic.List[object]'
         if ($Mode -eq 'Install') {
+            # Repair components already recorded as ours, even when the optional
+            # checkbox was not selected again. File presence is not ownership.
+            if ($owned.Count -gt 0) {
+                $dependencyLock = Read-BbwJson (Resolve-BbwPath $PackagePath 'packaging/dependencies.lock.json')
+                if ($dependencyLock -and $dependencyLock.PSObject.Properties['Dependencies']) {
+                    $roles = @($owned.Values | Where-Object { $_.PSObject.Properties['Role'] } | ForEach-Object { [string]$_.Role })
+                    $Features = @(Get-BbwRepairFeatures $dependencyLock.Dependencies $Features $roles)
+                }
+            }
             $items = @(Get-BbwStage $PackagePath $stage $DependencyDirectory $Features)
             $targets = @{}
             $payloadIndex=0
@@ -471,7 +493,7 @@ function Invoke-BbwSetup {
         [IO.File]::Delete($journalPath)
         if ($Mode -eq 'Install') {
             $message='Install/Repair completed. Existing settings and other mods were preserved. Start Big Walk through Steam when ready.'
-            if ($Features -contains 'fg') { $message+=' The optional Frame Generation bridge was installed. Fresh defaults leave Frame Generation off; follow docs/DEPENDENCIES.md to configure it.' }
+            if ($Features -contains 'fg') { $message+=' The optional upscaler and Frame Generation bridge was installed or repaired. Fresh defaults leave Frame Generation off; Neural Rendering also starts off. Open Home, then Frame Gen or Neural; see docs/FRAME-GENERATION.md for restart and comparison steps.' }
             return $message
         }
         return 'Uninstall completed. Your settings, saves and other mods were preserved; installer backups remain in .big-beautiful-walk.'

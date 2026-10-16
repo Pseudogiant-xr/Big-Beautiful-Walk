@@ -14,9 +14,15 @@ Install the optional bridge using Setup while the game is closed. Fresh defaults
 
 Profiles use one generated frame per rendered frame and clear F10's conflicting Force XeLL mode, which disables frame generation. Multi-frame generation is not exposed without real capability evidence. Changing NVIDIA's FG preset C is a driver-profile operation and is separate from SR model preset L; this mod does not alter driver profiles. Prefer a stable rendered-frame rate before enabling FG. Bars, foliage and fast movement need close comparison because interpolation can introduce shimmer.
 
-To turn FG off, use its **Enabled** control. Changing **FG Input** in F10 is a different operation. Compare the same moving view with FG disabled and enabled, checking actual displayed presents as well as responsiveness; an engine FPS counter may only count rendered frames.
+Home's **Enabled** control saves the next-launch request. For a live comparison, use F10's provider **Active** control (NVIDIA labels its state **DLSSG State Active**). Changing **FG Input** is a different operation. Compare the same moving view with FG disabled and enabled, checking actual displayed presents as well as responsiveness; an engine FPS counter may only count rendered frames.
 
 Pinned OptiScaler can terminate the process when direct NVIDIA FG is unsupported, after changing its replacement setting. Home checks known prerequisites before saving that route, but the provider API remains authoritative. Do not bypass checks or assume a DLL's presence proves support. See [compatibility](COMPATIBILITY.md) and retain a known-good profile.
+
+The pinned NVIDIA provider requests **NVIDIA Reflex Low Latency** when enabling FG, as shown in the [provider source](https://github.com/Skynizz/optiscaler-dlss5/blob/6bfc4389c25054ef6747df6e6b1b470e9541c4da/OptiScaler/framegen/dlssg/DLSSG_Dx12.cpp#L300). A present DLL or saved request does not establish successful Reflex initialization or measured latency. Its feature attribution and the applicable [UI guidelines](https://github.com/NVIDIA-RTX/Streamline/blob/2122257e0fce486f91b385aa63b9a09b0a34b363/docs/RTX%20UI%20Developer%20Guidelines.pdf) remain part of the pre-release checks.
+
+F10 can report FG status. Its generic Low Latency page describes a different bridge abstraction and can show no Reflex support while the NVIDIA FG provider makes a direct Streamline Reflex request. Successful Reflex operation needs separate runtime telemetry or integration verification; neither that generic value nor absence of an error message proves it.
+
+If a saved feature prevents startup, the [recovery guide](INSTALLATION.md#diagnose) explains how to disable FG and NR without reaching Home. Install/Repair preserves those settings.
 
 ## Neural rendering
 

@@ -12,16 +12,18 @@ This checklist tracks the private 0.7 test candidate, unresolved public-release 
 - [ ] Recheck the final public-release ZIP and installed notice payload for `LICENSE`, `NOTICE`, `THIRD_PARTY_NOTICES.md` and all linked `docs/licenses` files, plus the applicable downloaded SDK notices. Source-tree presence alone does not prove packaging preserved them.
 - [ ] Establish a supportable GPL combined-work/separate-work basis for optional OptiScaler, and the applicable corresponding-source method if its DLL is redistributed. Apache-2.0 is compatible with GPLv3 in the direction described in [the assessment](LICENSING.md#optiscaler-and-gplv3); dynamic loading and separate downloading alone are not proof of separation, and GPL cannot override proprietary SDK/UCL terms.
 - [ ] Check the actual Intel integration paths against the unchanged-binary/no-alteration-of-operation restriction; preserve Intel/AMD binary terms rather than label every SDK file open source.
+- [ ] Complete NVIDIA Reflex integration/UI verification, including successful enablement and marker/sleep operation with FG; a DLL, credit or saved request is insufficient.
 - [x] Exclude the NR model from the release, dependency lock and automatic download. [Skynizz's release](https://github.com/Skynizz/optiscaler-dlss5/releases/tag/v1.2.1) also excludes it; cached-file hashes and vendor performance announcements do not establish public redistribution rights.
 
 ## Private 0.7 validation
 
-- [x] CPU installer fixtures: 30 cases under Windows PowerShell 5.1 and PowerShell 7 in the author session. This does not exercise graphics runtimes or first-launch game behavior.
+- [x] CPU installer fixtures: 31 guarded cases and eight memory-only feature-selection cases under Windows PowerShell 5.1 and PowerShell 7. These do not exercise graphics runtimes or first-launch game behavior.
 - [ ] Recheck the public-release ZIP and fixture-installed notices after any final licensing edits; confirm linked license files, installer ownership/removal behavior and absence of bundled runtime/game/model binaries.
 - [x] Record the tested 0.7 managed/native binary hashes and build evidence in the release's compatibility documentation; the release preserves that pair through subsequent documentation edits.
 - [x] Fresh independent reviews cover the 0.7 implementation and vegetation binding corrections. Findings, reviewed heads and regression results are recorded in the private pull request's review table; the historical 0.6 review is separate.
 - [x] Final restoration acceptance in the authorized real-game test: NVIDIA FG plus Default NR received user confirmation; AMD FG operated with poorer results and Intel interpolation reduced FPS on the tested RTX 4090. The user confirmed stable preset cycling, Extreme distant tree shadows and Game defaults nearby foliage restoration after the final vegetation correction.
 - [ ] Validate a fresh BepInEx installation and first-launch interop generation; the historical existing-loader tests do not satisfy this check.
+- [ ] Visually check the revised Setup/Home wording at the intended DPI and resolution. The hosted Setup preview was not targetable through the permitted UI interface, and the new managed UI has not been installed in the live game during this audit.
 
 ## Historical private 0.6 observations
 

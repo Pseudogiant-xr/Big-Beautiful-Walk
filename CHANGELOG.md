@@ -9,6 +9,9 @@
 - Add in-app credits and install the full attribution/licence collection.
 - License original project code under Apache 2.0 while preserving Unity and vendor-specific terms and historical MIT permissions.
 - Restore vegetation material values at the override write boundary instead of replaying quality-table fade guesses; preserve subsequent game changes.
+- Repair previously owned optional bridge components during default Install / Repair, preserving edited settings.
+- Add missing Detours/JSON notices, specific Anti-Lag 2/LatencyFleX attribution and NVIDIA Reflex Low Latency feature naming.
+- Explain first-use verification, the Visual C++ prerequisite and startup recovery; link Setup to the feature guide and licences.
 
 NVIDIA FG and Default-style NR received in-world visual checks on the tested RTX 4090. AMD FG operated with poorer results; Intel FG produced interpolated frames but reduced measured FPS on this setup. Preset cycling, distant tree shadows under Extreme and nearby foliage restoration under Game defaults were confirmed after the vegetation binding corrections. Publication remains private pending the permission questions in `docs/LICENSING.md`.
 

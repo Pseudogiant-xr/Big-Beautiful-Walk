@@ -1,7 +1,7 @@
-param([string]$OnlineDependencyLock)
+param([string]$OnlineDependencyLock, [string]$CaseFilter='*', [string]$SetupCorePath=(Join-Path $PSScriptRoot '../scripts/Setup.Core.psm1'))
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version 2.0
-Import-Module (Join-Path $PSScriptRoot '../scripts/Setup.Core.psm1') -Force
+Import-Module $SetupCorePath -Force
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $scratch=Join-Path $PSScriptRoot ('../work/setup-tests-' + [guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory($scratch)
@@ -13,7 +13,7 @@ function Expect-Failure([scriptblock]$Action,[string]$Pattern) {
     try { & $Action | Out-Null } catch { $message=$_.Exception.Message }
     Assert ($null -ne $message -and $message -match $Pattern) "Expected '$Pattern'; got '$message'"
 }
-function Case([string]$Name,[scriptblock]$Action) { & $Action; $script:passed++; Write-Output "PASS $Name" }
+function Case([string]$Name,[scriptblock]$Action) { if ($Name -notlike $CaseFilter) { return }; & $Action; $script:passed++; Write-Output "PASS $Name" }
 function New-Fixture([string]$Name) {
     $root=Join-Path $scratch $Name
     $game=Join-Path $root 'game'; $package=Join-Path $root 'package'; $deps=Join-Path $root 'deps'
@@ -356,6 +356,20 @@ try {
         Assert ([IO.File]::ReadAllText($config) -eq 'my-changed-FG-settings') 'edited FG config survives repair and uninstall'
         Assert (-not (Test-Path (Join-Path $f.GamePath 'version.dll'))) 'owned FG bridge uninstalled'
     }
+    Case 'default repair updates already-installed optional bridge and preserves settings' {
+        $f=New-Fixture 'optional-default-repair'; Add-FgFixture $f
+        Invoke-BbwSetup @f -Mode Install -Features fg | Out-Null
+        $config=Join-Path $f.GamePath 'OptiScaler.ini'; Put $config 'user-kept-options'
+        $bridge=Join-Path $f.DependencyDirectory 'fg_bridge.file'; Put $bridge 'verified-bridge-update'
+        $lockPath=Join-Path $f.PackagePath 'packaging/dependencies.lock.json'
+        $lock=Get-Content $lockPath -Raw | ConvertFrom-Json
+        @($lock.Dependencies | Where-Object { $_.Id -eq 'fg_bridge' })[0].SHA256=(Get-FileHash $bridge).Hash
+        Put $lockPath ($lock | ConvertTo-Json -Depth 8)
+        Install $f | Out-Null
+        Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'version.dll')) -eq 'verified-bridge-update') 'default repair includes already-owned optional files'
+        Assert ([IO.File]::ReadAllText($config) -eq 'user-kept-options') 'default optional repair preserves edited configuration'
+        Uninstall $f | Out-Null
+    }
     Case 'optional FG preserves preexisting OptiScaler config bytes' {
         $f=New-Fixture 'optional-fg-existing'; Add-FgFixture $f
         $config=Join-Path $f.GamePath 'OptiScaler.ini'; Put $config 'existing-custom-settings'
@@ -453,6 +467,7 @@ try {
         Assert ([IO.File]::ReadAllText($plugin) -eq 'plugin-one') 'locked original retained'
         Uninstall $f | Out-Null
     }
+    if ($script:passed -eq 0) { throw 'No installer cases matched the requested filter.' }
     Write-Output "PASS $script:passed disposable installer integration cases."
 } finally {
     $resolved=[IO.Path]::GetFullPath($scratch)
