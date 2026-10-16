@@ -18,9 +18,7 @@ The earlier 0.6 candidate at `ccef38a` used MIT for independently authored mater
 
 **Treatment:** retain the file's UCL header, upstream notice and license, including alongside its compiled form. Owning Big Walk alone does not demonstrate the mod author's Engine License entitlement. No clean-room rewrite or Apache relicensing of this adaptation is claimed.
 
-**Question/options:** does the author's actual Engine License and this authoring/distribution context satisfy section 1? Record the applicable entitlement and context; otherwise obtain specific permission or independently replace/remove the adaptation. Merely changing its license header is insufficient.
-
-The release publisher has reported no Unity Engine licence. No qualifying entitlement has therefore been established for this candidate. [Unity Personal](https://unity.com/products/unity-personal) is available to eligible users, but eligibility and whether its grant covers this mod's authoring/distribution context must be checked; account creation alone is not recorded as clearance or a retroactive cure. Keep the adaptation out of a cleared-release claim until that condition is resolved, permission is obtained, or the adapted code is independently replaced/removed.
+**Status:** coverage of this external mod under section 1 has not been established. The adaptation retains its UCL terms and is excluded from the Apache grant. No Unity support submission or licence-activation workflow is planned. This records an unresolved licence condition, rather than an approval request or a claim that the condition has been satisfied.
 
 ## NVIDIA SDK incorporation and attribution
 
@@ -48,7 +46,7 @@ The supplement has several distinct requirements:
 
 **Question/options:** if it forms a GPL-covered combined work, satisfy GPLv3 for that work rather than claim exclusive Apache licensing. Apache licensing of our own portions is compatible in that direction. NVIDIA's SDK restriction, the UCL adaptation and Intel/AMD binary terms remain additional boundaries that a GPL declaration cannot override; any linking exception must come from the relevant rightsholders. Establish a supportable separation/compliance basis, obtain necessary permissions, or omit the optional integration from a public candidate. Source availability alone does not resolve incompatible terms.
 
-The exact release offers a [source archive with submodules](https://github.com/Skynizz/optiscaler-dlss5/releases/tag/v1.2.1); GitHub's automatic source archive omits them. Its label alone does not establish complete corresponding source: the pinned project also links prebuilt Detours, FreeType and FSR libraries whose exact preferred-source/build correspondence remains unverified. If conveying the DLL, use a GPL-compliant source-delivery method and verify that correspondence and availability. Its GPL declaration does not convert proprietary SDK components to GPL.
+The exact release offers a [source archive with submodules](https://github.com/Skynizz/optiscaler-dlss5/releases/tag/v1.2.1); GitHub's automatic source archive omits them. Direct inspection found prebuilt Detours/FreeType libraries without implementation sources, and custom FSR DX11 libraries without their backend sources in the included SDK. [The source-access guide](licenses/DEPENDENCY-SOURCES.md) records the exact archive hash, source directions and concrete gaps. This is not a demand for bit-identical independent compilation: the issue is the preferred source and build material needed to modify/rebuild the covered work. If conveying the DLL, use a GPL-compliant source-delivery method and ensure the corresponding source remains available. Its GPL declaration does not convert proprietary SDK components to GPL.
 
 ## BepInEx and LGPL libraries
 
