@@ -155,8 +155,12 @@ internal static class VegetationShadows
     private static bool MaterialsChanged(HouseFloraQualityData data)
     {
         if (data == null || data.allFloraMaterials == null) return false;
-        foreach (var material in data.allFloraMaterials)
+        var materials = data.allFloraMaterials;
+        // Avoid marshalling the generated value-type enumerator across the
+        // IL2CPP/CoreCLR boundary; native Count/index access needs no enumerator.
+        for (int i = 0; i < materials.Count; i++)
         {
+            var material = materials[i];
             if (material == null) continue;
             if (!Materials.TryGetValue(material.Pointer, out var snapshot)) return true;
             foreach (var property in snapshot.Properties) if (property.Changed()) return true;
@@ -167,9 +171,11 @@ internal static class VegetationShadows
     private static void ObserveMaterials(HouseFloraQualityData data)
     {
         if (data.allFloraMaterials == null) return;
+        var materials = data.allFloraMaterials;
         int samples = 0;
-        foreach (var material in data.allFloraMaterials)
+        for (int materialIndex = 0; materialIndex < materials.Count; materialIndex++)
         {
+            var material = materials[materialIndex];
             if (material == null) continue;
             if (!Materials.TryGetValue(material.Pointer, out var snapshot))
             {
