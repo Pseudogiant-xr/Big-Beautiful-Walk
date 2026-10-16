@@ -234,14 +234,6 @@ internal static class VegetationShadows
                         }
                     }
                 }
-            foreach (var item in UnityEngine.Object.FindObjectsOfType(Il2CppType.Of<Light>()))
-            {
-                var light = item.TryCast<Light>();
-                if (light == null || light.type != LightType.Directional) continue;
-                var distances = light.layerShadowCullDistances;
-                for (int layer = 0; layer < distances.Length; layer++)
-                    if (distances[layer] > 0) Log($"directional {light.name}: layer {layer}/{LayerMask.LayerToName(layer)} shadow cap={distances[layer]:0.###}m");
-            }
         }
         catch (Exception error) { Log("prefab diagnostics: " + error.Message); }
     }

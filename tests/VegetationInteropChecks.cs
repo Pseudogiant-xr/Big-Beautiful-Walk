@@ -49,6 +49,7 @@ internal static class Program
             enabled = false; VegetationShadows.Tick();
             Check(material.GetFloat("_DitherDistanceMaxValue") == 125, "Latest outside material value was lost on restore");
             Check(manager.floraQualityData.allFloraMaterials.EnumeratorRequests == 0, "Production adapter requested the native value-type enumerator");
+            Check(Light.LayerDistanceReads == 0, "Diagnostics invoked the unsafe native shadow-distance array getter");
             Console.WriteLine($"Vegetation interop checks passed: {_checks} assertions; production Tick/restore, indexed native lists, shared materials, external changes; Unity APIs stubbed.");
         }
         finally
@@ -130,7 +131,7 @@ namespace UnityEngine
     {
         internal IntPtr Pointer; internal string name = "";
         internal T? TryCast<T>() where T : class => this as T;
-        internal static Object[] FindObjectsOfType(Type type) => Array.Empty<Object>();
+        internal static Object[] FindObjectsOfType(Type type) => type == typeof(Light) ? new Object[] { new Light() } : Array.Empty<Object>();
     }
     internal sealed class Material : Object
     {
@@ -160,7 +161,12 @@ namespace UnityEngine
     internal sealed class LODGroup : Object { internal LOD[] GetLODs() => Array.Empty<LOD>(); }
     internal sealed class LOD { internal Renderer[] renderers = Array.Empty<Renderer>(); internal float screenRelativeTransitionHeight = 0; }
     internal sealed class Renderer { internal Rendering.ShadowCastingMode shadowCastingMode = Rendering.ShadowCastingMode.On; }
-    internal sealed class Light : Object { internal LightType type = LightType.Directional; internal float[] layerShadowCullDistances = Array.Empty<float>(); }
+    internal sealed class Light : Object
+    {
+        internal static int LayerDistanceReads;
+        internal LightType type = LightType.Directional;
+        internal float[] layerShadowCullDistances { get { LayerDistanceReads++; throw new InvalidOperationException("Unsafe native array marshalling"); } }
+    }
     internal enum LightType { Directional }
     internal static class LayerMask { internal static string LayerToName(int layer) => ""; }
 }
