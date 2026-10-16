@@ -934,6 +934,7 @@
       "SourceUrl": "https://github.com/NVIDIA/DLSS/tree/374959484e79a640feaba44c93ac8cfb0a03f5b5",
       "LicenseUrl": "https://github.com/NVIDIA/DLSS/blob/374959484e79a640feaba44c93ac8cfb0a03f5b5/LICENSE.txt",
       "Id": "nvngx_dlss",
+      "Vendor": "nvidia",
       "SHA256": "3975567B8943C53ACCE397F2B72380092F84F162D00B0D2C7D08A1025C563983",
       "Required": true
     },
@@ -959,6 +960,7 @@
     },
     {
       "Id": "nvidia_nr",
+      "Vendor": "nvidia",
       "Url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssnr-310.8.SF-v2/nvngx_dlssnr_310.8.SF-v2.zip",
       "SHA256": "1DA35941894994EB087E017577829E492454E9BAE3A6A9397027069CEB74955C",
       "Archive": "zip",
@@ -975,6 +977,7 @@
     },
     {
       "Id": "streamline_fg",
+      "Vendor": "nvidia",
       "Url": "https://github.com/NVIDIA-RTX/Streamline/releases/download/v2.14.1/streamline-sdk-v2.14.1.zip",
       "SHA256": "92C4D954631A1710DA86CA3FA8D5034F2B9503838C95FC4AE977AE149319781B",
       "Archive": "zip",

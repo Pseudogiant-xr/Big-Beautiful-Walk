@@ -5,7 +5,7 @@
 You need:
 
 - The Windows x64 Steam version of Big Walk, played on a monitor.
-- An NVIDIA RTX GPU running DirectX 11.
+- A DirectX 11 GPU. NVIDIA RTX GPUs use DLSS. AMD and Intel GPUs use FSR 3.1 or XeSS through the OptiScaler bridge, which Setup installs for them automatically. The AMD/Intel path is experimental and has not been tested on AMD or Intel hardware yet.
 - The [Microsoft Visual C++ v14 Redistributable for x64](https://aka.ms/vc14/vc_redist.x64.exe). The native plugin needs it, and Setup does not install it. [Microsoft's runtime guidance](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) explains the package.
 - An internet connection for the first install. BepInEx may also need one the first time the game starts.
 
@@ -30,6 +30,12 @@ Two checkboxes add optional components. Both start unchecked.
 
 - **Bridge**: OptiScaler, plus the NVIDIA, AMD and Intel frame generation runtimes.
 - **Neural Rendering model**: RHI's community-hosted SF-v2 model, about 111 MiB, plus the bridge it needs. This is not an official NVIDIA SDK download.
+
+On a PC without an NVIDIA GPU, Setup uses the AMD/Intel path: the bridge is required and its box is ticked and locked, the Neural Rendering box is disabled (it needs an NVIDIA RTX GPU), and NVIDIA-only downloads are skipped. The bridge starts with FSR 3.1 selected. If an `OptiScaler.ini` from an NVIDIA install is still there, Setup switches off DLSS, NVIDIA frame generation, Neural Rendering and OptiScaler's GPU spoofing in it, and keeps the previous copy in `.big-beautiful-walk/config-backups`.
+
+On a PC with both an NVIDIA GPU and an AMD or Intel GPU (most gaming laptops), Setup takes the NVIDIA path but ticks the bridge box for you, because Windows may run Big Walk on the other GPU. It also turns OptiScaler's GPU spoofing off in an existing `OptiScaler.ini`, so the mod can tell which GPU is rendering. If the game runs on the other GPU without the bridge, Home says so.
+
+`-GpuPath Nvidia` or `-GpuPath Bridge` on the command line overrides the detection.
 
 Installing only the bridge does not add a Neural Rendering model. Once an optional component is installed, later repairs include it even if its box is unchecked. Frame generation and Neural Rendering stay off until you choose them: open **Home → Frame Gen** or **Neural**, make your choice, then quit the game normally and restart it.
 

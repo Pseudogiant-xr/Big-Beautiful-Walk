@@ -514,7 +514,7 @@ internal static class AdvancedGraphics
     {
         GUI.Label(new Rect(x + 25, y + 185, 900, 45), Plugin.RendererStatus, _label);
         GUI.Label(new Rect(x + 25, y + 237, 900, 45),
-            $"Selected: {UpscalingPresentation.BackendName(BridgeSettings.RunningBackend)}  •  {UpscalingPresentation.QualityName(BridgeSettings.RunningBackend, Plugin.QualityMode.Value)}  •  {SystemInfo.graphicsDeviceName}", _small);
+            $"Selected: {UpscalingPresentation.BackendName(BridgeSettings.RunningBackend)}  •  {UpscalingPresentation.QualityName(BridgeSettings.RunningBackend, Plugin.QualityMode.Value)}  •  {SystemInfo.graphicsDeviceName}{(Plugin.UsesBridge ? "  •  AMD/Intel path (experimental)" : "")}", _small);
         GUI.enabled = Plugin.Compatible && Plugin.NativeLoaded;
         bool sr = GUI.Toggle(new Rect(x + 25, y + 292, 480, 30), Plugin.Enabled.Value,
             UpscalingPresentation.ToggleLabel(BridgeSettings.RunningBackend, Plugin.QualityMode.Value), _toggle);

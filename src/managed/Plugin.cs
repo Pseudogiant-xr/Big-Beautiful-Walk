@@ -30,9 +30,15 @@ public sealed class Plugin : BasePlugin
     internal static ConfigEntry<bool> RestorePostEffects = null!;
     internal static ConfigEntry<float> ShadowDistanceScale = null!;
     internal static ConfigEntry<bool> Diagnostics = null!;
+    internal static ConfigEntry<bool> ForceBridgeNative = null!;
     internal static bool Compatible, NativeLoaded;
+    // Rendering GPU vendor after correcting for OptiScaler's NVIDIA spoofing. AMD and Intel
+    // GPUs use the bridge native plugin, which drives OptiScaler and contains no NVIDIA SDK code.
+    internal static int GpuVendorId;
+    internal static bool UsesBridge;
     internal static string SupportMessage = "Starting…";
-    internal static string RendererStatus => !Compatible ? SupportMessage : !NativeLoaded ? "Upscaler unavailable — run Setup or check the log" :
+    private static string _nativeUnavailable = "Upscaler unavailable — run Setup or check the log";
+    internal static string RendererStatus => !Compatible ? SupportMessage : !NativeLoaded ? _nativeUnavailable :
         !Enabled.Value ? "Game renderer active" : UnityEngine.XR.XRSettings.enabled ? "VR session — reconstruction disabled" :
         _faulted || Native.Status() < 0 ? "Upscaling stopped — retry or select another quality mode" :
         ProbeOnly.Value ? "Diagnostic mode — reconstruction is off" : Bypass.Value ? "Comparison mode — basic scaling" :
@@ -77,7 +83,13 @@ public sealed class Plugin : BasePlugin
         RestorePostEffects = Config.Bind("PostProcessing", "Enabled", true, "Restore the game's active stock post effects around DLSS. F7 toggles this for comparison.");
         ShadowDistanceScale = Config.Bind("Shadows", "DistanceScale", 1f, "Legacy profile migration only. New installations retain stock shadow settings.");
         Diagnostics = Config.Bind("Diagnostics", "Enabled", false, "Enable diagnostic shortcuts F7/F9, automatic screenshots and verbose shadow texture probes.");
+        ForceBridgeNative = Config.Bind("Diagnostics", "ForceBridgeNative", false, "Testing only: use the AMD/Intel upscaler path through OptiScaler on an NVIDIA GPU. Requires the optional bridge.");
         bool allowUntested = Config.Bind("Compatibility", "AllowUntestedVersion", false, "Opt into an untested game/Unity update. Graphics API and XR restrictions still apply.").Value;
+        int reportedVendor = SystemInfo.graphicsDeviceVendorID;
+        GpuVendorId = GpuVendor.Resolve(reportedVendor, GpuVendor.InstalledVendors());
+        if (ForceBridgeNative.Value && GpuVendor.IsNvidia(GpuVendorId)) { GpuVendorId = GpuVendor.Amd; BridgeSettings.SimulatedVendor = true; }
+        UsesBridge = !GpuVendor.IsNvidia(GpuVendorId);
+        BridgeSettings.GpuVendorId = GpuVendorId;
         SupportMessage = Compatibility.Check(Application.unityVersion, Application.version,
             SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11, allowUntested);
         Compatible = SupportMessage.Length == 0;
@@ -90,7 +102,16 @@ public sealed class Plugin : BasePlugin
             try
             {
                 string directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
-                NativeLibrary.Load(Path.Combine(directory, "BigWalkDLSSNative.dll"));
+                if (UsesBridge && !BridgeSettings.Recognized)
+                {
+                    _nativeUnavailable = File.Exists(Path.Combine(Paths.GameRootPath, "version.dll"))
+                        ? "Big Walk is running on the " + GpuVendor.Name(GpuVendorId) + " GPU, which needs this mod's OptiScaler bridge, but a different version.dll is installed. Remove it, then run Setup."
+                        : "Big Walk is running on the " + GpuVendor.Name(GpuVendorId) + " GPU, which needs the optional upscaler bridge. " +
+                          "Run Setup and tick the bridge, or set Windows to run Big Walk on an NVIDIA GPU if this PC has one.";
+                    throw new InvalidOperationException("The OptiScaler bridge required for " + GpuVendor.Name(GpuVendorId) + " GPUs is not installed.");
+                }
+                IntPtr native = NativeLibrary.Load(Path.Combine(directory, UsesBridge ? "BigWalkBridgeNative.dll" : "BigWalkDLSSNative.dll"));
+                NativeLibrary.SetDllImportResolver(typeof(Plugin).Assembly, (name, _, _) => name == Native.Dll ? native : IntPtr.Zero);
                 Native.Initialize(Path.Combine(Paths.BepInExRootPath, "BigWalkDLSS"), Paths.GameRootPath);
                 _renderEvent = Native.GetRenderEvent();
                 if (Marshal.SizeOf<Frame>() != Native.FrameSize()) throw new InvalidOperationException("Managed/native frame ABI mismatch.");
@@ -98,11 +119,12 @@ public sealed class Plugin : BasePlugin
                 VegetationShadows.Initialize();
                 if (Enabled.Value && !UnityEngine.XR.XRSettings.enabled) InstallPatch();
             }
-            catch (Exception error) { _faulted = true; Log.LogError("Could not start DLSS. Use Home for status; check installation and Visual C++ runtime. " + error); }
+            catch (Exception error) { _faulted = true; Log.LogError("Could not start the upscaler. Use Home for status; check installation and Visual C++ runtime. " + error); }
         }
         else Log.LogWarning(SupportMessage);
         AddComponent<Controller>();
         Log.LogInfo($"Big Beautiful Walk 0.7.0: API={SystemInfo.graphicsDeviceType}, Unity={Application.unityVersion}, game={Application.version}, native loaded={NativeLoaded}; XR is excluded.");
+        Log.LogInfo($"GPU vendor reported=0x{reportedVendor:x4} resolved={GpuVendor.Name(GpuVendorId)}; native path={(UsesBridge ? "bridge (OptiScaler)" : "NVIDIA NGX")}{(ForceBridgeNative.Value ? " (forced for testing)" : "")}.");
     }
 
     private static void InstallPatch()
@@ -486,7 +508,7 @@ public sealed class Plugin : BasePlugin
 
     internal static class Native
     {
-        private const string Dll = "BigWalkDLSSNative";
+        internal const string Dll = "BigWalkDLSSNative";
         [DllImport(Dll, EntryPoint = "BW_Initialize", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void Initialize(string dataDirectory, string runtimeDirectory);
         [DllImport(Dll, EntryPoint = "BW_GetRenderEvent", CallingConvention = CallingConvention.Cdecl)]

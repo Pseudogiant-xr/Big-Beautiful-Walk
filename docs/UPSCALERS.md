@@ -2,7 +2,7 @@
 
 Big Beautiful Walk upscales with NVIDIA DLSS Super Resolution by default. The other backends need the optional OptiScaler bridge. XeSS and the FSR API also need extra runtime files from their vendors.
 
-This release needs an NVIDIA GPU, even if you choose FSR or XeSS. Those algorithms may run on other vendors' GPUs, but this build does not support systems without an NVIDIA GPU.
+On NVIDIA GPUs the mod calls DLSS directly. On AMD and Intel GPUs (experimental, not yet tested on that hardware) it uses a separate native plugin that hands every frame to OptiScaler, so FSR 3.1 or XeSS does the upscaling. DLSS and its model presets are greyed out there. The mod reads the real GPU vendor from Windows, because OptiScaler can report AMD and Intel GPUs as NVIDIA; Big Beautiful Walk also turns that spoofing off in `OptiScaler.ini`.
 
 A backend showing up in a menu, or its DLL loading, does not prove that backend drew the frame you see.
 

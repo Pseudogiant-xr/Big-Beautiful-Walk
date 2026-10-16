@@ -77,7 +77,7 @@ namespace BigWalkDLSS
         { Enabled = profile.Enabled, Style = profile.Style, Preset = profile.Preset,
           Intensity = profile.Intensity, TransferStrength = profile.TransferStrength, ColourStrength = profile.ColourStrength };
     }
-    internal static class BridgeSettings { internal static bool Recognized => true; internal static string Message => "Test saved-state feedback"; }
+    internal static class BridgeSettings { internal static bool Recognized => true; internal static string Message => "Test saved-state feedback"; internal static int GpuVendorId => 0x10de; }
     internal static class AdvancedGraphics { internal static GUIStyle ToggleStyle { get; } = new(); }
 }
 

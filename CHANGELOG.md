@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Experimental AMD and Intel GPU support. A separate native plugin with no NVIDIA SDK code hands frames to OptiScaler, so FSR 3.1 or XeSS upscales and AMD or Intel frame generation can run. Setup detects the GPU, installs the bridge automatically and skips NVIDIA-only downloads. Home greys out DLSS, its model presets, NVIDIA frame generation and Neural Rendering on these GPUs. Not yet tested on AMD or Intel hardware.
+- The real GPU vendor is read from Windows, so OptiScaler's GPU spoofing can no longer unlock NVIDIA-only options. Spoofing is turned off in the shipped OptiScaler settings.
+
+### Fixed
+
+- A single post-processing error no longer switches the game's post effects off permanently.
+- Setup accepts a Steam library behind a junction, allows slow downloads to finish, and returns failures correctly from `Setup.cmd`.
+- `Setup.cmd` and `Setup.exe` work when started from a PowerShell 7 terminal.
+
 ## 0.7.0 — alpha
 
 ### Added

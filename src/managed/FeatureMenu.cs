@@ -14,7 +14,7 @@ internal static class FeatureMenu
         {
             var current = FeatureSettings.StartupFrameGen;
             var queued = FeatureSettings.QueuedFrameGen;
-            int vendor = SystemInfo.graphicsDeviceVendorID;
+            int vendor = BridgeSettings.GpuVendorId;
             string device = SystemInfo.graphicsDeviceName;
             GUI.Label(new Rect(x + 25, y + 185, 900, 32), "This launch: " + Request(current.Enabled, FeatureOptions.ProviderName(current.Provider)), label);
             GUI.Label(new Rect(x + 25, y + 221, 900, 35), "Next launch: " + Request(queued.Enabled, FeatureOptions.ProviderName(queued.Provider)) +
@@ -62,7 +62,7 @@ internal static class FeatureMenu
         {
             var current = FeatureSettings.StartupNeural;
             var queued = FeatureSettings.QueuedNeural;
-            int vendor = SystemInfo.graphicsDeviceVendorID;
+            int vendor = BridgeSettings.GpuVendorId;
             GUI.Label(new Rect(x + 25, y + 185, 900, 28), "This launch: " + Request(current.Enabled, FeatureOptions.StyleNames[current.Style]), label);
             GUI.Label(new Rect(x + 25, y + 219, 900, 31), "Next launch: " + Request(queued.Enabled, FeatureOptions.StyleNames[queued.Style]) +
                 (FeatureSettings.NeuralPending ? " · Restart required" : " · No queued change"), small);

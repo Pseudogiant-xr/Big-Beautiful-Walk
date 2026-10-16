@@ -1,7 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using BepInEx;
-using UnityEngine;
 
 namespace BigWalkDLSS;
 
@@ -13,6 +13,11 @@ internal static class BridgeSettings
     private static string _gameRoot = "", _iniPath = "", _backupDirectory = "";
     private static IniSettings? _ini;
     internal static bool Recognized { get; private set; }
+    // Rendering GPU vendor, set by Plugin before Initialize. AMD and Intel GPUs run every upscaler through OptiScaler.
+    internal static int GpuVendorId { get; set; } = 0x10de;
+    internal static bool NvidiaGpu => GpuVendorId == 0x10de;
+    // ForceBridgeNative on an NVIDIA GPU: behave as AMD/Intel this session, but leave the saved settings alone.
+    internal static bool SimulatedVendor { get; set; }
     internal static bool PresetOverride { get; private set; }
     internal static int RunningBackend { get; private set; }
     internal static int NextLaunchBackend { get; private set; }
@@ -29,8 +34,46 @@ internal static class BridgeSettings
         RunningBackend = NextLaunchBackend;
         RunningBackendValue = NextLaunchBackendValue;
         PresetOverride = string.Equals(_ini?.Get("DLSS", "RenderPresetOverride"), "true", StringComparison.OrdinalIgnoreCase);
+        // Capture what this launch runs before correcting the next launch, so Home shows the restart.
         FeatureSettings.Initialize();
+        if (!NvidiaGpu) PrepareForOtherVendor();
     }
+
+    // DLSS cannot run on AMD or Intel GPUs; OptiScaler then substitutes its own default this
+    // session. GPU spoofing would also hide the real vendor from Unity, and a saved NVIDIA Frame
+    // Generation or Neural Rendering request can stop the game there. Correct all of them for the next launch.
+    private static void PrepareForOtherVendor()
+    {
+        if (RunningBackend == 0) RunningBackend = -1;
+        if (!Recognized || _ini == null) return;
+        if (SimulatedVendor) { Message = "Testing the AMD/Intel path: OptiScaler.ini is left unchanged."; return; }
+        bool dlss = NextLaunchBackend == 0;
+        bool spoofing = !string.Equals(ReadOption("Spoofing", "Dxgi"), "false", StringComparison.OrdinalIgnoreCase);
+        bool nvidiaFrameGen = IsTrue(ReadOption("FrameGen", "Enabled")) &&
+            string.Equals(ReadOption("FrameGen", "FGOutput"), "DLSSG", StringComparison.OrdinalIgnoreCase);
+        bool neural = IsTrue(ReadOption("DlssNr", "Enabled"));
+        if (!dlss && !spoofing && !nvidiaFrameGen && !neural) return;
+        var changes = new List<(string Section, string Key, string Value)>();
+        if (dlss) changes.Add(("Upscalers", "Dx11Upscaler", BackendValues[1]));
+        if (spoofing) changes.Add(("Spoofing", "Dxgi", "false"));
+        if (nvidiaFrameGen) changes.Add(("FrameGen", "Enabled", "false"));
+        if (neural) changes.Add(("DlssNr", "Enabled", "false"));
+        if (!WriteOptions(changes.ToArray()))
+        {
+            Message = "Settings for this GPU could not be updated. Close Big Walk and run Setup, or change them in Home.";
+            return;
+        }
+        if (dlss) NextLaunchBackend = 1;
+        var turnedOff = new List<string>();
+        if (nvidiaFrameGen) turnedOff.Add("NVIDIA Frame Generation");
+        if (neural) turnedOff.Add("Neural Rendering");
+        Message = (dlss ? "DLSS needs an NVIDIA GPU, so FSR 3.1 was selected. " : "") +
+            (turnedOff.Count > 0 ? string.Join(" and ", turnedOff) + (turnedOff.Count > 1 ? " were" : " was") + " turned off because they need an NVIDIA GPU. " : "") +
+            (spoofing && !dlss && turnedOff.Count == 0 ? "OptiScaler GPU spoofing was turned off for this GPU. " : "") +
+            "Restart Big Walk to apply.";
+    }
+
+    private static bool IsTrue(string? value) => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
 
     internal static void Reload()
     {
@@ -94,9 +137,10 @@ internal static class BridgeSettings
     internal static string UnavailableReason(int index)
     {
         if (index < 0 || index >= BackendValues.Length) return "Renderer unavailable.";
-        if (index == 3) return SystemInfo.graphicsDeviceVendorID == 0x10de
+        if (index == 3) return NvidiaGpu
             ? "FSR 4 requires a supported AMD GPU. It is unavailable on NVIDIA GPUs."
             : "FSR 4 requires a supported AMD GPU; support is not available in this alpha.";
+        if (index == 0 && !NvidiaGpu) return "DLSS and its model presets need an NVIDIA RTX GPU.";
         if (index == 0 && !Recognized && NextLaunchBackend == 0) return "";
         if (!Recognized || _ini == null) return "Additional renderers need optional OptiScaler support. See the graphics guide.";
         if (index == 2)

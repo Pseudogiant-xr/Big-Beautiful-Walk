@@ -65,6 +65,40 @@ try
     Check(retried.Get("DlssNr", "Style") == "2" && retried.Get("Other", "Keep") == "newer writer" && retried.Get("DlssNr", "Intensity") == "0.8", "Retry lost refreshed settings");
     Check(FeatureSettings.StartupFrameGen.Signature == startupFrame && FeatureSettings.StartupNeural.Signature == startupNeural, "Save or recovery changed startup snapshots");
 
+    // AMD and Intel GPUs: DLSS cannot run there, and GPU spoofing would hide the real vendor.
+    File.WriteAllText(path, "[Upscalers]\nDx11Upscaler=dlss_12\n[FrameGen]\nEnabled=false\n[Logging]\nLogLevel=Debug\n");
+    BridgeSettings.GpuVendorId = 0x1002;
+    BridgeSettings.Initialize();
+    var corrected = new IniSettings(File.ReadAllBytes(path));
+    Check(corrected.Get("Upscalers", "Dx11Upscaler") == "fsr31" && corrected.Get("Spoofing", "Dxgi") == "false", "AMD GPU kept DLSS or GPU spoofing for the next launch");
+    Check(corrected.Get("Logging", "LogLevel") == "Debug" && corrected.Get("FrameGen", "Enabled") == "false", "Vendor correction changed unrelated settings");
+    Check(BridgeSettings.RunningBackend == -1 && BridgeSettings.NextLaunchBackend == 1 && BridgeSettings.Message.Contains("FSR 3.1"), "AMD session reported DLSS or hid the restart");
+    Check(BridgeSettings.UnavailableReason(0).Contains("NVIDIA") && BridgeSettings.UnavailableReason(1).Length == 0, "AMD GPU could select DLSS or lost FSR 3.1");
+    byte[] settled = File.ReadAllBytes(path);
+    BridgeSettings.Initialize();
+    Check(File.ReadAllBytes(path).SequenceEqual(settled), "Corrected AMD settings were rewritten on the next launch");
+    // A saved NVIDIA FG or NR request is switched off on these GPUs; AMD FG requests are kept.
+    File.WriteAllText(path, "[Upscalers]\nDx11Upscaler=fsr31\n[Spoofing]\nDxgi=false\n[FrameGen]\nEnabled=true\nFGOutput=DLSSG\n[DlssNr]\nEnabled=true\n");
+    BridgeSettings.Initialize();
+    var nvidiaOnly = new IniSettings(File.ReadAllBytes(path));
+    Check(nvidiaOnly.Get("FrameGen", "Enabled") == "false" && nvidiaOnly.Get("DlssNr", "Enabled") == "false", "NVIDIA-only FG or NR stayed enabled on an AMD GPU");
+    Check(BridgeSettings.Message.Contains("NVIDIA Frame Generation and Neural Rendering"), "Turning off NVIDIA-only features was not explained");
+    Check(FeatureSettings.StartupFrameGen.Enabled && FeatureSettings.StartupNeural.Enabled && FeatureSettings.FrameGenPending && FeatureSettings.NeuralPending,
+        "This launch's running features were misreported as already off");
+    File.WriteAllText(path, "[Upscalers]\nDx11Upscaler=fsr31\n[Spoofing]\nDxgi=false\n[FrameGen]\nEnabled=true\nFGOutput=FSRFG\n[DlssNr]\nEnabled=false\n");
+    byte[] amdFrameGen = File.ReadAllBytes(path);
+    BridgeSettings.Initialize();
+    Check(File.ReadAllBytes(path).SequenceEqual(amdFrameGen), "AMD Frame Generation request was changed on an AMD GPU");
+    // ForceBridgeNative testing on NVIDIA behaves as AMD/Intel without rewriting saved settings.
+    File.WriteAllText(path, "[Upscalers]\nDx11Upscaler=dlss_12\n[FrameGen]\nEnabled=true\nFGOutput=DLSSG\n");
+    byte[] tester = File.ReadAllBytes(path);
+    BridgeSettings.SimulatedVendor = true;
+    BridgeSettings.Initialize();
+    BridgeSettings.SimulatedVendor = false;
+    Check(File.ReadAllBytes(path).SequenceEqual(tester) && BridgeSettings.RunningBackend == -1 && BridgeSettings.UnavailableReason(0).Contains("NVIDIA"),
+        "Forced AMD/Intel testing rewrote saved settings or did not behave as AMD/Intel");
+    BridgeSettings.GpuVendorId = 0x10de;
+
     // Refresh does not read/hash the proxy, but every write still validates it.
     File.Delete(proxy);
     BridgeSettings.RefreshSavedSettings();

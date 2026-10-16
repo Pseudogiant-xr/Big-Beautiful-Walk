@@ -1,13 +1,15 @@
 param(
     [string]$ManagedDll,
     [string]$NativeDll,
+    [string]$BridgeDll,
     [Parameter(Mandatory=$true)][string]$Destination
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 if (-not $ManagedDll) { $ManagedDll = Join-Path $root 'src/managed/bin/Release/net6.0/BigWalkDLSS.dll' }
 if (-not $NativeDll) { $NativeDll = Join-Path $root 'build/native/Release/BigWalkDLSSNative.dll' }
-foreach ($path in @($ManagedDll,$NativeDll)) {
+if (-not $BridgeDll) { $BridgeDll = Join-Path $root 'build/native/Release/BigWalkBridgeNative.dll' }
+foreach ($path in @($ManagedDll,$NativeDll,$BridgeDll)) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Build first: missing $path" }
 }
 $destinationPath = [IO.Path]::GetFullPath($Destination)
@@ -31,12 +33,15 @@ $payload = Join-Path $destinationPath 'payload/BigWalkDLSS'
 [void][IO.Directory]::CreateDirectory($payload)
 Copy-Item -LiteralPath $ManagedDll -Destination (Join-Path $payload 'BigWalkDLSS.dll')
 Copy-Item -LiteralPath $NativeDll -Destination (Join-Path $payload 'BigWalkDLSSNative.dll')
+Copy-Item -LiteralPath $BridgeDll -Destination (Join-Path $payload 'BigWalkBridgeNative.dll')
 $defaults = Join-Path $destinationPath 'payload/defaults'
 [void][IO.Directory]::CreateDirectory($defaults)
 Copy-Item -LiteralPath (Join-Path $root 'packaging/default-native.cfg') -Destination (Join-Path $defaults 'local.bigwalk.native-dlss.cfg')
 if (Test-Path -LiteralPath (Join-Path $root 'packaging/default-opti.ini')) {
     Copy-Item -LiteralPath (Join-Path $root 'packaging/default-opti.ini') -Destination (Join-Path $defaults 'OptiScaler.ini')
 }
+# Setup requires the AMD/Intel default whenever it takes the bridge path.
+Copy-Item -LiteralPath (Join-Path $root 'packaging/default-opti-bridge.ini') -Destination (Join-Path $defaults 'OptiScaler.bridge.ini')
 $hashes = foreach ($file in Get-ChildItem -LiteralPath $destinationPath -Recurse -File | Sort-Object FullName) {
     $relative = $file.FullName.Substring($destinationPath.Length+1).Replace('\','/')
     "$( (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $relative"

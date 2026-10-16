@@ -20,6 +20,8 @@ Not tested on other hardware, and the providers were not benchmarked against eac
 
 The panel shows what this launch started with and what is queued for the next launch. **F10** is still the advanced OptiScaler menu. Use it to see what the provider is really doing and any errors.
 
+On AMD and Intel GPUs, NVIDIA DLSS FG and Neural Rendering are greyed out because they need an NVIDIA RTX GPU. AMD FSR FG and Intel XeSS FG stay available; they have not been tested on AMD or Intel hardware yet.
+
 ## Frame-generation providers
 
 | Choice | Files the optional setup installs | Requirements and test results |
