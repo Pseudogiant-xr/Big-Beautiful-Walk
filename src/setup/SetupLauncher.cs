@@ -29,6 +29,9 @@ internal static class SetupLauncher
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
+            // Opened from a PowerShell 7 console, the inherited module path hides Windows PowerShell's
+            // built-in modules. Windows PowerShell rebuilds its default when the variable is unset.
+            start.EnvironmentVariables.Remove("PSModulePath");
             using (Process process = Process.Start(start))
             {
                 if (process == null) throw new InvalidOperationException("Windows PowerShell could not be started.");

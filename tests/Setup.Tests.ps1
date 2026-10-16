@@ -147,6 +147,7 @@ try {
         Assert ($state.Requests[1].Uri.Host -eq 'release-assets.githubusercontent.com') 'GitHub asset redirect followed'
         Assert ($state.Requests[2].Uri.AbsolutePath -eq '/final.zip') 'relative redirect resolved'
         Assert (@($state.Requests | Where-Object { $_.Timeout -le 0 -or $_.Timeout -gt 180000 }).Count -eq 0) 'requests have bounded timeouts'
+        Assert (@($state.Requests | Where-Object { $_.Timeout -ne 60000 }).Count -eq 0) 'each request gets the 60-second stall timeout, not a shrinking total budget'
         Assert ([IO.File]::ReadAllText($destination) -eq 'verified-download-fixture') 'redirect body saved'
     }
     Case 'redirect download rejects downgrade credentials missing destinations and loops' {
@@ -559,6 +560,22 @@ try {
         [void](New-Item -ItemType Junction -Path $junction -Target $outside)
         try { Expect-Failure { Install $f } 'junctions'; Assert (@(Get-ChildItem $outside).Count -eq 0) 'junction destination unchanged' }
         finally { [IO.Directory]::Delete($junction) }
+    }
+    Case 'game folder under a junctioned library installs and uninstalls' {
+        $f=New-Fixture 'linked-library'
+        $link=Join-Path $scratch 'linked-library-junction'
+        [void](New-Item -ItemType Junction -Path $link -Target (Split-Path $f.GamePath -Parent))
+        try {
+            $linked=@{GamePath=(Join-Path $link 'game');PackagePath=(Join-Path $link 'package');DependencyDirectory=(Join-Path $link 'deps')}
+            $module=Get-Module Setup.Core
+            Assert ((& $module { param($Path) Get-BbwMutexName $Path } $linked.GamePath) -eq (& $module { param($Path) Get-BbwMutexName $Path } $f.GamePath)) 'alias and physical path share one installer lock'
+            Assert ((& $module { param($Path) Get-BbwFinalPath $Path } $linked.GamePath) -eq (& $module { param($Path) Get-BbwFinalPath $Path } $f.GamePath)) 'alias resolves to the physical game folder'
+            Install $linked | Out-Null
+            Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll')) -eq 'plugin-one') 'installed through the junctioned library'
+            Uninstall $linked | Out-Null
+            Assert (-not (Test-Path (Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll'))) 'removed through the junctioned library'
+        }
+        finally { [IO.Directory]::Delete($link) }
     }
     Case 'injected mid-install failure rolls back and rerun succeeds' {
         $f=New-Fixture 'fault'

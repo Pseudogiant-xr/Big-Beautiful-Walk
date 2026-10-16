@@ -70,7 +70,7 @@ struct State {
     unsigned flags = 0;
     int quality = -1, preset = -1;
     unsigned long long evaluations = 0;
-    bool initialized = false, verified = false;
+    bool ngxReady = false, initialized = false, verified = false;
 };
 
 // The engine owns the process lifetime. Explicit GPU-idle teardown is used for feature recreation.
@@ -121,34 +121,54 @@ struct RestoreContext {
 bool BindDevice(State& state, ID3D11Resource* color) {
     ComPtr<ID3D11Device> device;
     color->GetDevice(&device);
+    if (!device) return false;
     if (state.device) return device.Get() == state.device.Get();
-    state.device = device;
-    device->GetImmediateContext(&state.context);
+    // Commit nothing until every interface and the saved context state exist, so a retry
+    // after a partial failure rebinds instead of evaluating without context restoration.
+    ComPtr<ID3D11DeviceContext> context;
+    device->GetImmediateContext(&context);
     ComPtr<ID3D11Device1> device1;
-    if (FAILED(device.As(&device1)) || FAILED(state.context.As(&state.context1))) return false;
+    ComPtr<ID3D11DeviceContext1> context1;
+    if (!context || FAILED(device.As(&device1)) || FAILED(context.As(&context1))) return false;
     D3D_FEATURE_LEVEL level = device->GetFeatureLevel(), selected{};
+    ComPtr<ID3DDeviceContextState> pluginState;
     HRESULT result = device1->CreateDeviceContextState(0, &level, 1, D3D11_SDK_VERSION,
-        __uuidof(ID3D11Device), &selected, &state.pluginState);
-    if (FAILED(result)) { Log("Context-state creation failed: 0x%08x", unsigned(result)); return false; }
+        __uuidof(ID3D11Device), &selected, &pluginState);
+    if (FAILED(result) || !pluginState) { Log("Context-state creation failed: 0x%08x", unsigned(result)); return false; }
+    state.device = device;
+    state.context = context;
+    state.context1 = context1;
+    state.pluginState = pluginState;
     return true;
 }
 
 bool InitializeNgx(State& state) {
     if (state.initialized) return true;
-    const wchar_t* paths[] = {runtimeDirectory.c_str()};
-    NVSDK_NGX_FeatureCommonInfo info{};
-    info.PathListInfo.Path = paths;
-    info.PathListInfo.Length = 1;
-    const auto result = NVSDK_NGX_D3D11_Init_with_ProjectID("ab31a96d-e80e-46d7-b5c1-78f9636183ec",
-        NVSDK_NGX_ENGINE_TYPE_UNITY, "6000.3.17f1", dataDirectory.c_str(), state.device.Get(), &info);
-    Log("NGX D3D11 project initialization result=0x%08x", unsigned(result));
-    if (NVSDK_NGX_FAILED(result)) return false;
-    const auto capabilities = NVSDK_NGX_D3D11_GetCapabilityParameters(&state.parameters);
+    // NGX is initialized once per device. A retry never calls Init again; it fetches capability
+    // parameters only if that failed before, and otherwise re-reads the cached availability.
+    if (!state.ngxReady) {
+        const wchar_t* paths[] = {runtimeDirectory.c_str()};
+        NVSDK_NGX_FeatureCommonInfo info{};
+        info.PathListInfo.Path = paths;
+        info.PathListInfo.Length = 1;
+        const auto result = NVSDK_NGX_D3D11_Init_with_ProjectID("ab31a96d-e80e-46d7-b5c1-78f9636183ec",
+            NVSDK_NGX_ENGINE_TYPE_UNITY, "6000.3.17f1", dataDirectory.c_str(), state.device.Get(), &info);
+        Log("NGX D3D11 project initialization result=0x%08x", unsigned(result));
+        if (NVSDK_NGX_FAILED(result)) return false;
+        state.ngxReady = true;
+    }
+    if (!state.parameters) {
+        const auto capabilities = NVSDK_NGX_D3D11_GetCapabilityParameters(&state.parameters);
+        if (NVSDK_NGX_FAILED(capabilities)) {
+            state.parameters = nullptr;
+            Log("DLSS capability result=0x%08x", unsigned(capabilities));
+            return false;
+        }
+    }
     int available = 0;
-    if (NVSDK_NGX_SUCCEED(capabilities))
-        state.parameters->Get(NVSDK_NGX_Parameter_SuperSampling_Available, &available);
-    Log("DLSS capability result=0x%08x available=%d", unsigned(capabilities), available);
-    state.initialized = NVSDK_NGX_SUCCEED(capabilities) && available != 0;
+    state.parameters->Get(NVSDK_NGX_Parameter_SuperSampling_Available, &available);
+    Log("DLSS capability available=%d", available);
+    state.initialized = available != 0;
     return state.initialized;
 }
 
