@@ -13,7 +13,7 @@ The [lock file](../packaging/dependencies.lock.json) contains the exact download
 
 ## Optional FG and NR
 
-Setup's optional upscaler/FG checkbox downloads the pinned OptiScaler proxy, production Streamline/FG files, AMD FidelityFX loader/FG and Intel XeSS SR/FG plus XeLL runtimes. The direct core install remains DLSS-only. The optional fresh configuration leaves FG and NR off, selects DLSS as the initial renderer and lets Home provide model-preset requests. Version 0.7 adds saved Home FG/NR profiles; these new controls and AMD/Intel FG routes await real-game testing. See [the FG / NR guide](FRAME-GENERATION.md).
+Setup's optional upscaler/FG checkbox downloads the pinned OptiScaler proxy, production Streamline/FG files, AMD FidelityFX loader/FG and Intel XeSS SR/FG plus XeLL runtimes. The direct core install remains DLSS-only. The optional fresh configuration leaves FG and NR off, selects DLSS as the initial renderer and lets Home provide model-preset requests. Version 0.7 adds saved Home FG/NR profiles; individual RTX 4090 observations and performance limitations are in [the FG / NR guide](FRAME-GENERATION.md). They do not validate every backend combination or a fresh loader bootstrap.
 
 The 0.6 official NVIDIA optional FG set produced generated-frame presents in-world on the tested setup. FSR 3.1 initialized, sustained reconstruction and was visually confirmed. Neural Rendering still requires a separately obtained model; setup supplies its forwarder from the pinned OptiScaler archive, without a model. Existing conflicting injector stacks may require their own removal before this install can proceed.
 

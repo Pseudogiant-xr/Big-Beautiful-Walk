@@ -20,7 +20,7 @@ A completely fresh BepInEx installation and first-launch interop generation have
 ## Limits
 
 - VR is unsupported. Remove or disable this graphics integration before a VR session.
-- Version 0.7's Home FG/NR controls, AMD FG, Intel FG and all new provider combinations are prepared offline and have not been launched in Big Walk. The tested 0.6 NVIDIA path does not validate these additions. See [FRAME-GENERATION.md](FRAME-GENERATION.md).
+- Version 0.7's controls and three FG routes were exercised on the observed RTX 4090. NVIDIA FG and Default-style NR received positive visual checks; AMD FG was functional but inferior in the user's comparison, and Intel FG produced frames with a net performance regression. Other hardware, all backend/FG combinations and AMD/Intel FG plus NR remain unverified. See [FRAME-GENERATION.md](FRAME-GENERATION.md).
 - DirectX 12, Vulkan, Linux/Proton, AMD/Intel GPUs and other RTX generations are unverified.
 - Game or Unity updates may change the rendering hooks. Preserve your installer backups before updating.
 - FG can shimmer on grass and foliage; generated-frame rate is different from the game's rendered-frame rate.

@@ -1,6 +1,6 @@
 # Frame generation and neural rendering
 
-Version 0.7 adds saved Home profiles for three frame-generation providers and Neural Rendering. It was prepared offline: no 0.7 game launch, provider initialization, visual comparison or frame-pacing test has been performed. Configuration and file checks cannot establish that generated frames or an NR model are running.
+Version 0.7 adds saved Home profiles for three frame-generation providers and Neural Rendering. After offline preparation it was tested on the observed RTX 4090 / DX11 setup. NVIDIA FG and Default-style NR received positive visual checks. AMD FG was functional but judged inferior; Intel FG produced marked interpolated frames with a reported performance regression. These observations do not establish performance on other hardware or a controlled provider benchmark. Configuration and file checks alone cannot establish active rendering.
 
 Install the optional bridge using Setup while the game is closed. Fresh defaults keep FG and NR off. Existing OptiScaler settings are preserved. Use **Home → Frame Gen** or **Home → Neural**, make a choice, then quit normally and restart Big Walk. The panel separates startup configuration from the next-launch request. **F10** remains the advanced OptiScaler menu and the place to inspect actual provider state and errors. Save any F10 changes before queuing Home choices; saving the bridge's older in-memory settings afterwards can overwrite the queued profile.
 
@@ -8,9 +8,9 @@ Install the optional bridge using Setup while the game is closed. Fresh defaults
 
 | Choice | Runtime files supplied by optional setup | Requirements and current evidence |
 | --- | --- | --- |
-| NVIDIA DLSS FG | Production Streamline 2.14.1 plus DLSS FG | Official direct FG requires RTX 40 or newer, Windows build 19041+, and hardware-accelerated GPU scheduling. The 0.6 route produced generated-frame presents on an RTX 4090. The new selector is untested. |
-| AMD FSR FG | Signed FidelityFX loader 2.3.0.2740 and frame-generation DLL 4.0.1.2740 | Cross-vendor route; GPU/resource compatibility must be established by initialization and rendering. No 0.7 game test has run. |
-| Intel XeSS FG | XeSS SDK 3.0.2's FG 1.3.1.78 and XeLL 1.3.2.10 | Supports Intel hardware and non-Intel Shader Model 6.4 GPUs. Requires XeLL and a recent Visual C++ runtime. Use borderless or windowed mode, not fullscreen exclusive. No 0.7 game test has run. |
+| NVIDIA DLSS FG | Production Streamline 2.14.1 plus DLSS FG | Official direct FG requires RTX 40 or newer, Windows build 19041+, and hardware-accelerated GPU scheduling. User confirmed the 0.7 picture/controls and preferred this provider on the RTX 4090. NVIDIA reported FG preset C effective. |
+| AMD FSR FG | Signed FidelityFX loader 2.3.0.2740 and frame-generation DLL 4.0.1.2740 | Cross-vendor route. Successful dispatches, generated-only motion and user off/on checks support operation on the RTX 4090; quality/performance was judged worse than NVIDIA. Day/night readings were not a controlled comparison. |
+| Intel XeSS FG | XeSS SDK 3.0.2's FG 1.3.1.78 and XeLL 1.3.2.10 | Supports Intel hardware and non-Intel Shader Model 6.4 GPUs. Requires XeLL and a recent Visual C++ runtime. Use borderless or windowed mode. Interpolated-frame debug markers appeared on the RTX 4090, but user A/B reported 71 FPS off and 40 on: not recommended for that tested setup. |
 
 Profiles use one generated frame per rendered frame and clear F10's conflicting Force XeLL mode, which disables frame generation. Multi-frame generation is not exposed without real capability evidence. Changing NVIDIA's FG preset C is a driver-profile operation and is separate from SR model preset L; this mod does not alter driver profiles. Prefer a stable rendered-frame rate before enabling FG. Bars, foliage and fast movement need close comparison because interpolation can introduce shimmer.
 
@@ -21,6 +21,8 @@ Pinned OptiScaler can terminate the process when direct NVIDIA FG is unsupported
 ## Neural rendering
 
 The optional package includes OptiScaler's NR forwarder. Supply a model only if you obtained it under terms permitting your use, at `OptiScaler/nvngx_dlssnr.dll`. No model is downloaded, extracted from another game, mirrored or redistributed by this project. A correctly named file still may fail initialization or lack required exports.
+
+The user's existing root-level NR model and forwarder layout is also recognized. That model evaluated at 3440×1440 with real 2293×960 depth/motion guides; Default style plus NVIDIA FG received a positive in-world colour, motion and controls check. AMD/Intel FG combined with NR remain unverified.
 
 NR's DX11 integration needs an OptiScaler backend using the DX12 interoperability route: the supplied DLSS and XeSS selections use this route; native `fsr31` does not reach the pinned NR call site. This is an implementation limitation of this integration, rather than a general claim that NR requires DLSS Super Resolution.
 
