@@ -1,6 +1,6 @@
-# License source snapshots
+# Licence source snapshots
 
-Retrieved 2026-10-16 from the upstream sources below. The source license texts retain their upstream content. SHA-256 values identify the saved files, not a legal-clearance decision.
+These licence texts were retrieved on 2026-10-16 from the upstream sources below, and keep their upstream content. The SHA-256 values identify the saved files. They are not a legal-clearance decision.
 
 | Local copy | Upstream source | SHA-256 |
 | --- | --- | --- |

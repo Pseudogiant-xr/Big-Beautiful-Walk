@@ -5,7 +5,7 @@ body:
     id: mod-version
     attributes:
       label: Mod version
-      placeholder: 0.6.0
+      placeholder: 0.7.0
     validations:
       required: true
   - type: input
@@ -32,12 +32,12 @@ body:
   - type: textarea
     id: steps
     attributes:
-      label: Reproduction and expected behaviour
-      description: Include the selected preset, graphics API and whether it also happens with Game defaults.
+      label: Steps to reproduce and expected behaviour
+      description: Include the selected preset, the graphics API, and whether it also happens with Game defaults.
     validations:
       required: true
   - type: textarea
     id: evidence
     attributes:
-      label: Relevant logs or screenshot
-      description: Use the smallest relevant excerpt. Remove account identifiers and personal paths before posting.
+      label: Logs or screenshots
+      description: Paste only the relevant part of the log. Remove account identifiers and personal paths before posting.
