@@ -51,7 +51,8 @@ The later installer and UI build has managed SHA-256 `C4E1CD56CCFCA4772D4341A05D
 - VR is not supported. Remove or turn off this graphics mod before a VR session.
 - In 0.7, the controls and all three FG providers were tried on the tested RTX 4090. NVIDIA FG and Default-style NR looked good. AMD FG worked but was worse in comparison. Intel FG generated frames but made the game slower overall. Not tested: other hardware, every backend and FG combination, and AMD or Intel FG together with NR. See [FRAME-GENERATION.md](FRAME-GENERATION.md).
 - DirectX 12, Vulkan, Linux/Proton and other RTX generations have not been tested.
-- This release needs an NVIDIA GPU, even if you choose FSR or XeSS. Systems with only an AMD or Intel GPU are outside what this build's SDKs cover, and are not supported.
+- AMD and Intel GPUs are supported experimentally through the OptiScaler bridge (FSR 3.1, XeSS, AMD and Intel frame generation). This path has not been tested on AMD or Intel hardware; the native bridge plugin was only exercised on the RTX 4090 with the AMD/Intel path forced. DLSS, NVIDIA frame generation and Neural Rendering need an NVIDIA RTX GPU.
+- On a PC with an NVIDIA GPU and an AMD integrated GPU, if OptiScaler's GPU spoofing is turned on and Windows runs the game on the integrated GPU, the mod cannot tell which GPU is rendering and takes the NVIDIA path. Big Beautiful Walk ships with spoofing off (`[Spoofing] Dxgi=false`); keep it off.
 - Game or Unity updates may break the rendering hooks. Keep your installer backups before you update.
 - FG can make grass and foliage shimmer. The generated frame rate is not the same as the game's rendered frame rate.
 - XeSS gives a valid picture, but slight flicker was reported on the tested display. The cause is unknown. This release does not claim a VRR-specific fix.

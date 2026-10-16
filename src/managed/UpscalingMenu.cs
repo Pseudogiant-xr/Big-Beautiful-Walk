@@ -29,7 +29,8 @@ internal static class UpscalingMenu
                 GUI.color = colour;
                 GUI.Label(new Rect(x + 38, y + 255, 875, 26), "Restart required · Restart Big Walk to use " + UpscalingPresentation.BackendName(BridgeSettings.NextLaunchBackend) + ".", label);
             }
-            GUI.Label(new Rect(x + 25, y + 284, 900, 32), BridgeSettings.UnavailableReason(3), small);
+            GUI.Label(new Rect(x + 25, y + 284, 900, 32), BridgeSettings.NvidiaGpu ? BridgeSettings.UnavailableReason(3)
+                : "DLSS and its model presets need an NVIDIA RTX GPU. FSR 4 is not available in this alpha.", small);
             GUI.Label(new Rect(x + 25, y + 321, 900, 28), Plugin.RendererStatus, label);
             GUI.enabled = enabled && Plugin.Compatible && Plugin.NativeLoaded;
             bool nextEnabled = GUI.Toggle(new Rect(x + 25, y + 355, 570, 28), Plugin.Enabled.Value,

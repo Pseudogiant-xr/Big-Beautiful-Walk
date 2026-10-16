@@ -1,10 +1,6 @@
 #include <windows.h>
 #include <d3d11_1.h>
 #include <wrl/client.h>
-#include <nvsdk_ngx.h>
-#include <nvsdk_ngx_helpers.h>
-#include <nvsdk_ngx_helpers_d3d.h>
-#include <sl_dlss_g.h>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -15,8 +11,12 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include "Upscaler.h"
 
+// Shared core of both native DLLs. The upscaler backend (NVIDIA NGX SDK or the OptiScaler bridge)
+// is chosen at link time; this file contains no vendor SDK code.
 using Microsoft::WRL::ComPtr;
+namespace backend = bw::backend;
 
 struct Frame {
     int abi, cameraId, frameIndex, mode;
@@ -34,8 +34,9 @@ std::atomic<int> status{0};
 std::atomic<bool> retryRequested{false};
 std::mutex logMutex;
 std::wstring dataDirectory, runtimeDirectory;
+}
 
-void Log(const char* format, ...) {
+void bw::Log(const char* format, ...) {
     std::lock_guard<std::mutex> guard(logMutex);
     FILE* file = nullptr;
     _wfopen_s(&file, (dataDirectory + L"\\native.log").c_str(), L"ab");
@@ -51,6 +52,9 @@ void Log(const char* format, ...) {
     fclose(file);
 }
 
+namespace {
+using bw::Log;
+
 bool Describe(ID3D11Resource* resource, D3D11_TEXTURE2D_DESC& desc) {
     if (!resource) return false;
     ComPtr<ID3D11Texture2D> texture;
@@ -64,33 +68,16 @@ struct State {
     ComPtr<ID3D11DeviceContext> context;
     ComPtr<ID3D11DeviceContext1> context1;
     ComPtr<ID3DDeviceContextState> pluginState;
-    NVSDK_NGX_Parameter* parameters = nullptr;
-    NVSDK_NGX_Handle* feature = nullptr;
     int width = 0, height = 0, outWidth = 0, outHeight = 0, cameraId = 0, epoch = -1, lastFrame = -1;
     unsigned flags = 0;
     int quality = -1, preset = -1;
     unsigned long long evaluations = 0;
-    bool ngxReady = false, initialized = false, verified = false;
+    bool initialized = false, verified = false;
 };
 
 // The engine owns the process lifetime. Explicit GPU-idle teardown is used for feature recreation.
 // Avoid calling graphics/NGX APIs from a DLL destructor after Unity has destroyed its device.
 State& Engine() { static State* state = new State(); return *state; }
-
-void ReportFrameGeneration(unsigned long long evaluations) {
-    HMODULE module = GetModuleHandleW(L"sl.dlss_g.dll");
-    if (!module) return;
-    using PluginFunction = void* (*)(const char*);
-    auto getFunction = reinterpret_cast<PluginFunction>(GetProcAddress(module, "slGetPluginFunction"));
-    if (!getFunction) return;
-    auto getState = reinterpret_cast<PFun_slDLSSGGetState*>(getFunction("slDLSSGGetState"));
-    if (!getState) return;
-    sl::DLSSGState fg{};
-    sl::ViewportHandle viewport{0};
-    const auto result = getState(viewport, fg, nullptr);
-    Log("FG presentation sample result=%u status=0x%x presentedSinceSample=%u SR_evaluations=%llu maxGeneratedPerRendered=%u",
-        unsigned(result), unsigned(fg.status), fg.numFramesActuallyPresented, evaluations, fg.numFramesToGenerateMax);
-}
 
 bool WaitGpu(State& state) {
     D3D11_QUERY_DESC desc{D3D11_QUERY_EVENT, 0};
@@ -142,69 +129,31 @@ bool BindDevice(State& state, ID3D11Resource* color) {
     return true;
 }
 
-bool InitializeNgx(State& state) {
+bool InitializeBackend(State& state) {
     if (state.initialized) return true;
-    // NGX is initialized once per device. A retry never calls Init again; it fetches capability
-    // parameters only if that failed before, and otherwise re-reads the cached availability.
-    if (!state.ngxReady) {
-        const wchar_t* paths[] = {runtimeDirectory.c_str()};
-        NVSDK_NGX_FeatureCommonInfo info{};
-        info.PathListInfo.Path = paths;
-        info.PathListInfo.Length = 1;
-        const auto result = NVSDK_NGX_D3D11_Init_with_ProjectID("ab31a96d-e80e-46d7-b5c1-78f9636183ec",
-            NVSDK_NGX_ENGINE_TYPE_UNITY, "6000.3.17f1", dataDirectory.c_str(), state.device.Get(), &info);
-        Log("NGX D3D11 project initialization result=0x%08x", unsigned(result));
-        if (NVSDK_NGX_FAILED(result)) return false;
-        state.ngxReady = true;
-    }
-    if (!state.parameters) {
-        const auto capabilities = NVSDK_NGX_D3D11_GetCapabilityParameters(&state.parameters);
-        if (NVSDK_NGX_FAILED(capabilities)) {
-            state.parameters = nullptr;
-            Log("DLSS capability result=0x%08x", unsigned(capabilities));
-            return false;
-        }
-    }
-    int available = 0;
-    state.parameters->Get(NVSDK_NGX_Parameter_SuperSampling_Available, &available);
-    Log("DLSS capability available=%d", available);
-    state.initialized = available != 0;
+    // The backend initializes once per device; a retry only repeats the steps that failed before.
+    state.initialized = backend::Initialize(state.device.Get(), dataDirectory, runtimeDirectory);
     return state.initialized;
 }
 
 bool EnsureFeature(State& state, const Frame& frame, const D3D11_TEXTURE2D_DESC& color,
                    const D3D11_TEXTURE2D_DESC& motion) {
-    unsigned flags = NVSDK_NGX_DLSS_Feature_Flags_AutoExposure;
-    if (frame.reversedDepth) flags |= NVSDK_NGX_DLSS_Feature_Flags_DepthInverted;
+    unsigned flags = bw::FlagAutoExposure;
+    if (frame.reversedDepth) flags |= bw::FlagDepthInverted;
     if (motion.Width <= unsigned(frame.renderWidth) && motion.Height <= unsigned(frame.renderHeight))
-        flags |= NVSDK_NGX_DLSS_Feature_Flags_MVLowRes;
+        flags |= bw::FlagMVLowRes;
     if (color.Format == DXGI_FORMAT_R16G16B16A16_FLOAT || color.Format == DXGI_FORMAT_R11G11B10_FLOAT ||
-        color.Format == DXGI_FORMAT_R32G32B32A32_FLOAT) flags |= NVSDK_NGX_DLSS_Feature_Flags_IsHDR;
-    if (state.feature && state.width == frame.renderWidth && state.height == frame.renderHeight &&
+        color.Format == DXGI_FORMAT_R32G32B32A32_FLOAT) flags |= bw::FlagIsHDR;
+    if (backend::HasFeature() && state.width == frame.renderWidth && state.height == frame.renderHeight &&
         state.outWidth == frame.outputWidth && state.outHeight == frame.outputHeight && state.flags == flags &&
         state.quality == frame.quality && state.preset == frame.preset) return true;
-    if (state.feature) {
+    if (backend::HasFeature()) {
         if (!WaitGpu(state)) { Log("Feature resize abandoned: GPU completion not confirmed."); return false; }
-        NVSDK_NGX_D3D11_ReleaseFeature(state.feature);
-        state.feature = nullptr;
+        backend::Release();
     }
-    NVSDK_NGX_DLSS_Create_Params create{};
-    create.Feature.InWidth = unsigned(frame.renderWidth);
-    create.Feature.InHeight = unsigned(frame.renderHeight);
-    create.Feature.InTargetWidth = unsigned(frame.outputWidth);
-    create.Feature.InTargetHeight = unsigned(frame.outputHeight);
-    create.Feature.InPerfQualityValue = static_cast<NVSDK_NGX_PerfQuality_Value>(frame.quality);
-    create.InFeatureCreateFlags = int(flags);
-    for (const char* key : { NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_DLAA,
-        NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraQuality, NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Quality,
-        NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Balanced, NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_Performance,
-        NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_UltraPerformance })
-        state.parameters->Set(key, unsigned(frame.preset));
-    Log("DLSS quality mode requested=%d, render preset hint=%d", frame.quality, frame.preset);
-    const auto result = NGX_D3D11_CREATE_DLSS_EXT(state.context.Get(), &state.feature, state.parameters, &create);
-    Log("DLSS CreateFeature result=0x%08x render=%dx%d output=%dx%d flags=0x%x", unsigned(result),
-        frame.renderWidth, frame.renderHeight, frame.outputWidth, frame.outputHeight, flags);
-    if (NVSDK_NGX_FAILED(result) || !state.feature) return false;
+    const bw::CreateInputs create{unsigned(frame.renderWidth), unsigned(frame.renderHeight),
+        unsigned(frame.outputWidth), unsigned(frame.outputHeight), frame.quality, frame.preset, flags};
+    if (!backend::Create(state.context.Get(), create)) return false;
     state.width = frame.renderWidth; state.height = frame.renderHeight;
     state.outWidth = frame.outputWidth; state.outHeight = frame.outputHeight; state.flags = flags;
     state.quality = frame.quality; state.preset = frame.preset;
@@ -254,8 +203,8 @@ void Verify(State& state, ID3D11Texture2D* before, ID3D11Texture2D* after) {
         }
     }
     state.context->Unmap(before, 0); state.context->Unmap(after, 0);
-    Log("A/B pixel evidence: DLSS versus bilinear, samples=%zu changed=%zu mean_absolute_linear_RGB_difference=%.8f",
-        count, changed, count ? absolute / double(count) : 0);
+    Log("A/B pixel evidence: %s versus bilinear, samples=%zu changed=%zu mean_absolute_linear_RGB_difference=%.8f",
+        backend::Name(), count, changed, count ? absolute / double(count) : 0);
     state.verified = true;
 }
 
@@ -283,32 +232,32 @@ void Evaluate(Frame& frame) {
     }
     if (!BindDevice(state, frame.color)) { Log("D3D11 device/context binding failed."); status = -1; return; }
     RestoreContext restore(state);
-    if (!InitializeNgx(state) || !EnsureFeature(state, frame, color, motion)) { status = -1; return; }
+    if (!InitializeBackend(state) || !EnsureFeature(state, frame, color, motion)) { status = -1; return; }
     if (frame.mode == 2) { state.lastFrame = -1; return; }
     const bool verify = frame.verify && !state.verified && state.evaluations >= 30;
     auto before = verify ? Capture(state, frame.output) : ComPtr<ID3D11Texture2D>{};
-    NVSDK_NGX_D3D11_DLSS_Eval_Params evaluate{};
-    evaluate.Feature.pInColor = frame.color; evaluate.Feature.pInOutput = frame.output;
-    evaluate.pInDepth = frame.depth; evaluate.pInMotionVectors = frame.motion;
-    evaluate.InJitterOffsetX = frame.jitterX; evaluate.InJitterOffsetY = frame.jitterY;
-    evaluate.InMVScaleX = frame.motionScaleX; evaluate.InMVScaleY = frame.motionScaleY;
-    evaluate.InRenderSubrectDimensions = {unsigned(frame.renderWidth), unsigned(frame.renderHeight)};
-    evaluate.InReset = state.lastFrame < 0 || state.cameraId != frame.cameraId || state.epoch != frame.historyEpoch || frame.frameIndex > state.lastFrame + 1;
-    evaluate.InPreExposure = 1.0f;
-    // OptiScaler's bridge consumes these optional camera values for frame generation.
-    state.parameters->Set("FSR.cameraNear", frame.reversedDepth ? frame.cameraFar : frame.cameraNear);
-    state.parameters->Set("FSR.cameraFar", frame.reversedDepth ? frame.cameraNear : frame.cameraFar);
-    state.parameters->Set("FSR.cameraFovAngleVertical", frame.cameraFov);
-    state.parameters->Set("FSR.viewSpaceToMetersFactor", 1.0f);
-    state.parameters->Set("FSR.frameTimeDelta", frame.deltaMilliseconds);
-    const auto result = NGX_D3D11_EVALUATE_DLSS_EXT(state.context.Get(), state.feature, state.parameters, &evaluate);
-    if (NVSDK_NGX_FAILED(result)) { Log("DLSS EvaluateFeature failed result=0x%08x", unsigned(result)); status = -1; return; }
+    bw::EvaluateInputs evaluate{};
+    evaluate.color = frame.color; evaluate.output = frame.output;
+    evaluate.depth = frame.depth; evaluate.motion = frame.motion;
+    evaluate.jitterX = frame.jitterX; evaluate.jitterY = frame.jitterY;
+    evaluate.motionScaleX = frame.motionScaleX; evaluate.motionScaleY = frame.motionScaleY;
+    evaluate.renderWidth = unsigned(frame.renderWidth); evaluate.renderHeight = unsigned(frame.renderHeight);
+    evaluate.reset = state.lastFrame < 0 || state.cameraId != frame.cameraId || state.epoch != frame.historyEpoch || frame.frameIndex > state.lastFrame + 1;
+    evaluate.cameraNear = frame.reversedDepth ? frame.cameraFar : frame.cameraNear;
+    evaluate.cameraFar = frame.reversedDepth ? frame.cameraNear : frame.cameraFar;
+    evaluate.cameraFov = frame.cameraFov;
+    evaluate.deltaMilliseconds = frame.deltaMilliseconds;
+    unsigned result = 0;
+    if (!backend::Evaluate(state.context.Get(), evaluate, result)) {
+        Log("%s EvaluateFeature failed result=0x%08x", backend::Name(), result); status = -1; return;
+    }
     ++state.evaluations;
     state.lastFrame = frame.frameIndex; state.cameraId = frame.cameraId; state.epoch = frame.historyEpoch;
     if (state.evaluations == 1 || state.evaluations % 300 == 0) {
-        Log("DLSS EvaluateFeature succeeded result=0x%08x evaluations=%llu reset=%d", unsigned(result), state.evaluations, evaluate.InReset);
+        Log("%s EvaluateFeature succeeded result=0x%08x evaluations=%llu reset=%d", backend::Name(), result,
+            state.evaluations, evaluate.reset);
         Log("Camera inputs near=%.4f far=%.1f verticalFovRadians=%.5f", frame.cameraNear, frame.cameraFar, frame.cameraFov);
-        ReportFrameGeneration(state.evaluations);
+        backend::ReportFrameGeneration(state.evaluations);
     }
     if (before) { auto after = Capture(state, frame.output); if (after) Verify(state, before.Get(), after.Get()); }
     status = 2;
@@ -319,18 +268,19 @@ void __stdcall RenderEvent(int eventId, void* pointer) {
     std::unique_ptr<Frame> frame(static_cast<Frame*>(pointer));
     if (retryRequested.exchange(false)) status = 0;
     try { Evaluate(*frame); }
-    catch (...) { Log("Unhandled native DLSS exception; integration disabled."); status = -1; }
+    catch (...) { Log("Unhandled native %s exception; integration disabled.", backend::Name()); status = -1; }
     for (auto* resource : {frame->color, frame->depth, frame->motion, frame->output}) if (resource) resource->Release();
 }
 }
 
 extern "C" __declspec(dllexport) void BW_Initialize(const wchar_t* data, const wchar_t* runtime) {
     dataDirectory = data; runtimeDirectory = runtime;
-    Log("Big Beautiful Walk native 0.7.0 loaded; frame ABI=%zu", sizeof(Frame));
+    Log("Big Beautiful Walk native 0.7.0 loaded; backend=%s; frame ABI=%zu", backend::Name(), sizeof(Frame));
+    if (!backend::Attach(runtimeDirectory)) status = -1;
 }
 extern "C" __declspec(dllexport) int BW_FrameSize() { return sizeof(Frame); }
 extern "C" __declspec(dllexport) int BW_Status() { return retryRequested.load() ? 0 : status.load(); }
-// Re-entry happens on the render thread; callers never mutate NGX/device state.
+// Re-entry happens on the render thread; callers never mutate backend/device state.
 extern "C" __declspec(dllexport) void BW_RequestRetry() { retryRequested = true; }
 extern "C" __declspec(dllexport) void* BW_GetRenderEvent() { return reinterpret_cast<void*>(&RenderEvent); }
 extern "C" __declspec(dllexport) Frame* BW_Queue(const Frame* input) {

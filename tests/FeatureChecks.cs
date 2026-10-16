@@ -28,6 +28,18 @@ Check(FeatureOptions.NvidiaReason(0x10de, "NVIDIA GeForce RTX 4090").Length == 0
 Check(FeatureOptions.NvidiaReason(0x10de, "NVIDIA GeForce RTX 5090").Length == 0, "RTX 50 Series rejected for direct FG");
 foreach (var gpu in new[] { (0x10de, "NVIDIA GeForce RTX 3090"), (0x1002, "AMD Radeon"), (0, "Unknown"), (0x10de, "NVIDIA RTX A6000"), (0x10de, "NVIDIA Quadro RTX 6000"), (0x10de, "NVIDIA RTX 5000 Ada") })
     Check(FeatureOptions.NvidiaReason(gpu.Item1, gpu.Item2).Length > 0, "Unsupported or unidentified direct NVIDIA GPU accepted");
+// OptiScaler can report AMD and Intel GPUs as NVIDIA; installed hardware decides.
+Check(GpuVendor.Resolve(GpuVendor.Nvidia, new[] { GpuVendor.Nvidia }) == GpuVendor.Nvidia, "Real NVIDIA GPU not recognised");
+Check(GpuVendor.Resolve(GpuVendor.Nvidia, new[] { GpuVendor.Amd }) == GpuVendor.Amd, "Spoofed AMD GPU treated as NVIDIA");
+Check(GpuVendor.Resolve(GpuVendor.Nvidia, new[] { GpuVendor.Intel }) == GpuVendor.Intel, "Spoofed Intel GPU treated as NVIDIA");
+Check(GpuVendor.Resolve(GpuVendor.Nvidia, new[] { 0x1234 }) == 0, "Spoofed unknown GPU treated as NVIDIA");
+Check(GpuVendor.Resolve(GpuVendor.Intel, new[] { GpuVendor.Nvidia, GpuVendor.Intel }) == GpuVendor.Intel, "Hybrid laptop on its Intel GPU treated as NVIDIA");
+Check(GpuVendor.Resolve(GpuVendor.Nvidia, Array.Empty<int>()) == GpuVendor.Nvidia, "Unreadable hardware list overrode the reported GPU");
+Check(GpuVendor.Resolve(GpuVendor.Amd, new[] { GpuVendor.Amd }) == GpuVendor.Amd, "AMD GPU misidentified");
+Check(GpuVendor.ParsePciVendor(@"pci\ven_10de&dev_2684") == GpuVendor.Nvidia && GpuVendor.ParsePciVendor(@"PCI\VEN_1002&DEV_744C") == GpuVendor.Amd, "PCI vendor id not parsed");
+Check(GpuVendor.ParsePciVendor(@"ROOT\BasicDisplay") == 0 && GpuVendor.ParsePciVendor(null) == 0 && GpuVendor.ParsePciVendor(@"pci\ven_10") == 0, "Malformed device id parsed as a vendor");
+foreach (int vendor in new[] { GpuVendor.Amd, GpuVendor.Intel })
+    Check(FeatureOptions.NvidiaReason(vendor, "NVIDIA GeForce RTX 4090").Length > 0, "Spoofed device name unlocked NVIDIA FG on " + GpuVendor.Name(vendor));
 Check(FeatureOptions.NvidiaSystemReason(19041, 2, false).Length == 0, "Known NVIDIA system prerequisites rejected");
 Check(FeatureOptions.NvidiaSystemReason(19040, 2, true).Length > 0, "Old Windows build accepted");
 Check(FeatureOptions.NvidiaSystemReason(26100, 1, true).Length > 0, "User acknowledgement bypassed known disabled HAGS");

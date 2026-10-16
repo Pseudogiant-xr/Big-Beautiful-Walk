@@ -126,7 +126,8 @@ function Get-BbwRole($Entry) {
 function Test-BbwOtherPlugins([string]$GamePath) {
     $managed=@(
         (Resolve-BbwPath $GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll'),
-        (Resolve-BbwPath $GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSSNative.dll')
+        (Resolve-BbwPath $GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSSNative.dll'),
+        (Resolve-BbwPath $GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkBridgeNative.dll')
     )
     $pending=New-Object 'Collections.Generic.Stack[string]'
     foreach ($relative in @('BepInEx/plugins','BepInEx/patchers')) {
@@ -142,6 +143,143 @@ function Test-BbwOtherPlugins([string]$GamePath) {
         }
     }
     return $false
+}
+
+function Get-BbwDisplayDeviceIds {
+    # Present display adapters first: Windows keeps class entries for removed cards. A present
+    # Enum\PCI instance of the display class has a live Control key. .NET registry APIs only:
+    # the GUI worker runspace runs without module autoload.
+    $present=New-Object 'Collections.Generic.List[string]'
+    try {
+        $pci=[Microsoft.Win32.Registry]::LocalMachine.OpenSubKey('SYSTEM\CurrentControlSet\Enum\PCI')
+        if ($pci) {
+            try {
+                foreach ($device in $pci.GetSubKeyNames()) {
+                    $deviceKey=$null
+                    try { $deviceKey=$pci.OpenSubKey($device) } catch { continue }
+                    if (-not $deviceKey) { continue }
+                    try {
+                        foreach ($instance in $deviceKey.GetSubKeyNames()) {
+                            $instanceKey=$null
+                            try { $instanceKey=$deviceKey.OpenSubKey($instance) } catch { continue }
+                            if (-not $instanceKey) { continue }
+                            try {
+                                if ([string]$instanceKey.GetValue('ClassGUID') -ne '{4d36e968-e325-11ce-bfc1-08002be10318}') { continue }
+                                $control=$instanceKey.OpenSubKey('Control')
+                                if ($control) { $control.Dispose(); $present.Add('PCI\' + $device); break }
+                            } finally { $instanceKey.Dispose() }
+                        }
+                    } finally { $deviceKey.Dispose() }
+                }
+            } finally { $pci.Dispose() }
+        }
+    } catch { }
+    if ($present.Count) { return $present.ToArray() }
+    $ids=New-Object 'Collections.Generic.List[string]'
+    $class=$null
+    try { $class=[Microsoft.Win32.Registry]::LocalMachine.OpenSubKey('SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}') } catch { }
+    if (-not $class) { return $ids.ToArray() }
+    try {
+        foreach ($name in $class.GetSubKeyNames()) {
+            # Adapter instances are NNNN; the Properties subkey is not readable.
+            if ($name -notmatch '^\d{4}$') { continue }
+            $adapter=$null
+            try { $adapter=$class.OpenSubKey($name) } catch { continue }
+            if (-not $adapter) { continue }
+            try {
+                foreach ($value in @($adapter.GetValue('MatchingDeviceId'),$adapter.GetValue('HardwareID'))) {
+                    foreach ($id in @($value)) { if ($id) { $ids.Add([string]$id) } }
+                }
+            } finally { $adapter.Dispose() }
+        }
+    } finally { $class.Dispose() }
+    return $ids.ToArray()
+}
+
+function Get-BbwGpuPath([ValidateSet('Auto','Nvidia','Bridge')][string]$Override='Auto', [string[]]$DeviceIds) {
+    # 'nvidia' uses DLSS; 'bridge' is the AMD/Intel path through OptiScaler.
+    if ($Override -eq 'Nvidia') { return 'nvidia' }
+    if ($Override -eq 'Bridge') { return 'bridge' }
+    if (-not $PSBoundParameters.ContainsKey('DeviceIds')) { $DeviceIds=@(Get-BbwDisplayDeviceIds) }
+    $pci=@($DeviceIds | Where-Object { [string]$_ -match 'ven_[0-9a-f]{4}' })
+    foreach ($id in $pci) { if ([string]$id -match 'ven_10de') { return 'nvidia' } }
+    # No readable PCI display adapter: keep the established NVIDIA path, matching the plugin,
+    # which then trusts the GPU the game reports. -GpuPath Bridge overrides this.
+    if ($pci.Count -eq 0) { return 'nvidia' }
+    return 'bridge'
+}
+
+function Test-BbwHybridGpu([string[]]$DeviceIds) {
+    # An NVIDIA GPU next to an AMD or Intel one (most often a laptop). Windows chooses which runs the game.
+    if (-not $PSBoundParameters.ContainsKey('DeviceIds')) { $DeviceIds=@(Get-BbwDisplayDeviceIds) }
+    $nvidia=@($DeviceIds | Where-Object { [string]$_ -match 'ven_10de' }).Count -gt 0
+    $other=@($DeviceIds | Where-Object { [string]$_ -match 'ven_(1002|8086)' }).Count -gt 0
+    return ($nvidia -and $other)
+}
+
+function Update-BbwBridgeSettings([string]$GamePath, [switch]$SpoofingOnly, [string]$StateRelative='.big-beautiful-walk') {
+    # OptiScaler reads OptiScaler.ini before the plugin starts. One kept from an NVIDIA install can ask
+    # for DLSS, NVIDIA Frame Generation or Neural Rendering, which AMD and Intel GPUs cannot run and
+    # which can stop the game. GPU spoofing (on unless set false) would also make an AMD/Intel GPU look
+    # like NVIDIA to the plugin. -SpoofingOnly is for hybrid PCs that keep the NVIDIA path. Returns what changed.
+    $IniPath=Resolve-BbwPath $GamePath 'OptiScaler.ini'
+    if (-not [IO.File]::Exists($IniPath)) { return @() }
+    $bytes=[IO.File]::ReadAllBytes($IniPath)
+    if ($bytes.Length -ge 2 -and (($bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) -or ($bytes[0] -eq 0xFE -and $bytes[1] -eq 0xFF))) { return @() }
+    $bom=$bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+    $skip=if ($bom) { 3 } else { 0 }
+    # Strict decoding: an ANSI file with accented characters must not be rewritten as replacement characters.
+    $text=(New-Object Text.UTF8Encoding($false,$true)).GetString($bytes,$skip,$bytes.Length-$skip)
+    $lines=[regex]::Split($text,'(?<=\n)')
+    $pattern='^(\s*([^=;#\[\s][^=]*?)\s*=\s*)([^;#\r\n]*?)(\s*(?:[;#].*)?\r?\n?)$'
+    $values=@{}; $section=''
+    foreach ($line in $lines) {
+        if ($line -match '^\s*\[([^\]]+)\]') { $section=$Matches[1].Trim(); continue }
+        if ($line -match $pattern) { $values[("$section|" + $Matches[2]).ToLowerInvariant()]=$Matches[3] }
+    }
+    $set=@{}; $changed=New-Object 'Collections.Generic.List[string]'
+    if (-not $SpoofingOnly) {
+        if ($values['upscalers|dx11upscaler'] -in @('dlss','dlss_12')) { $set['upscalers|dx11upscaler']='fsr31'; $changed.Add('FSR 3.1 selected instead of DLSS') }
+        if ($values['framegen|enabled'] -eq 'true' -and $values['framegen|fgoutput'] -eq 'DLSSG') { $set['framegen|enabled']='false'; $changed.Add('NVIDIA Frame Generation turned off') }
+        if ($values['dlssnr|enabled'] -eq 'true') { $set['dlssnr|enabled']='false'; $changed.Add('Neural Rendering turned off') }
+    }
+    $addSpoofing=-not $values.ContainsKey('spoofing|dxgi')
+    if (-not $addSpoofing -and $values['spoofing|dxgi'] -ne 'false') { $set['spoofing|dxgi']='false' }
+    if ($addSpoofing -or $set.ContainsKey('spoofing|dxgi')) { $changed.Add('OptiScaler GPU spoofing turned off') }
+    if (-not $changed.Count) { return @() }
+    $newline=if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
+    $out=New-Object Text.StringBuilder; $section=''
+    foreach ($line in $lines) {
+        if ($line -match '^\s*\[([^\]]+)\]') { $section=$Matches[1].Trim() }
+        elseif ($line -match $pattern) {
+            $key=("$section|" + $Matches[2]).ToLowerInvariant()
+            if ($set.ContainsKey($key)) { $line=$Matches[1] + $set[$key] + $Matches[4] }
+        }
+        [void]$out.Append($line)
+        if ($addSpoofing -and $line -match '^\s*\[\s*Spoofing\s*\]') {
+            if (-not $line.EndsWith("`n")) { [void]$out.Append($newline) }
+            [void]$out.Append('Dxgi=false' + $newline); $addSpoofing=$false
+        }
+    }
+    if ($addSpoofing) {
+        if ($out.Length -and -not $out.ToString().EndsWith("`n")) { [void]$out.Append($newline) }
+        [void]$out.Append('[Spoofing]' + $newline + 'Dxgi=false' + $newline)
+    }
+    $backupDirectory=Resolve-BbwPath $GamePath "$StateRelative/config-backups"
+    [void][IO.Directory]::CreateDirectory($backupDirectory)
+    $backup=Resolve-BbwPath $GamePath ("$StateRelative/config-backups/OptiScaler-" + [DateTime]::Now.ToString('yyyyMMdd-HHmmss-fff') + '.ini')
+    [IO.File]::Copy($IniPath,$backup,$false)
+    $body=(New-Object Text.UTF8Encoding($false)).GetBytes($out.ToString())
+    $next=New-Object byte[] ($skip + $body.Length)
+    if ($bom) { $next[0]=0xEF; $next[1]=0xBB; $next[2]=0xBF }
+    [Array]::Copy($body,0,$next,$skip,$body.Length)
+    $temp=Resolve-BbwPath $GamePath ('OptiScaler.ini.' + [guid]::NewGuid().ToString('N') + '.tmp')
+    # CreateNew never follows or replaces an existing path.
+    $stream=[IO.File]::Open($temp,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+    try { $stream.Write($next,0,$next.Length) } finally { $stream.Dispose() }
+    try { [IO.File]::Replace($temp,$IniPath,[NullString]::Value) }
+    finally { if ([IO.File]::Exists($temp)) { [IO.File]::Delete($temp) } }
+    return $changed.ToArray()
 }
 
 function Test-BbwGame([string]$GamePath) {
@@ -291,9 +429,11 @@ function Get-BbwRepairFeatures([object[]]$Dependencies, [string[]]$Requested, [s
     return $selected.ToArray()
 }
 
-function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyDirectory, [string[]]$Features) {
+function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyDirectory, [string[]]$Features, [string]$GpuPath='nvidia') {
     $items = New-Object 'Collections.Generic.List[object]'
-    foreach ($name in @('BigWalkDLSS.dll','BigWalkDLSSNative.dll')) {
+    $plugins = @('BigWalkDLSS.dll','BigWalkBridgeNative.dll')
+    if ($GpuPath -eq 'nvidia') { $plugins += 'BigWalkDLSSNative.dll' }
+    foreach ($name in $plugins) {
         $source = Resolve-BbwPath $PackagePath "payload/BigWalkDLSS/$name"
         if (-not [IO.File]::Exists($source)) { throw "Release payload is incomplete: missing $name. Extract the complete release ZIP and run Setup.cmd again." }
         $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/plugins/BigWalkDLSS/$name"; FreshOnly=$false; Role='plugin' })
@@ -317,11 +457,18 @@ function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyD
     }
     $lock = Read-BbwJson (Resolve-BbwPath $PackagePath 'packaging/dependencies.lock.json')
     if (-not $lock -or -not $lock.PSObject.Properties['SchemaVersion'] -or $lock.SchemaVersion -ne 1 -or -not $lock.PSObject.Properties['Dependencies']) { throw 'Dependency lock is missing or incomplete. This alpha cannot install until official dependency URLs and SHA256 hashes are supplied in packaging/dependencies.lock.json.' }
+    # NVIDIA-only runtimes (DLSS, DLSS-G, the NR model) are never installed on the AMD/Intel path.
+    $available = @($lock.Dependencies | Where-Object { $GpuPath -eq 'nvidia' -or -not ($_.PSObject.Properties['Vendor'] -and $_.Vendor -eq 'nvidia') })
     foreach ($feature in $Features) {
-        if (-not @($lock.Dependencies | Where-Object { $_.Feature -eq $feature }).Count) { throw "Optional feature '$feature' has no verified runtime in this release. Core setup provides DLSS Super Resolution and Advanced Graphics. See docs/DEPENDENCIES.md for manual FG/NR setup; no game files were changed." }
+        if (-not @($available | Where-Object { $_.Feature -eq $feature }).Count) {
+            if ($GpuPath -eq 'bridge' -and $feature -eq 'fg') { throw 'AMD and Intel GPUs need the OptiScaler bridge, but this release has no verified bridge runtime. Obtain a complete release; no game files were changed.' }
+            throw "Optional feature '$feature' has no verified runtime in this release. Core setup provides DLSS Super Resolution and Advanced Graphics. See docs/DEPENDENCIES.md for manual FG/NR setup; no game files were changed."
+        }
     }
-    $selected = @($lock.Dependencies | Where-Object { $_.Required -or $_.Feature -eq 'core' -or $Features -contains $_.Feature })
-    foreach ($id in @('bepinex','nvngx_dlss')) {
+    $selected = @($available | Where-Object { $_.Required -or $_.Feature -eq 'core' -or $Features -contains $_.Feature })
+    $requiredIds = @('bepinex')
+    if ($GpuPath -eq 'nvidia') { $requiredIds += 'nvngx_dlss' }
+    foreach ($id in $requiredIds) {
         if (-not @($selected | Where-Object { $_.Id -eq $id }).Count) { throw "Required locked dependency '$id' is unavailable. Obtain a complete release; no game files were changed." }
     }
     $seenIds = @{}
@@ -351,6 +498,13 @@ function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyD
     }
     foreach ($default in @(@('local.bigwalk.native-dlss.cfg','BepInEx/config/local.bigwalk.native-dlss.cfg'),@('OptiScaler.ini','OptiScaler.ini'))) {
         if ($default[0] -eq 'OptiScaler.ini' -and $Features -notcontains 'fg') { continue }
+        if ($default[0] -eq 'OptiScaler.ini' -and $GpuPath -eq 'bridge') {
+            # FSR defaults without DXGI spoofing; the NVIDIA default would select DLSS.
+            $source = Resolve-BbwPath $PackagePath 'payload/defaults/OptiScaler.bridge.ini'
+            if (-not [IO.File]::Exists($source)) { throw 'Release payload is incomplete: missing payload/defaults/OptiScaler.bridge.ini. Extract the complete release ZIP and run Setup.cmd again.' }
+            $items.Add([pscustomobject]@{ Source=$source; Target=$default[1]; FreshOnly=$true; Role='config' })
+            continue
+        }
         $source = Resolve-BbwPath $PackagePath ('payload/defaults/' + $default[0])
         if ([IO.File]::Exists($source)) { $items.Add([pscustomobject]@{ Source=$source; Target=$default[1]; FreshOnly=$true; Role='config' }) }
     }
@@ -391,15 +545,21 @@ function Invoke-BbwSetup {
     param([Parameter(Mandatory=$true)][string]$GamePath,
           [ValidateSet('Install','Uninstall','Diagnose')][string]$Mode='Install',
           [string]$PackagePath=(Split-Path $PSScriptRoot -Parent),
-          [string]$DependencyDirectory, [string[]]$Features=@(), [int]$FaultAfter=0)
+          [string]$DependencyDirectory, [string[]]$Features=@(), [int]$FaultAfter=0,
+          [ValidateSet('Auto','Nvidia','Bridge')][string]$GpuPath='Auto')
     Test-BbwGame $GamePath
     $GamePath = Get-BbwFinalPath $GamePath
     $state = Resolve-BbwPath $GamePath '.big-beautiful-walk'
     $manifestPath = Resolve-BbwPath $state 'manifest.json'
     $journalPath = Resolve-BbwPath $state 'journal.json'
+    $gpu = Get-BbwGpuPath $GpuPath
     if ($Mode -eq 'Diagnose') {
         $messages = New-Object 'Collections.Generic.List[string]'
         $messages.Add("Game folder: $GamePath")
+        $gpuSource = 'detected'
+        if ($GpuPath -ne 'Auto') { $gpuSource = 'selected with -GpuPath' }
+        if ($gpu -eq 'nvidia') { $messages.Add("GPU path: NVIDIA (DLSS), $gpuSource.") }
+        else { $messages.Add("GPU path: AMD/Intel (OptiScaler bridge), $gpuSource.") }
         if (Test-Path -LiteralPath $journalPath) { $messages.Add('Interrupted transaction detected. Install/Repair or Uninstall will attempt safe rollback first.') }
         $manifest = Read-BbwJson $manifestPath
         if (-not $manifest) { $messages.Add('Big Beautiful Walk is not installed by this installer.') }
@@ -417,6 +577,11 @@ function Invoke-BbwSetup {
             if ([IO.File]::Exists($path)) { $messages.Add("Present: $name (SHA256 $(Get-BbwHash $path))") }
         }
         return ($messages -join [Environment]::NewLine)
+    }
+    if ($Mode -eq 'Install' -and $gpu -eq 'bridge') {
+        if ($Features -contains 'nr') { throw 'Neural Rendering needs an NVIDIA RTX GPU; it is not available on AMD or Intel GPUs. No game files were changed.' }
+        # The OptiScaler bridge is what renders on AMD/Intel, so it is not optional there.
+        if ($Features -notcontains 'fg') { $Features = @($Features) + 'fg' }
     }
     Assert-BbwGameClosed $GamePath
     # A process-wide file lock prevents two copies of Setup touching one game.
@@ -452,7 +617,9 @@ function Invoke-BbwSetup {
                 $roles = @($owned.Values | Where-Object { $_.PSObject.Properties['Role'] } | ForEach-Object { [string]$_.Role })
                 $Features = @(Get-BbwRepairFeatures $dependencyLock.Dependencies $Features $roles)
             }
-            $items = @(Get-BbwStage $PackagePath $stage $DependencyDirectory $Features)
+            # An NR model owned from an earlier NVIDIA install stays owned but is not repaired here.
+            if ($gpu -eq 'bridge') { $Features = @($Features | Where-Object { $_ -ne 'nr' }) }
+            $items = @(Get-BbwStage $PackagePath $stage $DependencyDirectory $Features $gpu)
             $targets = @{}
             $payloadIndex=0
             foreach ($item in $items) {
@@ -487,7 +654,18 @@ function Invoke-BbwSetup {
                 if ($before -ne $after) { $plans.Add([pscustomobject]@{ Target=$item.Target; BeforeHash=$before; AfterHash=$after; Source=$item.Source; TransactionBackup=$null }) }
             }
             # Unrequested files from an earlier version remain owned until uninstall.
-            foreach ($entry in @($owned.Values)) { if (-not @($entries | Where-Object { $_.Target -eq $entry.Target }).Count) { $entries.Add($entry) } }
+            foreach ($entry in @($owned.Values)) {
+                if (@($entries | Where-Object { $_.Target -eq $entry.Target }).Count) { continue }
+                if ($gpu -eq 'bridge' -and $entry.Target -eq 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSSNative.dll') {
+                    # The NVIDIA native plugin is removed (or its original restored) as on uninstall.
+                    $beforeHash=Get-BbwHash (Resolve-BbwPath $GamePath $entry.Target)
+                    $source=$null
+                    if ($entry.OriginalHash) { $source=Resolve-BbwPath $state $entry.Backup }
+                    if ($beforeHash -ne $entry.OriginalHash) { $plans.Add([pscustomobject]@{ Target=$entry.Target; BeforeHash=$beforeHash; AfterHash=$entry.OriginalHash; Source=$source; TransactionBackup=$null }) }
+                    continue
+                }
+                $entries.Add($entry)
+            }
             foreach ($injector in @('dxgi.dll','version.dll','winhttp.dll','nvngx_dlss.dll','nvngx_dlssnr.dll')) {
                 $path = Resolve-BbwPath $GamePath $injector
                 if ([IO.File]::Exists($path) -and -not $owned.ContainsKey($injector) -and -not $targets.ContainsKey($path.ToLowerInvariant())) { throw "Unknown injector/runtime '$injector' is present. Use Diagnose and the existing mod's uninstall instructions before installing; no files were changed." }
@@ -541,9 +719,20 @@ function Invoke-BbwSetup {
         elseif ([IO.File]::Exists($manifestPath)) { [IO.File]::Delete($manifestPath) }
         [IO.File]::Delete($journalPath)
         if ($Mode -eq 'Install') {
+            $settingsNote=''
+            $hybrid=$gpu -eq 'nvidia' -and $GpuPath -eq 'Auto' -and (Test-BbwHybridGpu)
+            if ($gpu -eq 'bridge' -or $hybrid) {
+                try {
+                    $adjusted=@(Update-BbwBridgeSettings $GamePath -SpoofingOnly:$hybrid)
+                    if ($adjusted.Count) { $settingsNote=' OptiScaler.ini was updated for this GPU: ' + ($adjusted -join '; ') + '. The previous copy is in .big-beautiful-walk/config-backups.' }
+                } catch { $settingsNote=' OptiScaler.ini could not be updated for this GPU. After launching, open Home and switch off NVIDIA-only features.' }
+            }
             $message='Install/Repair completed. Existing settings and other mods were preserved. Start Big Walk through Steam when ready.'
-            if ($Features -contains 'fg') { $message+=' The optional upscaler and Frame Generation bridge was installed or repaired. Fresh defaults leave Frame Generation off; Neural Rendering also starts off. Open Home, then Frame Gen or Neural; see docs/FRAME-GENERATION.md for restart and comparison steps.' }
+            if ($gpu -eq 'bridge') { $message+=' AMD/Intel GPU path used: the bridge plugin and the OptiScaler upscaler bridge (FSR by default) were installed or repaired; NVIDIA-only DLSS and Neural Rendering files were skipped. Fresh defaults leave Frame Generation off. Open Home, then Frame Gen; see docs/FRAME-GENERATION.md for restart and comparison steps.' }
+            elseif ($Features -contains 'fg') { $message+=' The optional upscaler and Frame Generation bridge was installed or repaired. Fresh defaults leave Frame Generation off; Neural Rendering also starts off. Open Home, then Frame Gen or Neural; see docs/FRAME-GENERATION.md for restart and comparison steps.' }
             if ($Features -contains 'nr') { $message+=' The community RHI SF-v2 Neural Rendering model was installed or repaired; this does not enable Neural Rendering.' }
+            $message+=$settingsNote
+            if ($gpu -eq 'nvidia' -and $GpuPath -eq 'Auto' -and $Features -notcontains 'fg' -and (Test-BbwHybridGpu)) { $message+=' This PC also has an AMD or Intel GPU. If Windows runs Big Walk on it, the mod needs the bridge: run Setup again and tick it, or set Windows to use the NVIDIA GPU for Big Walk.' }
             return $message
         }
         return 'Uninstall completed. Your settings, saves and other mods were preserved; installer backups remain in .big-beautiful-walk.'
@@ -567,4 +756,4 @@ function Invoke-BbwSetup {
     }
 }
 
-Export-ModuleMember -Function Invoke-BbwSetup,Get-BbwSteamGames
+Export-ModuleMember -Function Invoke-BbwSetup,Get-BbwSteamGames,Get-BbwGpuPath,Test-BbwHybridGpu

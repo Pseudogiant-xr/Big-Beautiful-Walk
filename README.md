@@ -43,7 +43,7 @@ Big Beautiful Walk is not affiliated with or endorsed by House House, Unity or N
 ## Requirements
 
 - Windows x64 and the Steam version of Big Walk, played on a monitor (no VR).
-- An NVIDIA RTX GPU running DirectX 11.
+- A DirectX 11 GPU. NVIDIA RTX GPUs use DLSS. AMD and Intel GPUs use FSR 3.1 or XeSS through the OptiScaler bridge, which Setup installs for them automatically. The AMD/Intel path is experimental and has not been tested on AMD or Intel hardware yet.
 - The [Microsoft Visual C++ v14 runtime for x64](https://aka.ms/vc14/vc_redist.x64.exe). Setup does not install it. See [Microsoft's runtime guidance](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist).
 
 ## Install
@@ -79,6 +79,7 @@ Big Beautiful Walk is not affiliated with or endorsed by House House, Unity or N
 - **Graphics overrides**, including shadow cascades, vegetation shadow range and an experimental 16384-pixel main shadow atlas. Extreme settings can cost a lot of performance and video memory.
 - **Frame generation** (optional bridge), with NVIDIA, AMD and Intel profiles in **Home → Frame Gen**. On the test RTX 4090, NVIDIA FG looked best. AMD FG worked, with worse quality and performance. Intel FG generated frames but lowered the reported frame rate. See the [FG / NR guide](docs/FRAME-GENERATION.md).
 - **Neural Rendering** (optional), using the RHI community download or a compatible model you already have. The pinned download is the same model that was tested with NVIDIA FG and the Default style. RHI's faster model from 16 October has not been tested. [The NR guide](docs/FRAME-GENERATION.md#neural-rendering) gives the exact version and source.
+- **AMD and Intel GPUs (experimental)**: upscaling with FSR 3.1 or XeSS, plus AMD and Intel frame generation, all through the bridge. Options that need an NVIDIA GPU (DLSS, its model presets, NVIDIA frame generation and Neural Rendering) are greyed out with the reason.
 - **FSR 3.1 and XeSS**, offered in Home when the bridge's requirements are met. FSR 4 shows as unsupported on the RTX 4090. The [feature matrix](docs/UPSCALERS.md) lists requirements and test status for each.
 
 Not supported: VR, distance-field shadows and ray-traced shadows.

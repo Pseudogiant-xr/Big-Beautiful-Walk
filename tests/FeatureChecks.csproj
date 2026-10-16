@@ -4,5 +4,6 @@
     <Compile Include="FeatureChecks.cs" />
     <Compile Include="../src/managed/FeatureOptions.cs" />
     <Compile Include="../src/managed/FeatureSettings.cs" />
+    <Compile Include="../src/managed/GpuVendor.cs" />
   </ItemGroup>
 </Project>

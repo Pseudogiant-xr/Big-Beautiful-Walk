@@ -22,8 +22,10 @@ function New-Fixture([string]$Name) {
     [void][IO.Directory]::CreateDirectory((Join-Path $game 'Big Walk_Data'))
     Put (Join-Path $package 'payload/BigWalkDLSS/BigWalkDLSS.dll') 'plugin-one'
     Put (Join-Path $package 'payload/BigWalkDLSS/BigWalkDLSSNative.dll') 'native-one'
+    Put (Join-Path $package 'payload/BigWalkDLSS/BigWalkBridgeNative.dll') 'bridge-native-one'
     Put (Join-Path $package 'payload/defaults/local.bigwalk.native-dlss.cfg') 'default-config'
     Put (Join-Path $package 'payload/defaults/OptiScaler.ini') 'default-opti'
+    Put (Join-Path $package 'payload/defaults/OptiScaler.bridge.ini') "[Upscalers]`r`nDx11Upscaler=fsr31`r`n[FrameGen]`r`nEnabled=false"
     foreach ($name in @('LICENSE','NOTICE','THIRD_PARTY_NOTICES.md')) { Put (Join-Path $package $name) "fixture-$name" }
     Put (Join-Path $package 'THIRD_PARTY_NOTICES.md') '[Vendor](docs/licenses/vendor.txt) [Assessment](docs/LICENSING.md)'
     Put (Join-Path $package 'docs/LICENSING.md') '[Project license](../LICENSE) [Checklist](RELEASE-CHECKLIST.md)'
@@ -38,9 +40,10 @@ function New-Fixture([string]$Name) {
     Put (Join-Path $deps 'nvngx_dlss.file') 'runtime-known'
     $lock=@{SchemaVersion=1;Dependencies=@(
         @{Id='bepinex';Url='https://example.org/bepinex.zip';SHA256=(Get-FileHash (Join-Path $deps 'bepinex.zip')).Hash;Archive='zip';Required=$true;Feature='core';Files=@(@{Source='winhttp.dll';Target='winhttp.dll'},@{Source='BepInEx/core/BepInEx.Core.dll';Target='BepInEx/core/BepInEx.Core.dll'})},
-        @{Id='nvngx_dlss';Url='https://example.org/nvngx_dlss.dll';SHA256=(Get-FileHash (Join-Path $deps 'nvngx_dlss.file')).Hash;Archive='file';Required=$true;Feature='core';Files=@(@{Source='nvngx_dlss.dll';Target='nvngx_dlss.dll'})})}
+        @{Id='nvngx_dlss';Vendor='nvidia';Url='https://example.org/nvngx_dlss.dll';SHA256=(Get-FileHash (Join-Path $deps 'nvngx_dlss.file')).Hash;Archive='file';Required=$true;Feature='core';Files=@(@{Source='nvngx_dlss.dll';Target='nvngx_dlss.dll'})})}
     Put (Join-Path $package 'packaging/dependencies.lock.json') ($lock | ConvertTo-Json -Depth 8)
-    return @{GamePath=$game;PackagePath=$package;DependencyDirectory=$deps}
+    # Pin the NVIDIA path so results do not depend on this machine's GPU.
+    return @{GamePath=$game;PackagePath=$package;DependencyDirectory=$deps;GpuPath='Nvidia'}
 }
 function Install($Fixture,[int]$Fault=0) { Invoke-BbwSetup @Fixture -Mode Install -FaultAfter $Fault }
 function Uninstall($Fixture) { Invoke-BbwSetup @Fixture -Mode Uninstall }
@@ -59,9 +62,19 @@ function Add-NrFixture($Fixture) {
     Put $model 'community-model-fixture'
     $lockPath=Join-Path $Fixture.PackagePath 'packaging/dependencies.lock.json'
     $lock=Get-Content $lockPath -Raw | ConvertFrom-Json
-    $lock.Dependencies+=@{Id='nvidia_nr';Url='https://example.org/nvngx_dlssnr.dll';SHA256=(Get-FileHash $model).Hash;Archive='file';Required=$false;Feature='nr';Files=@(@{Source='nvngx_dlssnr.dll';Target='OptiScaler/nvngx_dlssnr.dll'})}
+    $lock.Dependencies+=@{Id='nvidia_nr';Vendor='nvidia';Url='https://example.org/nvngx_dlssnr.dll';SHA256=(Get-FileHash $model).Hash;Archive='file';Required=$false;Feature='nr';Files=@(@{Source='nvngx_dlssnr.dll';Target='OptiScaler/nvngx_dlssnr.dll'})}
     Put $lockPath ($lock | ConvertTo-Json -Depth 8)
     Put (Join-Path $Fixture.PackagePath 'payload/defaults/OptiScaler.ini') "[OptiFG]`r`nEnabled=false`r`n[NeuralRendering]`r`nEnabled=false"
+}
+function Add-BridgeFixture($Fixture) {
+    # Full optional set plus an NVIDIA-only FG runtime, as in the real lock.
+    Add-NrFixture $Fixture
+    $streamline=Join-Path $Fixture.DependencyDirectory 'streamline_fg.file'
+    Put $streamline 'nvidia-only-fg-runtime'
+    $lockPath=Join-Path $Fixture.PackagePath 'packaging/dependencies.lock.json'
+    $lock=Get-Content $lockPath -Raw | ConvertFrom-Json
+    $lock.Dependencies+=@{Id='streamline_fg';Vendor='nvidia';Url='https://example.org/sl.interposer.dll';SHA256=(Get-FileHash $streamline).Hash;Archive='file';Required=$false;Feature='fg';Files=@(@{Source='sl.interposer.dll';Target='OptiScaler/streamline/sl.interposer.dll'})}
+    Put $lockPath ($lock | ConvertTo-Json -Depth 8)
 }
 try {
     Case 'Windows PowerShell parses the GUI entry point' {
@@ -102,7 +115,7 @@ try {
                     }
                     $selected=@()
                     if (-not (Test-Path -LiteralPath $model)) { $selected=@('nr','fg') }
-                    [void]$worker.AddScript($workerBody).AddArgument($modulePath).AddArgument($f.GamePath).AddArgument($action).AddArgument($f.DependencyDirectory).AddArgument($selected)
+                    [void]$worker.AddScript($workerBody).AddArgument($modulePath).AddArgument($f.GamePath).AddArgument($action).AddArgument($f.DependencyDirectory).AddArgument($selected).AddArgument('Nvidia')
                     $operation=$worker.BeginInvoke()
                     $result=$worker.EndInvoke($operation)
                     Assert (-not $worker.HadErrors) ('GUI worker errors: '+[string]$worker.Streams.Error[0])
@@ -246,6 +259,10 @@ try {
     Case 'fresh install, uninstall and game bytes preserved' {
         $f=New-Fixture 'fresh'; Install $f | Out-Null
         Assert (Test-Path (Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll')) 'plugin installed'
+        Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSSNative.dll')) -eq 'native-one') 'NVIDIA path installs DLSS native plugin'
+        Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkBridgeNative.dll')) -eq 'bridge-native-one') 'NVIDIA path also installs bridge native plugin'
+        Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'nvngx_dlss.dll')) -eq 'runtime-known') 'NVIDIA path installs DLSS runtime'
+        Assert ((Invoke-BbwSetup @f -Mode Diagnose) -match 'GPU path: NVIDIA') 'diagnosis reports NVIDIA path'
         Assert (-not (Test-Path (Join-Path $f.GamePath 'OptiScaler.ini'))) 'core-only install does not create OptiScaler config'
         Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/BigWalkDLSS/notices/NOTICE')) -eq 'fixture-NOTICE') 'attribution installed'
         Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/BigWalkDLSS/notices/docs/licenses/vendor.txt')) -eq 'fixture-vendor-license') 'vendor license installed'
@@ -258,6 +275,7 @@ try {
         Uninstall $f | Out-Null
         Assert (-not (Test-Path (Join-Path $f.GamePath 'winhttp.dll'))) 'owned loader removed'
         Assert (-not (Test-Path (Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSS.dll'))) 'plugin removed'
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkBridgeNative.dll'))) 'bridge native plugin removed'
         Assert (-not (Test-Path (Join-Path $f.GamePath 'BepInEx/BigWalkDLSS/notices/NOTICE'))) 'owned notices removed when shared loader removed'
         Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'GameAssembly.dll')) -eq 'game-assembly-do-not-touch') 'game assembly preserved'
     }
@@ -508,6 +526,105 @@ try {
         Assert ([IO.File]::ReadAllText($model) -eq 'different-preexisting-model') 'different preexisting model is preserved'
         Assert (-not (Test-Path (Join-Path $f.GamePath 'version.dll'))) 'model collision prevents partial bridge install'
     }
+    Case 'AMD/Intel bridge path forces the bridge, skips NVIDIA runtimes and uses bridge defaults' {
+        $f=New-Fixture 'bridge-fresh'; Add-BridgeFixture $f; $f.GpuPath='Bridge'
+        # NVIDIA-vendor inputs are absent offline: the bridge path must neither require nor fetch them.
+        foreach ($name in @('nvngx_dlss.file','nvidia_nr.file','streamline_fg.file')) { Remove-Item -LiteralPath (Join-Path $f.DependencyDirectory $name) }
+        $message=Install $f
+        Assert ($message -match 'AMD/Intel GPU path used' -and $message -match 'bridge') 'completion names the AMD/Intel path and bridge'
+        Assert ($message -notmatch 'Neural Rendering model was installed') 'completion does not claim NR'
+        Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'version.dll')) -eq 'experimental-fg-bridge') 'bridge installed without FG being selected'
+        Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkBridgeNative.dll')) -eq 'bridge-native-one') 'bridge native plugin installed'
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSSNative.dll'))) 'DLSS native plugin not installed'
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'nvngx_dlss.dll'))) 'NVIDIA DLSS runtime skipped'
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'OptiScaler/streamline/sl.interposer.dll'))) 'NVIDIA FG runtime skipped'
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'OptiScaler/nvngx_dlssnr.dll'))) 'NR model skipped'
+        Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'OptiScaler.ini')) -match 'fsr31') 'bridge OptiScaler default installed'
+        $manifest=Get-Content (Join-Path $f.GamePath '.big-beautiful-walk/manifest.json') -Raw | ConvertFrom-Json
+        Assert (@($manifest.Entries | Where-Object { $_.Role -in @('nvngx_dlss','streamline_fg','nvidia_nr') }).Count -eq 0) 'no NVIDIA runtime ownership recorded'
+        Assert ((Invoke-BbwSetup @f -Mode Diagnose) -match 'GPU path: AMD/Intel') 'diagnosis reports the bridge path'
+        Install $f | Out-Null
+        Uninstall $f | Out-Null
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkBridgeNative.dll'))) 'bridge native plugin removed'
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'version.dll'))) 'bridge removed'
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'winhttp.dll'))) 'own bridge native plugin does not count as another mod'
+    }
+    Case 'AMD/Intel bridge path rejects Neural Rendering and a release without the bridge before any change' {
+        $f=New-Fixture 'bridge-nr'; Add-BridgeFixture $f; $f.GpuPath='Bridge'
+        foreach ($request in @(@('nr'),@('fg','NR'))) {
+            Expect-Failure { Invoke-BbwSetup @f -Mode Install -Features $request } 'Neural Rendering needs an NVIDIA RTX GPU; it is not available on AMD or Intel GPUs\. No game files were changed\.'
+        }
+        Assert (-not (Test-Path (Join-Path $f.GamePath '.big-beautiful-walk'))) 'NR rejection leaves no state'
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'BepInEx'))) 'NR rejection installs nothing'
+        $core=New-Fixture 'bridge-no-runtime'; $core.GpuPath='Bridge'
+        Expect-Failure { Install $core } 'no verified bridge runtime'
+        Assert (-not (Test-Path (Join-Path $core.GamePath '.big-beautiful-walk'))) 'missing bridge runtime leaves no state'
+    }
+    Case 'AMD/Intel path switches off NVIDIA-only settings kept from an NVIDIA install' {
+        $f=New-Fixture 'bridge-kept-settings'; Add-BridgeFixture $f; $f.GpuPath='Bridge'
+        $config=Join-Path $f.GamePath 'OptiScaler.ini'
+        $kept="[Upscalers]`r`nDx11Upscaler = dlss_12 ; chosen in F10`r`n[FrameGen]`r`nEnabled=true`r`nFGOutput=DLSSG`r`n[DlssNr]`r`nEnabled = true`r`nStyle = 2`r`n[Other]`r`nEnabled=true`r`n"
+        Put $config $kept
+        $message=Install $f
+        $expected="[Upscalers]`r`nDx11Upscaler = fsr31 ; chosen in F10`r`n[FrameGen]`r`nEnabled=false`r`nFGOutput=DLSSG`r`n[DlssNr]`r`nEnabled = false`r`nStyle = 2`r`n[Other]`r`nEnabled=true`r`n[Spoofing]`r`nDxgi=false`r`n"
+        Assert ([IO.File]::ReadAllText($config) -eq $expected) 'only DLSS, NVIDIA FG and NR values changed, formatting kept'
+        Assert ($message -match 'OptiScaler.ini was updated for this GPU') 'settings update reported'
+        $backups=@(Get-ChildItem (Join-Path $f.GamePath '.big-beautiful-walk/config-backups') -Filter 'OptiScaler-*.ini')
+        Assert ($backups.Count -eq 1 -and [IO.File]::ReadAllText($backups[0].FullName) -eq $kept) 'previous settings backed up'
+        Install $f | Out-Null
+        Assert (@(Get-ChildItem (Join-Path $f.GamePath '.big-beautiful-walk/config-backups') -Filter 'OptiScaler-*.ini').Count -eq 1) 'already corrected settings left alone'
+        $amd="[Upscalers]`r`nDx11Upscaler=fsr31`r`n[FrameGen]`r`nEnabled=true`r`nFGOutput=FSRFG`r`n[Spoofing]`r`nDxgi = false`r`n"
+        Put $config $amd
+        Install $f | Out-Null
+        Assert ([IO.File]::ReadAllText($config) -eq $amd) 'AMD Frame Generation request kept'
+        # An ANSI file with an accented path is left untouched and reported, never re-encoded.
+        $ansi=[byte[]](@([Text.Encoding]::ASCII.GetBytes("[Upscalers]`r`nDx11Upscaler=dlss_12`r`n[Paths]`r`nLibrary=C:\Caf")) + @(0xE9) + @([Text.Encoding]::ASCII.GetBytes("`r`n")))
+        [IO.File]::WriteAllBytes($config,$ansi)
+        $message=Install $f
+        Assert ([Linq.Enumerable]::SequenceEqual([byte[]][IO.File]::ReadAllBytes($config),$ansi)) 'non-UTF-8 settings rewritten'
+        Assert ($message -match 'could not be updated for this GPU') 'unsupported settings encoding not reported'
+        Assert (@(Get-ChildItem $f.GamePath -Filter 'OptiScaler.ini.*.tmp').Count -eq 0) 'temporary settings file left behind'
+        # Hybrid PCs keep the NVIDIA path: only spoofing changes, inserted into an existing [Spoofing] section.
+        $hybridKept="[Upscalers]`r`nDx11Upscaler=dlss_12`r`n[FrameGen]`r`nEnabled=true`r`nFGOutput=DLSSG`r`n[Spoofing]`r`nDxgiVRAM=auto`r`n"
+        Put $config $hybridKept
+        $module=Get-Module Setup.Core
+        $hybridChanges=@(& $module { param($Game) Update-BbwBridgeSettings $Game -SpoofingOnly } $f.GamePath)
+        Assert ([IO.File]::ReadAllText($config) -eq "[Upscalers]`r`nDx11Upscaler=dlss_12`r`n[FrameGen]`r`nEnabled=true`r`nFGOutput=DLSSG`r`n[Spoofing]`r`nDxgi=false`r`nDxgiVRAM=auto`r`n") 'hybrid settings changed beyond spoofing'
+        Assert ($hybridChanges.Count -eq 1 -and $hybridChanges[0] -match 'spoofing') 'hybrid spoofing change not reported'
+        Put $config "[Spoofing]`r`nDxgi=auto`r`n"
+        [void](& $module { param($Game) Update-BbwBridgeSettings $Game -SpoofingOnly } $f.GamePath)
+        Assert ([IO.File]::ReadAllText($config) -eq "[Spoofing]`r`nDxgi=false`r`n") 'automatic spoofing left on'
+        Uninstall $f | Out-Null
+    }
+    Case 'switching an NVIDIA install to the bridge path removes the owned DLSS native plugin and back' {
+        $f=New-Fixture 'bridge-switch'; Add-BridgeFixture $f
+        Invoke-BbwSetup @f -Mode Install -Features nr | Out-Null
+        $dlssNative=Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSSNative.dll'
+        $model=Join-Path $f.GamePath 'OptiScaler/nvngx_dlssnr.dll'
+        $config=Join-Path $f.GamePath 'OptiScaler.ini'
+        Assert ([IO.File]::ReadAllText($dlssNative) -eq 'native-one') 'NVIDIA install owns DLSS native plugin'
+        Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'OptiScaler/streamline/sl.interposer.dll')) -eq 'nvidia-only-fg-runtime') 'NVIDIA FG installs NVIDIA-vendor runtime'
+        Put $config 'user-opti-settings'
+        $f.GpuPath='Bridge'
+        Install $f | Out-Null
+        Assert (-not (Test-Path -LiteralPath $dlssNative)) 'owned DLSS native plugin removed on bridge path'
+        Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkBridgeNative.dll')) -eq 'bridge-native-one') 'bridge native plugin kept'
+        Assert ([IO.File]::ReadAllText($config) -eq "user-opti-settings`n[Spoofing]`nDxgi=false`n") 'edited OptiScaler settings preserved on switch, spoofing turned off'
+        Assert ([IO.File]::ReadAllText($model) -eq 'community-model-fixture') 'owned NR model left in place on bridge repair'
+        $manifest=Get-Content (Join-Path $f.GamePath '.big-beautiful-walk/manifest.json') -Raw | ConvertFrom-Json
+        Assert (@($manifest.Entries | Where-Object { $_.Target -eq 'BepInEx/plugins/BigWalkDLSS/BigWalkDLSSNative.dll' }).Count -eq 0) 'DLSS native plugin ownership released'
+        Assert (@($manifest.Entries | Where-Object { $_.Role -eq 'nvidia_nr' }).Count -eq 1) 'NR model stays owned for uninstall'
+        Assert ((Invoke-BbwSetup @f -Mode Diagnose) -notmatch 'MISSING') 'bridge switch leaves no missing owned files'
+        Install $f | Out-Null
+        $f.GpuPath='Nvidia'
+        Install $f | Out-Null
+        Assert ([IO.File]::ReadAllText($dlssNative) -eq 'native-one') 'NVIDIA path reinstalls DLSS native plugin'
+        Uninstall $f | Out-Null
+        foreach ($path in @($dlssNative,$model,(Join-Path $f.GamePath 'nvngx_dlss.dll'),(Join-Path $f.GamePath 'version.dll'),(Join-Path $f.GamePath 'BepInEx/plugins/BigWalkDLSS/BigWalkBridgeNative.dll'))) {
+            Assert (-not (Test-Path -LiteralPath $path)) "owned file removed after switching back: $path"
+        }
+        Assert ([IO.File]::ReadAllText($config) -eq "user-opti-settings`n[Spoofing]`nDxgi=false`n") 'settings preserved through switch and uninstall'
+    }
     Case 'missing and hash-invalid dependencies fail before mutation' {
         $f=New-Fixture 'missing'; Remove-Item (Join-Path $f.DependencyDirectory 'nvngx_dlss.file')
         Expect-Failure { Install $f } 'Offline dependency is missing'
@@ -566,7 +683,7 @@ try {
         $link=Join-Path $scratch 'linked-library-junction'
         [void](New-Item -ItemType Junction -Path $link -Target (Split-Path $f.GamePath -Parent))
         try {
-            $linked=@{GamePath=(Join-Path $link 'game');PackagePath=(Join-Path $link 'package');DependencyDirectory=(Join-Path $link 'deps')}
+            $linked=@{GamePath=(Join-Path $link 'game');PackagePath=(Join-Path $link 'package');DependencyDirectory=(Join-Path $link 'deps');GpuPath='Nvidia'}
             $module=Get-Module Setup.Core
             Assert ((& $module { param($Path) Get-BbwMutexName $Path } $linked.GamePath) -eq (& $module { param($Path) Get-BbwMutexName $Path } $f.GamePath)) 'alias and physical path share one installer lock'
             Assert ((& $module { param($Path) Get-BbwFinalPath $Path } $linked.GamePath) -eq (& $module { param($Path) Get-BbwFinalPath $Path } $f.GamePath)) 'alias resolves to the physical game folder'

@@ -1,13 +1,14 @@
-param([string]$GamePath, [ValidateSet('Install','Uninstall','Diagnose')][string]$Mode='Install', [switch]$Headless, [string]$DependencyDirectory, [string[]]$Features=@())
+param([string]$GamePath, [ValidateSet('Install','Uninstall','Diagnose')][string]$Mode='Install', [switch]$Headless, [string]$DependencyDirectory, [string[]]$Features=@(), [ValidateSet('Auto','Nvidia','Bridge')][string]$GpuPath='Auto')
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'Setup.Core.psm1') -Force
 if ($Headless) {
-    try { Invoke-BbwSetup -GamePath $GamePath -Mode $Mode -DependencyDirectory $DependencyDirectory -Features $Features; exit 0 }
+    try { Invoke-BbwSetup -GamePath $GamePath -Mode $Mode -DependencyDirectory $DependencyDirectory -Features $Features -GpuPath $GpuPath; exit 0 }
     catch { Write-Error $_; exit 1 }
 }
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [Windows.Forms.Application]::EnableVisualStyles()
+$gpu=Get-BbwGpuPath $GpuPath
 $hasFg=$false
 $hasNr=$false
 try {
@@ -74,6 +75,17 @@ if ($hasNr) {
     $form.Controls.Add($nrCheck)
     $status.Text='Ready. Optional bridge and community RHI SF-v2 NR model downloads are separate choices. The unsigned model is distributed by RHI; read the guides and NVIDIA terms. Selecting NR includes the bridge. Fresh defaults leave FG and NR off. Install/Repair retains previously installed optional components. Diagnose only reads files.'
 }
+if ($gpu -eq 'bridge') {
+    # AMD/Intel: the bridge is how the plugin renders; NR needs an NVIDIA RTX GPU.
+    $hint.Text='Core on AMD/Intel GPUs: FSR and other upscalers through the OptiScaler bridge + Advanced Graphics. Close the game to install or remove. Install the x64 Visual C++ runtime first; see the installation guide. Existing settings and saves are preserved.'
+    $fgCheck.Checked=$true; $fgCheck.Enabled=$false; $fgCheck.Text+=' (required for AMD/Intel GPUs)'
+    $nrCheck.Checked=$false; $nrCheck.Enabled=$false; $nrCheck.Text+=' (NVIDIA RTX only)'
+    $status.Text='Ready. AMD/Intel GPU path: Install/Repair installs the bridge plugin with the OptiScaler upscaler bridge (FSR by default) instead of DLSS, and skips NVIDIA-only files. Fresh defaults leave Frame Generation off. Neural Rendering needs an NVIDIA RTX GPU. Diagnose only reads files. Read the guides and licences before installing.'
+}
+if ($gpu -eq 'nvidia' -and $GpuPath -eq 'Auto' -and (Test-BbwHybridGpu)) {
+    # Windows may run the game on the AMD/Intel GPU, which needs the bridge. Recommend it; don't force it.
+    $fgCheck.Checked=$true; $fgCheck.Text+=' (recommended: this PC also has an AMD/Intel GPU)'
+}
 $guide=New-Object Windows.Forms.Button
 $guide.Text='FG / NR guide'
 $guide.TabIndex=7
@@ -108,7 +120,7 @@ $timer.Add_Tick({
     finally {
         $script:setupWorker.Dispose(); $script:setupWorker=$null; $script:setupOperation=$null
         foreach ($control in $buttons) { $control.Enabled=$true }
-        $browse.Enabled=$true; $pathBox.Enabled=$true; $fgCheck.Enabled=$true; $nrCheck.Enabled=$true
+        $browse.Enabled=$true; $pathBox.Enabled=$true; $fgCheck.Enabled=($gpu -ne 'bridge'); $nrCheck.Enabled=($gpu -ne 'bridge')
     }
 })
 foreach ($spec in @(@('Install / Repair','Install',20,155),@('Uninstall','Uninstall',190,120),@('Diagnose','Diagnose',325,120))) {
@@ -127,7 +139,7 @@ foreach ($spec in @(@('Install / Repair','Install',20,155),@('Uninstall','Uninst
             if ($hasNr -and $nrCheck.Checked) { $selectedFeatures+='nr' }
             $script:setupWorker=[PowerShell]::Create()
             [void]$script:setupWorker.AddScript({
-                param($Module,$Game,$Action,$Dependencies,$SelectedFeatures)
+                param($Module,$Game,$Action,$Dependencies,$SelectedFeatures,$Gpu)
                 $ErrorActionPreference='Stop'
                 # A background runspace does not inherit the GUI's loaded modules.
                 # Use this engine's built-ins even when module autoload is unavailable.
@@ -135,15 +147,15 @@ foreach ($spec in @(@('Install / Repair','Install',20,155),@('Uninstall','Uninst
                     Import-Module ([IO.Path]::Combine($PSHOME,'Modules',$name,($name+'.psd1'))) -ErrorAction Stop
                 }
                 Import-Module $Module -Force
-                Invoke-BbwSetup -GamePath $Game -Mode $Action -DependencyDirectory $Dependencies -Features $SelectedFeatures
-            }).AddArgument((Join-Path $PSScriptRoot 'Setup.Core.psm1')).AddArgument($pathBox.Text).AddArgument([string]$sender.Tag).AddArgument($DependencyDirectory).AddArgument($selectedFeatures)
+                Invoke-BbwSetup -GamePath $Game -Mode $Action -DependencyDirectory $Dependencies -Features $SelectedFeatures -GpuPath $Gpu
+            }).AddArgument((Join-Path $PSScriptRoot 'Setup.Core.psm1')).AddArgument($pathBox.Text).AddArgument([string]$sender.Tag).AddArgument($DependencyDirectory).AddArgument($selectedFeatures).AddArgument($GpuPath)
             $script:setupOperation=$script:setupWorker.BeginInvoke()
             $timer.Start()
         } catch {
             $status.Text='Setup could not start.' + [Environment]::NewLine + $_.Exception.Message
             if ($script:setupWorker) { $script:setupWorker.Dispose(); $script:setupWorker=$null }
             foreach ($control in $buttons) { $control.Enabled=$true }
-            $browse.Enabled=$true; $pathBox.Enabled=$true; $fgCheck.Enabled=$true; $nrCheck.Enabled=$true
+            $browse.Enabled=$true; $pathBox.Enabled=$true; $fgCheck.Enabled=($gpu -ne 'bridge'); $nrCheck.Enabled=($gpu -ne 'bridge')
         }
     })
     $buttons += $button
