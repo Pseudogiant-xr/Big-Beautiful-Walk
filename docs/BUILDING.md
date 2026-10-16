@@ -26,3 +26,5 @@ The managed/native packet ABI is 120 bytes, version 3; always distribute both DL
 The bridge loads the runtime DLL from the game folder; compiling it does not supply that runtime or establish compatibility with an arbitrary version. Use the pins in `packaging/dependencies.lock.json` for the public core.
 
 Keep `LICENSE`, `NOTICE`, `THIRD_PARTY_NOTICES.md` and `docs/licenses` with source and compiled deliverables. The Unity adaptation and incorporated NVIDIA SDK code retain their own terms; see `docs/RELEASE-CHECKLIST.md` before publishing a build.
+
+Packaging also builds the small `Setup.exe` GUI launcher from `src/setup/SetupLauncher.cs` using Windows' x64 .NET Framework compiler. It starts the same Windows PowerShell installer with no console; it adds no downloaded runtime dependency. `Setup.cmd` remains the console/command-line fallback.

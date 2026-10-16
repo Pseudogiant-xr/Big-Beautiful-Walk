@@ -14,6 +14,7 @@
 - Explain first-use verification, the Visual C++ prerequisite and startup recovery; link Setup to the feature guide and licences.
 - Add a separate optional NR runtime download from the RHI community mirror, pinned to the exact SF-v2 model already tested in Big Walk; keep it out of the release ZIP and disabled initially.
 - Load the background installer's built-in PowerShell modules explicitly, so a cold GUI worker can hash files and handle JSON without relying on module autoloading.
+- Add a small Setup.exe graphical launcher that opens the installer without a terminal; retain Setup.cmd for console diagnostics and command-line use.
 
 NVIDIA FG and Default-style NR received in-world visual checks on the tested RTX 4090. AMD FG operated with poorer results; Intel FG produced interpolated frames but reduced measured FPS on this setup. Preset cycling, distant tree shadows under Extreme and nearby foliage restoration under Game defaults were confirmed after the vegetation binding corrections. These tests do not establish fresh-loader bootstrap or compatibility on other hardware; component terms remain in `docs/LICENSING.md`.
 

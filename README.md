@@ -9,7 +9,7 @@ This is an experimental alpha tested on one RTX 4090 system. See [compatibility]
 ## Install
 
 1. Install or repair the [Microsoft Visual C++ v14 runtime for x64](https://aka.ms/vc14/vc_redist.x64.exe), then close Big Walk and extract the complete release ZIP into a separate folder. See [Microsoft's runtime guidance](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist).
-2. Open **Setup.cmd**, choose the Big Walk folder containing `Big Walk.exe`, and select **Install / Repair**.
+2. Open **Setup.exe**, choose the Big Walk folder containing `Big Walk.exe`, and select **Install / Repair**. The graphical launcher has no terminal window; `Setup.cmd` remains available for troubleshooting and command-line use.
 3. Setup downloads the pinned BepInEx loader and DLSS runtime and verifies their SHA-256 hashes. The optional bridge adds alternative upscalers and NVIDIA/AMD/Intel frame generation. A separate **Neural Rendering runtime** option adds RHI's community-hosted SF-v2 model and the bridge it needs. Both options start unchecked; fresh FG and NR settings remain off. Component sources and terms are in [the notices](THIRD_PARTY_NOTICES.md).
 4. Launch Big Walk normally on your monitor. The first BepInEx launch can take longer while it prepares local interop files.
 5. Enter a private world, press **Home**, and look for **Upscaling active**. **Waiting for a scene** at the title screen is normal. Start with DLSS Quality / Preset L; **F8** compares reconstruction off/on.

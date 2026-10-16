@@ -28,6 +28,9 @@ jobs:
       - name: Installer recovery fixtures (Windows PowerShell)
         shell: powershell
         run: ./tests/Setup.Tests.ps1
+      - name: Graphical installer launcher
+        shell: pwsh
+        run: ./tests/Launcher.Tests.ps1
       - name: Installer optional-feature selection (Windows PowerShell)
         shell: powershell
         run: ./tests/SetupSelection.Tests.ps1

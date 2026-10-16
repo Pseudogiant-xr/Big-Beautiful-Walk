@@ -2,7 +2,7 @@
 
 ## Before installing
 
-Use the Windows x64 Steam version of Big Walk on a monitor, with an NVIDIA RTX GPU and DirectX 11. Close the game. Extract the whole release archive before running `Setup.cmd`; do not run Setup inside the ZIP or copy only its launcher.
+Use the Windows x64 Steam version of Big Walk on a monitor, with an NVIDIA RTX GPU and DirectX 11. Close the game. Extract the whole release archive before running `Setup.exe`; do not run Setup inside the ZIP or copy only its launcher.
 
 Install or repair the [Microsoft Visual C++ v14 Redistributable for x64](https://aka.ms/vc14/vc_redist.x64.exe) before starting the game. The native plugin needs its runtime libraries; Setup does not install this system prerequisite. [Microsoft's supported runtime guidance](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) explains the package.
 
@@ -10,7 +10,7 @@ Setup searches Steam libraries and lets you choose another folder. Select the fo
 
 ## Install or repair
 
-Open `Setup.cmd` and choose **Install / Repair**. The installer stages and hashes its downloads before changing the game folder. It tracks installed files and stores original files under `.big-beautiful-walk` in the game folder. Preserve that folder for recovery and uninstall.
+Open `Setup.exe` and choose **Install / Repair**. It starts the same PowerShell installer without a terminal window. `Setup.cmd` provides console diagnostics and command-line options if needed. The installer stages and hashes its downloads before changing the game folder. It tracks installed files and stores original files under `.big-beautiful-walk` in the game folder. Preserve that folder for recovery and uninstall.
 
 Setup refuses unrecognized conflicting loader or runtime files rather than replacing another mod's installation. Existing configurations are preserved. The optional bridge adds OptiScaler and NVIDIA, AMD and Intel FG dependencies. A separate **Neural Rendering runtime** checkbox downloads RHI's community-hosted SF-v2 model and includes that bridge; it is roughly 111 MiB and is not an official NVIDIA SDK download. Both boxes start unchecked, and fresh FG/NR settings remain off. Bridge-only installation or repair does not add an NR model. Already-owned optional components are included in later repairs even when their boxes are unchecked. Open **Home → Frame Gen** or **Neural**, make your choice, then quit normally and restart. Setup's **FG / NR guide** opens the [feature instructions](FRAME-GENERATION.md), and **Licences** opens the component notices.
 
@@ -28,7 +28,7 @@ Report reproducible problems through [GitHub Issues](https://github.com/Pseudogi
 
 ## Uninstall
 
-Close the game, run `Setup.cmd`, select the same folder and choose **Uninstall**. The installer removes files it installed and restores originals it backed up. It preserves configuration files, saves, other mods and its backup folder. If an installed file has been changed externally, Setup stops rather than deleting someone else's change.
+Close the game, run `Setup.exe`, select the same folder and choose **Uninstall**. The installer removes files it installed and restores originals it backed up. It preserves configuration files, saves, other mods and its backup folder. If an installed file has been changed externally, Setup stops rather than deleting someone else's change.
 
 If Setup reports interrupted recovery, keep `.big-beautiful-walk` and run Setup again after closing the game. Do not manually delete the transaction journal or original backups.
 
