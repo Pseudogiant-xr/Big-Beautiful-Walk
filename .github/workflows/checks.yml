@@ -12,6 +12,8 @@ jobs:
           dotnet-version: '8.0.x'
       - name: Graphics logic
         run: dotnet run --project tests/GraphicsChecks.csproj -c Release
+      - name: Vegetation override restoration
+        run: dotnet run --project tests/VegetationRestoreChecks.csproj -c Release
       - name: INI preservation and configuration recovery
         run: dotnet run --project tests/BridgeChecks.csproj -c Release
       - name: Frame generation and neural rendering profiles

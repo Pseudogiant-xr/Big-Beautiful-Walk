@@ -1,6 +1,6 @@
 # Release checklist
 
-This checklist tracks the private 0.7 offline candidate, unresolved public-release terms and explicitly labeled historical 0.6 observations. It is not a legal-clearance statement. A license copy, checksum or upstream download does not prove every distribution condition has been satisfied; historical runtime observations do not validate the new candidate.
+This checklist tracks the private 0.7 test candidate, unresolved public-release terms and explicitly labeled historical 0.6 observations. It is not a legal-clearance statement. A license copy, checksum or upstream download does not prove every distribution condition has been satisfied; historical runtime observations do not validate the new candidate.
 
 ## License review
 
@@ -16,11 +16,11 @@ This checklist tracks the private 0.7 offline candidate, unresolved public-relea
 
 ## Private 0.7 validation
 
-- [x] CPU installer fixtures: 29 cases under Windows PowerShell 5.1 and PowerShell 7 in the author session. This does not exercise graphics runtimes or first-launch game behavior.
+- [x] CPU installer fixtures: 30 cases under Windows PowerShell 5.1 and PowerShell 7 in the author session. This does not exercise graphics runtimes or first-launch game behavior.
 - [ ] Inspect the final packaged ZIP and fixture-installed notices after the final licensing edits; confirm linked license files, installer ownership/removal behavior and absence of bundled runtime/game/model binaries.
 - [ ] Record exact 0.7 managed/native binary hashes, build commands and validation receipts for the frozen candidate.
 - [ ] Complete one fresh independent review of the final 0.7 candidate. The historical 0.6 review below does not satisfy this check.
-- [ ] Run the final 0.7 candidate in the real game within an authorized GPU/test window: new controls, restoration, selected AMD/Intel/NVIDIA FG paths and NR forwarding need runtime verification. No 0.7 game/GPU launch has been performed in this offline preparation.
+- [ ] Complete final restoration acceptance in the real game within an authorized test window. NVIDIA FG plus Default NR received user confirmation; AMD FG operated with poorer results and Intel interpolation reduced FPS on the tested RTX 4090. The subsequent Game defaults vegetation correction is not yet visually verified.
 - [ ] Validate a fresh BepInEx installation and first-launch interop generation; the historical existing-loader tests do not satisfy this check.
 
 ## Historical private 0.6 observations
