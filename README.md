@@ -24,7 +24,7 @@ So download it. It’s free, which is a very good price. Make Big Walk Beautiful
 
 ----------------------------------------------------------------------------------------
 
-# Big Beautiful Walk 0.7.0
+# Big Beautiful Walk 0.8.0
 
 An unofficial graphics mod for **Big Walk** on Windows. It adds DLSS Super Resolution, FSR 3.1, FSR 4 and XeSS, DLSS5 Neural Rendering, Frame Generation and an in-game graphics panel, opened with the **Home** key, with controls for upscaling, shadows, vegetation, textures and more.
 

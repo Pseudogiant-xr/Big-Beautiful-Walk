@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Windows.Forms;
 
 [assembly: AssemblyTitle("Big Beautiful Walk Setup")]
-[assembly: AssemblyVersion("0.7.0.0")]
+[assembly: AssemblyVersion("0.8.0.0")]
 
 internal static class SetupLauncher
 {
