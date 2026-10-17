@@ -32,7 +32,7 @@ Get the NVIDIA DLSS/NGX SDK and the Streamline headers under their upstream term
 
 ```powershell
 .\scripts\Build.ps1 -GameDir 'E:\SteamLibrary\steamapps\common\Big Walk' -NgxRoot 'E:\SDKs\DLSS' -StreamlineRoot 'E:\SDKs\Streamline'
-.\scripts\Package.ps1 -Destination '.\dist\Big-Beautiful-Walk-0.7.0'
+.\scripts\Package.ps1 -Destination '.\dist\Big-Beautiful-Walk-0.8.0'
 ```
 
 The managed/native packet ABI is 120 bytes, version 3. Always ship both DLLs from the same build. Release builds leave out debug-path records.

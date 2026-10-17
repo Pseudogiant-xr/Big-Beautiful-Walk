@@ -65,7 +65,7 @@ The later installer and UI build has managed SHA-256 `C4E1CD56CCFCA4772D4341A05D
 
 Open a [GitHub issue](https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/issues) and include:
 
-- Big Beautiful Walk version 0.7.0
+- Big Beautiful Walk version 0.8.0
 - your game version and build
 - your GPU and driver
 - the graphics API
