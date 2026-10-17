@@ -2,7 +2,7 @@ Foreword:
 
 G'day people, this is Big Beautiful Walk. The game is awesome and great fun with my mates, but the horrible jaggies and lack of graphics options galled me, so I decided to AI sloppify a fix to make it better!
 
-I hope it makes your walk even more beautiful, and now for a bit of memery:
+I hope it makes your walk even more beautiful, and now for a bit of satire:
 
 ----------------------------------------------------------------------------------------
 
