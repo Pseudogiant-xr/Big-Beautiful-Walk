@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.1 — alpha
+
+### Added
+
+- Import the NR 310.9.16 compatibility DLL through Setup's file picker or `-NeuralModelPath`. The exact OpenNR reference hash is checked before installation; the runtime is never bundled. The existing SF-v2 download remains available.
+- Home names NR preset A (Standard) and preset B (Lightweight FP8) for 310.9.16. Auto keeps the runtime's default; existing settings are preserved.
+- Repair retains an owned imported model without downloading or downgrading it. A missing imported model requires selecting its DLL again. Installer checks cover upgrades, repair, removal, invalid hashes and ownership conflicts. Big Walk rendering and performance with 310.9.16 are not yet verified.
+
 ## 0.8.0 — alpha
 
 ### Added

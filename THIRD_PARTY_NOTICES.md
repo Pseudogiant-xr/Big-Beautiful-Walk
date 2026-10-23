@@ -59,6 +59,8 @@ Portions of this software are copyright © 2024 The FreeType Project (www.freety
 
 Cached Streamline 2.14.16 and FG 310.9.16 prototype files are not the official versions this installer pins.
 
+A separate local-import option accepts the hash-verified NR 310.9.16 compatibility DLL supplied by the user; it is never bundled or automatically downloaded. Its [provenance and rights limits](docs/licenses/RHI-Neural-Rendering-NOTICE.md#nr-310916-local-import) remain separate from the project and OpenNR source licences.
+
 The separate optional NR download uses RankFTW/RHI's community-hosted SF-v2 archive, and matches the model previously tested in Big Walk. It is unsigned, is not in this project's repository or ZIP, and carries no licence in its upstream archive. [The NR provenance notice](docs/licenses/RHI-Neural-Rendering-NOTICE.md) records its exact hashes and these limits. Neither RHI's GPL nor this project's Apache grant relicenses the vendor model. The project claims no NVIDIA authorisation for the model, and does not claim it is the latest model.
 
 OptiScaler also uses Microsoft Detours headers that identify version 4.0.1, and links a prebuilt Detours library. Keep Microsoft's [MIT copyright and permission notice](docs/licenses/OptiScaler-Detours-LICENSE.md). The exact source and build that produced the linked library are not verified.

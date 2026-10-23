@@ -1,5 +1,7 @@
 # Compatibility and known issues
 
+NR 310.9.16 can also be imported from a user-supplied, hash-verified compatibility DLL. This runtime is not bundled or downloaded automatically; its Big Walk rendering is unverified. See [local import](FRAME-GENERATION.md#nr-310916-local-import) and [provenance](licenses/RHI-Neural-Rendering-NOTICE.md#nr-310916-local-import).
+
 ## Tested setup
 
 Big Beautiful Walk 0.7 has been tested on one PC:

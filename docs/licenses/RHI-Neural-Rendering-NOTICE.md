@@ -1,5 +1,13 @@
 # Community Neural Rendering runtime
 
+## NR 310.9.16 local import
+
+Setup also accepts a user-supplied compatibility DLL with file version `310.9.16.0`, size 276,162,560 bytes and SHA-256 `CDFA6C1EC784867182164C7836F324F087B5C9F374D0C9FE46F54999FEABF3ED`. It matches the reference output documented by [OpenNR at 57ca170](https://github.com/clshortfuse/openNR/tree/57ca170cb836f549f0e64544f282d535666b0f7d). Windows reports `NotSigned`; the hash identifies the supported bytes and is not a vendor signature or approval. OpenNR's source licence does not relicense the vendor runtime or model assets. No model or generated DLL is shipped in this repository or ZIP.
+
+This path copies the user's file after verifying it, includes the existing bridge and leaves saved settings unchanged. Fresh NR remains disabled. Rendering with this model in Big Walk is not yet verified. There is no automatic 310.9.16 download in this release.
+
+## SF-v2 download
+
 Setup's separate **Neural Rendering runtime** option downloads the SF-v2 model from [RankFTW's RHI runtime mirror](https://github.com/RankFTW/rhi-repo/releases/tag/dlssnr-310.8.SF-v2). This is a community-hosted variant, not an official NVIDIA SDK download. Credit goes to RankFTW / ReShade HDR Installer (RHI) for hosting and the version catalogue. This project does not incorporate any RHI implementation code.
 
 The downloaded archive and model are not in Big Beautiful Walk's repository or release ZIP. The download is optional and hash-pinned, and it leaves NR disabled at first. The core install and the upscaler/FG option do not select it. Existing files and settings keep the installer's usual ownership and conflict protections.

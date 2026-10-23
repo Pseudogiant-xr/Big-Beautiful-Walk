@@ -24,7 +24,7 @@ So download it. It’s free, which is a very good price. Make Big Walk Beautiful
 
 ----------------------------------------------------------------------------------------
 
-# Big Beautiful Walk 0.8.0
+# Big Beautiful Walk 0.8.1
 
 An unofficial graphics mod for **Big Walk** on Windows. It adds DLSS Super Resolution, FSR 3.1, FSR 4 and XeSS, DLSS5 Neural Rendering, Frame Generation and an in-game graphics panel, opened with the **Home** key, with controls for upscaling, shadows, vegetation, textures and more.
 
@@ -55,6 +55,8 @@ Big Beautiful Walk is not affiliated with or endorsed by House House, Unity or N
    - the bridge, which adds alternative upscalers and NVIDIA, AMD and Intel frame generation;
    - the Neural Rendering model, RHI's community-hosted SF-v2 model. This also installs the bridge.
 
+   For NR 310.9.16, click **Use my NR 310.9.16 compatibility DLL...** and select your existing `nvngx_dlssnr.dll`. Setup verifies the supported compatibility build by SHA-256 and uses it instead of the older download. See [the NR guide](docs/FRAME-GENERATION.md#nr-310916-local-import).
+
    Frame generation and Neural Rendering stay off until you turn them on in the game. Sources and terms for each component are in [the notices](THIRD_PARTY_NOTICES.md).
 5. Start Big Walk normally. The first launch takes longer while BepInEx prepares its interop files.
 6. Load into a private world and press **Home**. You should see **Upscaling active**. On the title screen it says **Waiting for a scene**, which is normal.
@@ -78,7 +80,7 @@ Big Beautiful Walk is not affiliated with or endorsed by House House, Unity or N
 - **DLSS**, from Ultra Performance to native DLAA, with selectable render presets. Quality with Preset L is the tested baseline. DLAA and Ultra Quality are experimental.
 - **Graphics overrides**, including shadow cascades, vegetation shadow range and an experimental 16384-pixel main shadow atlas. Extreme settings can cost a lot of performance and video memory.
 - **Frame generation** (optional bridge), with NVIDIA, AMD and Intel profiles in **Home → Frame Gen**. On the test RTX 4090, NVIDIA FG looked best. AMD FG worked, with worse quality and performance. Intel FG generated frames but lowered the reported frame rate. See the [FG / NR guide](docs/FRAME-GENERATION.md).
-- **Neural Rendering** (optional), using the RHI community download or a compatible model you already have. The pinned download is the same model that was tested with NVIDIA FG and the Default style. RHI's faster model from 16 October has not been tested. [The NR guide](docs/FRAME-GENERATION.md#neural-rendering) gives the exact version and source.
+- **Neural Rendering** (optional), using the RHI community download or a compatible model you already have. Setup can import the hash-verified NR 310.9.16 compatibility runtime you already have, including its new Lightweight FP8 model (preset B). The older SF-v2 download remains available. The new runtime has passed installer checks; rendering in Big Walk has not yet been tested. [The NR guide](docs/FRAME-GENERATION.md#neural-rendering) gives the exact version and source.
 - **AMD and Intel GPUs (experimental)**: upscaling with FSR 3.1 or XeSS, plus AMD and Intel frame generation, all through the bridge. Options that need an NVIDIA GPU (DLSS, its model presets, NVIDIA frame generation and Neural Rendering) are greyed out with the reason.
 - **FSR 3.1 and XeSS**, offered in Home when the bridge's requirements are met. FSR 4 shows as unsupported on the RTX 4090. The [feature matrix](docs/UPSCALERS.md) lists requirements and test status for each.
 

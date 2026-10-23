@@ -37,6 +37,8 @@ On a PC with both an NVIDIA GPU and an AMD or Intel GPU (most gaming laptops), S
 
 `-GpuPath Nvidia` or `-GpuPath Bridge` on the command line overrides the detection.
 
+For NR 310.9.16, use **Use my NR 310.9.16 compatibility DLL...** to select your existing model before Install / Repair, or pass `-NeuralModelPath` in headless mode. Setup checks its exact supported hash. See [local import and repair](FRAME-GENERATION.md#nr-310916-local-import).
+
 Installing only the bridge does not add a Neural Rendering model. Once an optional component is installed, later repairs include it even if its box is unchecked. Frame generation and Neural Rendering stay off until you choose them: open **Home → Frame Gen** or **Neural**, make your choice, then quit the game normally and restart it.
 
 Setup's **FG / NR guide** button opens the [feature guide](FRAME-GENERATION.md), and **Licences** opens the component notices.

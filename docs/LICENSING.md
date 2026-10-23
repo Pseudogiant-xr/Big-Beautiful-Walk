@@ -4,6 +4,8 @@ Big Beautiful Walk uses mixed licence terms. Independently authored project mate
 
 This assessment separates three things: what the licence texts say, how this project reads them, and permissions that are not verified. It reflects the position on 2026-10-16. It is not blanket legal clearance.
 
+NR 310.9.16 can also be imported from a user-supplied, hash-verified compatibility DLL. This runtime is not bundled or downloaded automatically; its Big Walk rendering is unverified. See [provenance](licenses/RHI-Neural-Rendering-NOTICE.md#nr-310916-local-import).
+
 ## Apache-2.0 scope and history
 
 [LICENSE](../LICENSE) is the complete, unmodified Apache License 2.0 from the Apache Software Foundation. [NOTICE](../NOTICE) holds the project attribution.

@@ -361,7 +361,7 @@ function Invoke-BbwDownloadRequest([uri]$Uri, [string]$Destination, [int]$Timeou
     $request.PreAuthenticate=$false
     $request.Timeout=$TimeoutMilliseconds
     $request.ReadWriteTimeout=$TimeoutMilliseconds
-    $request.UserAgent='BigBeautifulWalk-Setup/0.8.0'
+    $request.UserAgent='BigBeautifulWalk-Setup/0.8.1'
     $response=$null
     $elapsed=[Diagnostics.Stopwatch]::StartNew()
     try {
@@ -429,7 +429,7 @@ function Get-BbwRepairFeatures([object[]]$Dependencies, [string[]]$Requested, [s
     return $selected.ToArray()
 }
 
-function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyDirectory, [string[]]$Features, [string]$GpuPath='nvidia') {
+function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyDirectory, [string[]]$Features, [string]$GpuPath='nvidia', [string]$NeuralModelPath) {
     $items = New-Object 'Collections.Generic.List[object]'
     $plugins = @('BigWalkDLSS.dll','BigWalkBridgeNative.dll')
     if ($GpuPath -eq 'nvidia') { $plugins += 'BigWalkDLSSNative.dll' }
@@ -475,6 +475,14 @@ function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyD
     foreach ($dep in $selected) {
         if ($dep.Id -notmatch '^[a-zA-Z0-9_-]+$' -or $seenIds.ContainsKey($dep.Id)) { throw 'Invalid or duplicate dependency ID.' }
         $seenIds[$dep.Id] = $true
+        if ($dep.Id -eq 'nvidia_nr' -and $NeuralModelPath) {
+            if (-not $dep.PSObject.Properties['LocalModelSHA256'] -or $dep.LocalModelSHA256 -notmatch '^[a-fA-F0-9]{64}$') { throw 'This release has no pinned local Neural Rendering model.' }
+            $localModel = Resolve-BbwPath $Stage 'local-nvngx_dlssnr.dll'
+            [IO.File]::Copy([IO.Path]::GetFullPath($NeuralModelPath), $localModel)
+            if ((Get-BbwHash $localModel) -ne $dep.LocalModelSHA256.ToLowerInvariant()) { throw 'SHA256 mismatch for local Neural Rendering model. Select the supported 310.9.16 compatibility DLL; no game files were changed.' }
+            $items.Add([pscustomobject]@{ Source=$localModel; Target='OptiScaler/nvngx_dlssnr.dll'; FreshOnly=$false; Role='nvidia_nr' })
+            continue
+        }
         $uri = $null
         if (-not [uri]::TryCreate([string]$dep.Url, [UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -ne 'https' -or $uri.UserInfo -or $dep.SHA256 -notmatch '^[a-fA-F0-9]{64}$' -or $dep.Archive -notin @('zip','file') -or -not @($dep.Files).Count) { throw "Locked dependency '$($dep.Id)' lacks a valid HTTPS URL, SHA256 hash or file map." }
         $download = Resolve-BbwPath $Stage "$($dep.Id).$($dep.Archive)"
@@ -546,7 +554,8 @@ function Invoke-BbwSetup {
           [ValidateSet('Install','Uninstall','Diagnose')][string]$Mode='Install',
           [string]$PackagePath=(Split-Path $PSScriptRoot -Parent),
           [string]$DependencyDirectory, [string[]]$Features=@(), [int]$FaultAfter=0,
-          [ValidateSet('Auto','Nvidia','Bridge')][string]$GpuPath='Auto')
+          [ValidateSet('Auto','Nvidia','Bridge')][string]$GpuPath='Auto',
+          [string]$NeuralModelPath)
     Test-BbwGame $GamePath
     $GamePath = Get-BbwFinalPath $GamePath
     $state = Resolve-BbwPath $GamePath '.big-beautiful-walk'
@@ -610,6 +619,10 @@ function Invoke-BbwSetup {
         $plans = New-Object 'Collections.Generic.List[object]'
         $entries = New-Object 'Collections.Generic.List[object]'
         if ($Mode -eq 'Install') {
+            if ($NeuralModelPath) {
+                if ($gpu -ne 'nvidia') { throw 'A local Neural Rendering model requires the NVIDIA GPU path; no game files were changed.' }
+                $Features += 'nr'
+            }
             # Repair components already recorded as ours, even when the optional
             # checkbox was not selected again. File presence is not ownership.
             $dependencyLock = Read-BbwJson (Resolve-BbwPath $PackagePath 'packaging/dependencies.lock.json')
@@ -619,7 +632,20 @@ function Invoke-BbwSetup {
             }
             # An NR model owned from an earlier NVIDIA install stays owned but is not repaired here.
             if ($gpu -eq 'bridge') { $Features = @($Features | Where-Object { $_ -ne 'nr' }) }
-            $items = @(Get-BbwStage $PackagePath $stage $DependencyDirectory $Features $gpu)
+            # Keep an owned imported model on repair instead of downgrading to the old download.
+            # The ownership checks above reject edited files before any bytes are staged.
+            if (-not $NeuralModelPath -and $gpu -eq 'nvidia' -and $owned.ContainsKey('OptiScaler/nvngx_dlssnr.dll')) {
+                $nrDependency = @($dependencyLock.Dependencies | Where-Object { $_.Id -eq 'nvidia_nr' })
+                $installedModel = Resolve-BbwPath $GamePath 'OptiScaler/nvngx_dlssnr.dll'
+                if ($nrDependency.Count -eq 1 -and $nrDependency[0].PSObject.Properties['LocalModelSHA256'] -and
+                    $owned['OptiScaler/nvngx_dlssnr.dll'].InstalledHash -eq $nrDependency[0].LocalModelSHA256 -and
+                    (Get-BbwHash $installedModel) -eq $nrDependency[0].LocalModelSHA256) { $NeuralModelPath = $installedModel }
+                elseif ($nrDependency.Count -eq 1 -and $nrDependency[0].PSObject.Properties['LocalModelSHA256'] -and
+                    $owned['OptiScaler/nvngx_dlssnr.dll'].InstalledHash -eq $nrDependency[0].LocalModelSHA256) {
+                    throw 'The imported NR 310.9.16 model is missing. Select its DLL again with -NeuralModelPath to repair it; no game files were changed.'
+                }
+            }
+            $items = @(Get-BbwStage $PackagePath $stage $DependencyDirectory $Features $gpu $NeuralModelPath)
             $targets = @{}
             $payloadIndex=0
             foreach ($item in $items) {
@@ -715,7 +741,7 @@ function Invoke-BbwSetup {
             $applied++
             if ($FaultAfter -gt 0 -and $applied -eq $FaultAfter) { throw 'Injected transaction failure.' }
         }
-        if ($Mode -eq 'Install' -or $entries.Count -gt 0) { Write-BbwJson $manifestPath ([pscustomobject]@{ SchemaVersion=1; Version='0.8.0'; Entries=@($entries.ToArray()) }) }
+        if ($Mode -eq 'Install' -or $entries.Count -gt 0) { Write-BbwJson $manifestPath ([pscustomobject]@{ SchemaVersion=1; Version='0.8.1'; Entries=@($entries.ToArray()) }) }
         elseif ([IO.File]::Exists($manifestPath)) { [IO.File]::Delete($manifestPath) }
         [IO.File]::Delete($journalPath)
         if ($Mode -eq 'Install') {
@@ -730,7 +756,10 @@ function Invoke-BbwSetup {
             $message='Install/Repair completed. Existing settings and other mods were preserved. Start Big Walk through Steam when ready.'
             if ($gpu -eq 'bridge') { $message+=' AMD/Intel GPU path used: the bridge plugin and the OptiScaler upscaler bridge (FSR by default) were installed or repaired; NVIDIA-only DLSS and Neural Rendering files were skipped. Fresh defaults leave Frame Generation off. Open Home, then Frame Gen; see docs/FRAME-GENERATION.md for restart and comparison steps.' }
             elseif ($Features -contains 'fg') { $message+=' The optional upscaler and Frame Generation bridge was installed or repaired. Fresh defaults leave Frame Generation off; Neural Rendering also starts off. Open Home, then Frame Gen or Neural; see docs/FRAME-GENERATION.md for restart and comparison steps.' }
-            if ($Features -contains 'nr') { $message+=' The community RHI SF-v2 Neural Rendering model was installed or repaired; this does not enable Neural Rendering.' }
+            if ($Features -contains 'nr') {
+                if ($NeuralModelPath) { $message+=' The local NR 310.9.16 compatibility model was installed or repaired; this does not enable Neural Rendering.' }
+                else { $message+=' The community RHI SF-v2 Neural Rendering model was installed or repaired; this does not enable Neural Rendering.' }
+            }
             $message+=$settingsNote
             if ($gpu -eq 'nvidia' -and $GpuPath -eq 'Auto' -and $Features -notcontains 'fg' -and (Test-BbwHybridGpu)) { $message+=' This PC also has an AMD or Intel GPU. If Windows runs Big Walk on it, the mod needs the bridge: run Setup again and tick it, or set Windows to use the NVIDIA GPU for Big Walk.' }
             return $message
