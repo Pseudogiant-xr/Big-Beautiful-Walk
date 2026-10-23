@@ -10,6 +10,31 @@ const string supported="BOXOPHOBIC/The Visual Engine/Geometry/House Standard Lit
 MeshRenderer Make(string shader,ShadowCastingMode mode=ShadowCastingMode.Off)=>new(shader,mode);
 try
 {
+ if(Array.IndexOf(args,"--unload")>=0)
+ {
+  SmallPlantShadows.Initialize(new ConfigEntry<bool>(true),true);
+  var renderer=Make(supported);var root=new GameObject("Unloaded_Grass",renderer);SmallPlantShadows.ApplyPrefab(root);
+  root.Destroyed=renderer.Destroyed=true;Time.unscaledTime=2;SmallPlantShadows.Tick();
+  foreach(string field in new[]{"Seen","Changed"}){object cache=typeof(SmallPlantShadows).GetField(field,System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static)!.GetValue(null)!;Check((int)cache.GetType().GetProperty("Count")!.GetValue(cache)! == 0,"Destroyed objects retained in "+field);}
+  SmallPlantShadows.Shutdown();Console.WriteLine("PASS destroyed roots/renderers pruned after unload");return 0;
+ }
+ if(Array.IndexOf(args,"--root-cache")>=0||Array.IndexOf(args,"--pointer-reuse")>=0)
+ {
+  SmallPlantShadows.Initialize(new ConfigEntry<bool>(true),true);
+  GameObject? last=null;
+  int count=Array.IndexOf(args,"--root-cache")>=0?600:1;
+  for(int i=0;i<count;i++){last=new GameObject("Cache_Grass_"+i,Make(supported));SmallPlantShadows.ApplyPrefab(last);}
+  if(count>1)
+  {
+   object cache=typeof(SmallPlantShadows).GetField("Seen",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static)!.GetValue(null)!;
+   int cached=(int)cache.GetType().GetProperty("Count")!.GetValue(cache)!;
+   Check(cached<=512,"Root cache exceeded its lifetime bound");
+  }
+  var renderer=Make(supported);var replacement=new GameObject("Replacement_Grass",renderer);replacement.Pointer=last!.Pointer;
+  SmallPlantShadows.ApplyPrefab(replacement);
+  Check(renderer.shadowCastingMode==ShadowCastingMode.On,"Reused raw pointer suppressed a replacement prefab");
+  SmallPlantShadows.Shutdown();Console.WriteLine("PASS bounded roots and pointer replacement");return 0;
+ }
  var request=new ConfigEntry<bool>(false);
  var off=Make(supported);var already=Make(supported,ShadowCastingMode.TwoSided);var unsupported=Make("Unrelated/NoShadowPass");
  var plant=new GameObject("BlueTussockGrass",off,already,unsupported);
@@ -62,7 +87,11 @@ namespace Il2CppInterop.Runtime{internal static class Il2CppType{internal static
 namespace UnityEngine.Rendering{internal enum ShadowCastingMode{Off,On,TwoSided}}
 namespace UnityEngine
 {
- internal abstract class Component{private static long next;internal readonly IntPtr Pointer=(IntPtr)(++next);internal T? TryCast<T>()where T:class=>this as T;}
+ internal static class Time{internal static float unscaledTime;}
+ internal abstract class Component{private static long next;internal IntPtr Pointer=(IntPtr)(++next);private readonly int identity=(int)next;internal int GetInstanceID()=>identity;internal bool Destroyed;
+ public static bool operator==(Component? a,Component? b){bool an=ReferenceEquals(a,null)||a.Destroyed;bool bn=ReferenceEquals(b,null)||b.Destroyed;return an||bn?an==bn:ReferenceEquals(a,b);}
+ public static bool operator!=(Component? a,Component? b)=>!(a==b);public override bool Equals(object? value)=>ReferenceEquals(this,value);public override int GetHashCode()=>identity;
+ internal T? TryCast<T>()where T:class=>this as T;}
  internal sealed class GameObject(string title,params MeshRenderer[] values):Component{internal string name=>title;internal Component[] GetComponentsInChildren(Type type,bool includeInactive)=>values;}
  internal sealed class Shader(string title){internal string name=>title;}
  internal sealed class Material(string shaderName){internal Shader shader=>new(shaderName);}

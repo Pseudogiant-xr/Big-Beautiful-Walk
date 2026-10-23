@@ -12,6 +12,23 @@ string root=Path.GetFullPath(Path.Combine(parent,"bbw-performance-"+Guid.NewGuid
 BepInEx.Paths.BepInExRootPath=root;
 try
 {
+    if (Array.IndexOf(args,"--focus-event") >= 0)
+    {
+        PerformanceCapture.Begin();
+        var controller=new Controller(IntPtr.Zero);
+        controller.OnApplicationFocus(false);controller.OnApplicationFocus(true);
+        Check(!PerformanceCapture.Active&&ProfilerRecorder.All.All(d=>d.Disposed),"Focus loss/regain without Tick left the capture active");
+        Console.WriteLine("PASS focus loss/regain without intervening Update");return 0;
+    }
+    if (Array.IndexOf(args,"--boundary-stall") >= 0)
+    {
+        PerformanceCapture.Begin();
+        for(int i=1;i<=100;i++){Time.realtimeSinceStartupAsDouble=3+i*.01;Time.unscaledDeltaTime=.01f;PerformanceCapture.Tick();}
+        Time.realtimeSinceStartupAsDouble=34;Time.unscaledDeltaTime=30;PerformanceCapture.Tick();
+        string file=Directory.GetFiles(Path.Combine(root,"BigWalkDLSS"))[0];
+        Check(File.ReadAllLines(file).Any(line=>line.StartsWith("30000,")),"Completing 30-second stall was omitted from the samples");
+        Console.WriteLine("PASS full deadline-crossing frame retained");return 0;
+    }
     PerformanceCapture.Begin();
     Check(PerformanceCapture.Active,"Capture did not start");
     int created=ProfilerRecorder.All.Count;
@@ -20,13 +37,13 @@ try
     Check(!Directory.Exists(root),"Warm-up wrote samples prematurely");
     Time.realtimeSinceStartupAsDouble=3.1;Time.unscaledDeltaTime=.01f;PerformanceCapture.Tick();
     Time.realtimeSinceStartupAsDouble=4.2;Time.unscaledDeltaTime=.02f;PerformanceCapture.Tick();
-    Time.realtimeSinceStartupAsDouble=33.1;PerformanceCapture.Tick();
+    Time.realtimeSinceStartupAsDouble=33.1;Time.unscaledDeltaTime=.03f;PerformanceCapture.Tick();
     Check(!PerformanceCapture.Active && ProfilerRecorder.All.All(d=>d.Disposed),"Completed capture leaked recorders");
     string[] files=Directory.GetFiles(Path.Combine(root,"BigWalkDLSS"));Check(files.Length==1,"Unexpected output files");
     string data=File.ReadAllText(files[0]);
-    Check(data.Contains("frames=2; mean_frame_ms=15; mean_game_FPS=66.667; p95_frame_ms=20"),"Frame-time summary is incorrect");
+    Check(data.Contains("frames=3; mean_frame_ms=20; mean_game_FPS=50; p95_frame_ms=30"),"Frame-time summary is incorrect");
     string[] rows=data.Split((char)10).Where(line=>line.Length>0 && !line.StartsWith('#')).ToArray();
-    Check(rows.Length==3,"Sample count differs from summary");
+    Check(rows.Length==4,"Sample count differs from summary");
     string[] headings=rows[0].Split(','), first=rows[1].Split(',');
     Check(first[1]=="30" && first[2]=="1" && first[4]=="3","Sun/camera context missing");
     int unavailable=Array.FindIndex(headings,h=>h.Contains("GPU Frame Time"));
@@ -52,7 +69,7 @@ namespace BigWalkDLSS
  internal sealed class Setting<T>(T value){internal int Writes; internal T Value{get=>value;set{Writes++;throw new Exception("Unexpected setting write");}}}
  internal sealed class Log{internal void LogInfo(string text){} internal void LogWarning(string text){}}
  internal sealed class Host{internal readonly Log Log=new();}
- internal static class Plugin{internal static readonly Host Instance=new();internal static readonly Setting<float> RenderScale=new(.5f);internal static Camera RenderingCamera=>Camera.main;}
+ internal static class Plugin{internal static readonly Host Instance=new();internal static readonly Setting<float> RenderScale=new(.5f);internal static Camera RenderingCamera=>Camera.main;internal static void Tick(){}internal static void StopAfterError(Exception e){}internal static void Restore(){}}
  internal static class BridgeSettings{internal static int RunningBackend=>0;}
  internal sealed class Feature{internal bool Enabled=>false;}
  internal static class FeatureSettings{internal static readonly Feature StartupFrameGen=new(),StartupNeural=new();}
@@ -61,6 +78,7 @@ internal sealed class TerrainQualityManager{internal static TerrainQualityManage
 namespace MA.Flora{internal sealed class FloraRenderSettings{internal Parameter? MinShadowLOD=>null;}internal sealed class Parameter{internal int value=>0;}internal static class FloraSystem{internal static string PerformBatchCullingMarkerName=>"Flora.Culling";}}
 namespace UnityEngine
 {
+ public class MonoBehaviour{public MonoBehaviour(IntPtr pointer){}}
  internal readonly record struct Vector3(float x,float y,float z){internal static Vector3 zero=>new(0,0,0);}
  internal sealed class Transform{internal Vector3 position=new(1,2,3);internal Vector3 forward=new(0,-.5f,0);}
  internal sealed class Camera{internal static readonly Camera main=new();internal readonly Transform transform=new();}
@@ -107,3 +125,7 @@ namespace Unity.Profiling
   internal void Dispose(){data.Disposed=true;}
  }
 }
+
+namespace BigWalkDLSS {internal static class AdvancedGraphics{internal static void Update(){}internal static void LateUpdate(){}internal static void Draw(){}internal static void Close(){}internal static void Shutdown(){}} internal static class SmallPlantShadows{internal static void Tick(){}internal static void Shutdown(){}} internal static class VegetationShadows{internal static void Shutdown(){}}}
+
+namespace BigWalkDLSS {internal static class ShadowPassProbe{internal static void Begin(Action<string> record,Func<bool> collecting){}internal static void Shutdown(){}}}

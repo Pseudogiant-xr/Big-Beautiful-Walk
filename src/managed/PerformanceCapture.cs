@@ -26,6 +26,7 @@ internal static class PerformanceCapture
     private sealed record Sample(double FrameMs, double SunAltitude, Vector3 Position, Vector3 Forward, bool HasCamera, double?[] Values);
     private static readonly List<Counter> Counters = new();
     private static readonly List<Sample> Samples = new();
+    private static readonly List<string> ShadowStates = new();
     private static double _start, _nextContext, _sunAltitude = double.NaN;
     private static Vector3 _position, _forward;
     private static bool _hasCamera;
@@ -36,7 +37,7 @@ internal static class PerformanceCapture
     internal static void Begin()
     {
         if (Active) return;
-        Samples.Clear(); Counters.Clear();
+        Samples.Clear(); Counters.Clear(); ShadowStates.Clear();
         try
         {
             foreach (string name in new[] { "CPU Main Thread Frame Time", "CPU Render Thread Frame Time", "GPU Frame Time",
@@ -61,6 +62,7 @@ internal static class PerformanceCapture
             _start = Time.realtimeSinceStartupAsDouble + 3;
             _nextContext = 0;
             Active = true;
+            ShadowPassProbe.Begin(ShadowStates.Add, () => Active && Time.realtimeSinceStartupAsDouble >= _start && Time.realtimeSinceStartupAsDouble <= _start + 30);
             Status = "Capturing after a 3-second warm-up. Keep the same view for 30 seconds; no settings are changed.";
             Plugin.Instance.Log.LogInfo("Performance capture started; close Home and keep the camera still.");
         }
@@ -95,10 +97,9 @@ internal static class PerformanceCapture
         if (!Active) return;
         try
         {
-            if (!Application.isFocused) { Status = "Capture cancelled because the game lost focus. Try again in the game window."; Shutdown(); return; }
+            if (!Application.isFocused) { FocusChanged(false); return; }
             double now = Time.realtimeSinceStartupAsDouble;
             if (now < _start) return;
-            if (now >= _start + 30) { Save(); Shutdown(); return; }
             if (now >= _nextContext)
             {
                 _nextContext = now + 1;
@@ -125,6 +126,8 @@ internal static class PerformanceCapture
             double frameMs = Time.unscaledDeltaTime * 1000;
             if (double.IsFinite(frameMs) && frameMs > 0)
                 Samples.Add(new Sample(frameMs, _sunAltitude, _position, _forward, _hasCamera, values));
+            // Retain the complete finishing interval, including a stall across the deadline.
+            if (now >= _start + 30) { Save(); Shutdown(); }
         }
         catch (Exception error) { Fail(error); }
     }
@@ -132,7 +135,9 @@ internal static class PerformanceCapture
     private static void Save()
     {
         var output = new StringBuilder(_metadata).AppendLine();
+        output.AppendLine("# Complete frame intervals are retained, including the finishing frame; a boundary stall can extend the requested 30-second window.");
         output.AppendLine("# Game update timings are not generated-frame FPS. Marker values use the stated native units; blank means unavailable. CPU scopes do not measure GPU cost.");
+        foreach (string state in ShadowStates) output.AppendLine(state);
         var frames = Samples.ConvertAll(sample => sample.FrameMs);
         double total = 0; foreach (double value in frames) total += value;
         frames.Sort();
@@ -158,6 +163,13 @@ internal static class PerformanceCapture
         Plugin.Instance.Log.LogInfo(Status);
     }
 
+    internal static void FocusChanged(bool focused)
+    {
+        if (focused || !Active) return;
+        Status = "Capture cancelled because the game lost focus. Try again in the game window.";
+        Shutdown();
+    }
+
     private static string Number(double value) => double.IsFinite(value) ? value.ToString("0.###", CultureInfo.InvariantCulture) : "";
     private static void Fail(Exception error)
     {
@@ -168,6 +180,8 @@ internal static class PerformanceCapture
     internal static void Shutdown()
     {
         Active = false;
+        ShadowPassProbe.Shutdown();
+        ShadowStates.Clear();
         foreach (var counter in Counters)
             if (counter.Created) { try { counter.Recorder.Dispose(); } catch { } }
         Counters.Clear(); Samples.Clear();

@@ -11,9 +11,12 @@ namespace BigWalkDLSS;
 
 internal static class SmallPlantShadows
 {
-    private sealed record Snapshot(MeshRenderer Renderer, OverrideOwnership<ShadowCastingMode> Mode);
+    private sealed record Snapshot(MeshRenderer Renderer, int InstanceId, OverrideOwnership<ShadowCastingMode> Mode);
+    private sealed record Root(GameObject Prefab, int InstanceId);
+    private const int MaxRoots = 512, MaxRenderers = 4096;
     private static readonly Dictionary<IntPtr, Snapshot> Changed = new();
-    private static readonly HashSet<IntPtr> Seen = new();
+    private static readonly Dictionary<IntPtr, Root> Seen = new();
+    private static float _nextPrune;
     private static ConfigEntry<bool> _request = null!;
     private static Harmony? _harmony;
     private static string _error = "";
@@ -82,12 +85,27 @@ internal static class SmallPlantShadows
 
     internal static void ApplyPrefab(GameObject? prefab)
     {
-        if (!StartupEnabled || prefab == null || !PlantName(prefab.name) || !Seen.Add(prefab.Pointer)) return;
+        if (!StartupEnabled || prefab == null || !PlantName(prefab.name)) return;
+        int identity = prefab.GetInstanceID();
+        if (Seen.TryGetValue(prefab.Pointer, out var root) && root.Prefab != null && root.InstanceId == identity) return;
+        Seen.Remove(prefab.Pointer);
+        if (Seen.Count >= MaxRoots)
+        {
+            Prune();
+            if (Seen.Count >= MaxRoots)
+            {
+                using var entries = Seen.GetEnumerator();
+                if (entries.MoveNext()) Seen.Remove(entries.Current.Key);
+            }
+        }
+        Seen[prefab.Pointer] = new Root(prefab, identity);
         int count = 0;
         bool deferred = false;
         try
         {
-            foreach (var component in prefab.GetComponentsInChildren(Il2CppType.Of<MeshRenderer>(), true))
+            var components = prefab.GetComponentsInChildren(Il2CppType.Of<MeshRenderer>(), true);
+            if (components.Length == 0) deferred = true;
+            foreach (var component in components)
             {
                 var renderer = component.TryCast<MeshRenderer>();
                 if (renderer == null || renderer.shadowCastingMode != ShadowCastingMode.Off) continue;
@@ -98,9 +116,14 @@ internal static class SmallPlantShadows
                     if (material == null || material.shader == null) { supported = false; deferred = true; }
                     else if (!SupportedShader(material.shader.name)) supported = false;
                 if (!supported) continue;
+                if (Changed.Count >= MaxRenderers)
+                {
+                    _error = "Plant-shadow tracking limit reached; additional caster requests were skipped.";
+                    continue;
+                }
                 var mode = new OverrideOwnership<ShadowCastingMode>();
                 mode.Observe(renderer.shadowCastingMode);
-                Changed[renderer.Pointer] = new Snapshot(renderer, mode);
+                Changed[renderer.Pointer] = new Snapshot(renderer, renderer.GetInstanceID(), mode);
                 try { renderer.shadowCastingMode = ShadowCastingMode.On; }
                 finally { mode.Applied(ShadowCastingMode.On); }
                 count++;
@@ -109,6 +132,23 @@ internal static class SmallPlantShadows
         catch { Seen.Remove(prefab.Pointer); throw; }
         if (deferred) Seen.Remove(prefab.Pointer);
         if (count > 0) Plugin.Instance.Log.LogInfo("Small-plant caster flags: " + prefab.name + ", enabled renderers=" + count + ". Visible shadows remain subject to Flora culling and the current shadow distance.");
+    }
+    internal static void Tick()
+    {
+        if (!StartupEnabled || Time.unscaledTime < _nextPrune) return;
+        _nextPrune = Time.unscaledTime + 1;
+        try { Prune(); } catch (Exception error) { Report(error); }
+    }
+    private static void Prune()
+    {
+        var roots = new List<IntPtr>();
+        foreach (var pair in Seen)
+            if (pair.Value.Prefab == null || pair.Value.Prefab.GetInstanceID() != pair.Value.InstanceId) roots.Add(pair.Key);
+        foreach (var key in roots) Seen.Remove(key);
+        var renderers = new List<IntPtr>();
+        foreach (var pair in Changed)
+            if (pair.Value.Renderer == null || pair.Value.Renderer.GetInstanceID() != pair.Value.InstanceId) renderers.Add(pair.Key);
+        foreach (var key in renderers) Changed.Remove(key);
     }
     internal static bool PlantName(string name) => name.IndexOf("grass", StringComparison.OrdinalIgnoreCase) >= 0 ||
         name.IndexOf("bush", StringComparison.OrdinalIgnoreCase) >= 0 || name.IndexOf("shrub", StringComparison.OrdinalIgnoreCase) >= 0 ||
@@ -122,7 +162,7 @@ internal static class SmallPlantShadows
     internal static void Shutdown()
     {
         foreach (var snapshot in Changed.Values)
-            if (snapshot.Renderer != null) { try { if (snapshot.Mode.TryRestore(snapshot.Renderer.shadowCastingMode, out var original)) snapshot.Renderer.shadowCastingMode = original; } catch (Exception error) { Report(error); } }
+            if (snapshot.Renderer != null && snapshot.Renderer.GetInstanceID() == snapshot.InstanceId) { try { if (snapshot.Mode.TryRestore(snapshot.Renderer.shadowCastingMode, out var original)) snapshot.Renderer.shadowCastingMode = original; } catch (Exception error) { Report(error); } }
         Changed.Clear(); Seen.Clear();
         try { _harmony?.UnpatchSelf(); }
         catch (Exception error) { Report(error); }
