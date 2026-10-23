@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.4 — alpha
+
+- Bypass Unity 6's generated `LoadImage` span wrapper, which failed with `MissingMethodException` for both artwork files. Pass pinned PNG bytes to the generated injected decoder binding instead.
+- Log successful image loads and dimensions as well as failures. Keep embedded images, caching, cleanup and uniform scaling.
+- Exercise the reported missing-method failure in the artwork harness, and add a CPU-only JIT check against locally generated Unity interop assemblies. Actual in-game acceptance remains unverified.
+
 ## 0.8.3 — alpha
 
 - Bundle the serpent border and landscape in the mod DLL so Home does not depend on separately installed PNG files. Report failed image decoding and retain the plain fallback.

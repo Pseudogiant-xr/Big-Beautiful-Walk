@@ -8,7 +8,7 @@ Each graphics row has a short explanation underneath it, including what higher o
 
 **Learn these tools** opens a read-only guide to every upscaler, frame-generation provider, Neural Rendering and native antialiasing. It also explains unavailable tools and their requirements; opening or scrolling the guide does not change your renderer or saved settings.
 
-Home 0.8.3 includes its border and header artwork inside `BigWalkDLSS.dll`; missing external PNG files no longer remove them. If Unity rejects an image, the plain theme remains usable and the BepInEx log names the failed image.
+Home includes its border and header artwork inside `BigWalkDLSS.dll`; missing external PNG files no longer remove them. If Unity rejects an image, the plain theme remains usable and the BepInEx log names the failed image. In 0.8.4, the loader bypasses the Unity 6 span wrapper that failed in 0.8.3; successful loads log the image name and dimensions.
 
 Upscaling shows the selected provider’s explanation below its buttons. Quality controls name the provider running now; a queued provider change still needs a restart. Each DLSS preset, FG provider, NR style and NR preset has its own explanation. Unavailable tools remain inspectable in **Learn these tools**.
 

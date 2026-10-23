@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 
 namespace BigWalkDLSS;
@@ -42,13 +41,27 @@ internal static class MenuTheme
             using var bytes = new MemoryStream();
             resource.CopyTo(bytes);
             texture = new Texture2D(2, 2) { hideFlags = HideFlags.HideAndDontSave };
-            if (!ImageConversion.LoadImage(texture, new Il2CppStructArray<byte>(bytes.ToArray()), true))
+            if (!LoadPng(texture, bytes.ToArray()))
                 throw new InvalidDataException("Unity rejected the PNG data.");
+            Plugin.Instance.Log.LogInfo("Menu artwork " + filename + " loaded: " + texture.width + "x" + texture.height + ".");
             cached = texture; texture = null;
         }
         catch (System.Exception error) { Plugin.Instance.Log.LogWarning("Menu artwork " + filename + " could not be loaded: " + error.GetType().Name + ". " + error.Message); }
         finally { if (texture != null) UnityEngine.Object.Destroy(texture); }
         return cached;
+    }
+
+    private static unsafe bool LoadPng(Texture2D texture, byte[] bytes)
+    {
+        var nativeTexture = UnityEngine.Object.MarshalledUnityObject.MarshalNotNull(texture);
+        if (nativeTexture == System.IntPtr.Zero) throw new InvalidDataException("Unity texture has no native handle.");
+        // Unity 6's array wrapper calls an unavailable IL2CPP span helper.
+        // Pin managed bytes and use the generated native binding directly.
+        fixed (byte* pointer = bytes)
+        {
+            var data = new UnityEngine.Bindings.ManagedSpanWrapper(pointer, bytes.Length);
+            return ImageConversion.LoadImage_Injected(nativeTexture, ref data, true);
+        }
     }
 
     internal static GUIStyle Button(GUIStyle original, bool selected = false)

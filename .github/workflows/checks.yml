@@ -27,6 +27,8 @@ jobs:
           dotnet run --project tests/MenuThemeChecks.csproj -c Release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/MenuThemeChecks.csproj -c Release -- --reject
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/MenuThemeChecks.csproj -c Release -- --null-handle
       - name: Saved bridge settings refresh
         shell: pwsh
         run: ./tests/Invoke-BridgeRefreshChecks.ps1
