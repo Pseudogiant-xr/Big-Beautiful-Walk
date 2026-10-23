@@ -8,6 +8,10 @@ Each graphics row has a short explanation underneath it, including what higher o
 
 **Learn these tools** opens a read-only guide to every upscaler, frame-generation provider, Neural Rendering and native antialiasing. It also explains unavailable tools and their requirements; opening or scrolling the guide does not change your renderer or saved settings.
 
+Home 0.8.3 includes its border and header artwork inside `BigWalkDLSS.dll`; missing external PNG files no longer remove them. If Unity rejects an image, the plain theme remains usable and the BepInEx log names the failed image.
+
+Upscaling shows the selected provider’s explanation below its buttons. Quality controls name the provider running now; a queued provider change still needs a restart. Each DLSS preset, FG provider, NR style and NR preset has its own explanation. Unavailable tools remain inspectable in **Learn these tools**.
+
 Changing a control turns on its override. Number fields take effect when you press **Enter**. Changes save a moment after you stop editing.
 
 Untick an override to go back to the value the game had before. This works unless another system has changed that value in the meantime. Changing the game's own quality preset can still affect any setting you have not overridden.
@@ -89,8 +93,10 @@ What to expect:
 
 ## Experimental shadow-culling optimisation
 
-**Shadows → Reduce duplicate shadow work** exposes Unity's conservative enclosing-sphere culling. It attempts to reduce repeated shadow casting in overlapping cascade regions, while keeping the selected shadow distance, cascade splits and map resolution. It is off until you enable its override, and selecting a graphics preset clears custom overrides as usual.
+**Shadows → Experimental shadow culling** exposes Unity's conservative enclosing-sphere culling. It changes the bounds used to decide which objects are drawn in each cascade, potentially reducing shadow work, while keeping the selected shadow distance, cascade splits and map resolution. It is off until you enable its override, and selecting a graphics preset clears custom overrides as usual.
 
 This is a candidate for investigating Extreme's dawn/dusk slowdown, not a verified fix. Low-angle sunlight may increase shadow-casting work, but no controlled dawn/dusk profile has established the cause here. Compare frame rate and shadow edges in the same view with the option off/on; restore the setting if shadows change incorrectly. No time-of-day quality reductions are applied.
 
 Unity documents the setting's behaviour and compatibility caveats in [the URP asset reference](https://docs.unity.com/en-us/engine/6000.0/manual/render-pipelines/universal-render-pipeline/urp-reference/universalrp-asset#shadows).
+
+The model-preset explanations follow [NVIDIA’s preset descriptions](https://github.com/NVIDIA-RTX/Streamline/blob/main/include/sl_dlss.h). NR style names and strength semantics follow the [pinned bridge’s menu](https://github.com/Skynizz/optiscaler-dlss5/blob/v1.2.1/OptiScaler/dlssnr/DlssNr_Menu.cpp); style descriptions come from its community testing, and the result still depends on the installed NR model.

@@ -10,7 +10,7 @@ internal static class UpscalingMenu
         bool enabled = GUI.enabled;
         try
         {
-            GUI.Label(new Rect(x + 25, y + 145, 900, 37), UpscalingPresentation.Introduction(BridgeSettings.UnavailableReason(3)), small);
+            GUI.Label(new Rect(x + 25, y + 145, 900, 37), UpscalingPresentation.Introduction, small);
             GUI.Label(new Rect(x + 25, y + 185, 900, 28), "Upscaler · how the picture is rebuilt", label);
             if (GUI.Button(new Rect(x + 690, y + 185, 235, 28), "Learn these tools", button)) AdvancedGraphics.ShowToolGuide();
             int selectedBackend = BridgeSettings.NextLaunchBackend >= 0 ? BridgeSettings.NextLaunchBackend : BridgeSettings.RunningBackend;
@@ -22,6 +22,7 @@ internal static class UpscalingMenu
                     BridgeSettings.SelectBackend(index);
             }
             GUI.enabled = enabled;
+            selectedBackend = BridgeSettings.NextLaunchBackend >= 0 ? BridgeSettings.NextLaunchBackend : BridgeSettings.RunningBackend;
             bool pending = BridgeSettings.NextLaunchBackend >= 0 && BridgeSettings.NextLaunchBackend != BridgeSettings.RunningBackend;
             if (pending)
             {
@@ -38,7 +39,7 @@ internal static class UpscalingMenu
                 UpscalingPresentation.ToggleLabel(BridgeSettings.RunningBackend, Plugin.QualityMode.Value), AdvancedGraphics.ToggleStyle);
             if (nextEnabled != Plugin.Enabled.Value) { Plugin.Enabled.Value = nextEnabled; Plugin.ResetHistory(); }
             if (GUI.Button(new Rect(x + 690, y + 355, 235, 28), "Retry upscaler", button)) Plugin.RetryUpscaler();
-            int quality = Choice(x, y + 393, "Quality mode", Plugin.QualityMode.Value,
+            int quality = Choice(x, y + 393, UpscalingPresentation.BackendName(BridgeSettings.RunningBackend) + " quality mode", Plugin.QualityMode.Value,
                 UpscalingOptions.QualityValues, UpscalingPresentation.QualityNames(BridgeSettings.RunningBackend), label, button);
             if (quality != Plugin.QualityMode.Value)
             {
@@ -57,15 +58,15 @@ internal static class UpscalingMenu
                     UpscalingOptions.PresetValues, UpscalingOptions.PresetNames, label, button);
                 if (preset != Plugin.Preset.Value) { Plugin.Preset.Value = preset; Plugin.ResetHistory(); }
                 GUI.enabled = enabled;
-                GUI.Label(new Rect(x + 25, y + 505, 900, 36), "Chooses a different AI method for rebuilding detail. Letters are not quality levels: later is not always better. Start with L; the driver may override it.", small);
+                GUI.Label(new Rect(x + 25, y + 505, 900, 36), UpscalingPresentation.PresetHelp(Plugin.Preset.Value) + " The driver may override this hint.", small);
                 if (BridgeSettings.PresetOverride)
                 {
                     GUI.Label(new Rect(x + 25, y + 544, 555, 37), "OptiScaler controls the model preset until you restart with Home presets enabled.", small);
                     if (GUI.Button(new Rect(x + 590, y + 545, 335, 31), "Use Home presets after restart", button)) BridgeSettings.UseHomePresets();
                 }
             }
-            else if (BridgeSettings.UnavailableReason(2).Length > 0)
-                GUI.Label(new Rect(x + 25, y + 471, 900, 42), BridgeSettings.UnavailableReason(2), small);
+            else if (BridgeSettings.UnavailableReason(selectedBackend).Length > 0)
+                GUI.Label(new Rect(x + 25, y + 471, 900, 42), BridgeSettings.UnavailableReason(selectedBackend), small);
             GUI.Label(new Rect(x + 25, y + 584, 715, 36), BridgeSettings.Message, small);
             if (GUI.Button(new Rect(x + 750, y + 584, 175, 31), "Refresh settings", button)) BridgeSettings.Reload();
             GUI.Label(new Rect(x + 25, y + 625, 900, 40),

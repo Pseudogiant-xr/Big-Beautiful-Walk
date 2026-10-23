@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using BepInEx;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 
@@ -38,13 +37,16 @@ internal static class MenuTheme
         Texture2D? texture = null;
         try
         {
-            string path = Path.Combine(Paths.PluginPath, "BigWalkDLSS", filename);
-            if (!File.Exists(path)) return null;
+            using var resource = typeof(MenuTheme).Assembly.GetManifestResourceStream("BigWalkDLSS." + filename)
+                ?? throw new InvalidDataException("Embedded artwork is missing.");
+            using var bytes = new MemoryStream();
+            resource.CopyTo(bytes);
             texture = new Texture2D(2, 2) { hideFlags = HideFlags.HideAndDontSave };
-            if (ImageConversion.LoadImage(texture, new Il2CppStructArray<byte>(File.ReadAllBytes(path)), true))
-            { cached = texture; texture = null; }
+            if (!ImageConversion.LoadImage(texture, new Il2CppStructArray<byte>(bytes.ToArray()), true))
+                throw new InvalidDataException("Unity rejected the PNG data.");
+            cached = texture; texture = null;
         }
-        catch (System.Exception error) { Plugin.Instance.Log.LogWarning("Menu artwork could not be loaded: " + error.GetType().Name); }
+        catch (System.Exception error) { Plugin.Instance.Log.LogWarning("Menu artwork " + filename + " could not be loaded: " + error.GetType().Name + ". " + error.Message); }
         finally { if (texture != null) UnityEngine.Object.Destroy(texture); }
         return cached;
     }

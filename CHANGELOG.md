@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.3 — alpha
+
+- Bundle the serpent border and landscape in the mod DLL so Home does not depend on separately installed PNG files. Report failed image decoding and retain the plain fallback.
+- Replace the unconditional FSR 4 notice with a neutral introduction. Keep selected-provider help current, identify the running provider for live quality changes, and keep unavailable-tool help in the read-only guide.
+- Give each DLSS model preset, frame-generation provider, NR style and NR model preset its own explanation. Show AMD/Intel requirements on their own FG choices, and distinguish NR model intensity from the final blend.
+- Clarify experimental shadow culling and shadow-atlas requests. Show the mod version on Home.
+
 ## 0.8.2 — alpha
 
 - Add short, plain-English explanations of graphics settings, upscaling, frame generation and AI lighting, including picture/performance trade-offs.
