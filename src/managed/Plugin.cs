@@ -16,7 +16,7 @@ using PassData = UnityEngine.Rendering.Universal.PostProcessPassRenderGraph.DoFG
 
 namespace BigWalkDLSS;
 
-[BepInPlugin("local.bigwalk.native-dlss", "Big Beautiful Walk", "0.8.4")]
+[BepInPlugin("local.bigwalk.native-dlss", "Big Beautiful Walk", "0.8.5")]
 public sealed class Plugin : BasePlugin
 {
     internal static Plugin Instance = null!;
@@ -95,6 +95,7 @@ public sealed class Plugin : BasePlugin
         Compatible = SupportMessage.Length == 0;
         AdvancedGraphics.Initialize();
         BridgeSettings.Initialize();
+        SmallPlantShadows.Initialize(Config.Bind("Vegetation", "EnableSmallPlantCasters", false, "Request shadows from supported grass/shrub prefabs after restart. Uses the current vegetation shadow range and adds graphics work."), Compatible);
         Directory.CreateDirectory(Path.Combine(Paths.BepInExRootPath, "BigWalkDLSS"));
         _harmony = new Harmony("local.bigwalk.native-dlss");
         if (Compatible)
@@ -123,7 +124,7 @@ public sealed class Plugin : BasePlugin
         }
         else Log.LogWarning(SupportMessage);
         AddComponent<Controller>();
-        Log.LogInfo($"Big Beautiful Walk 0.8.4: API={SystemInfo.graphicsDeviceType}, Unity={Application.unityVersion}, game={Application.version}, native loaded={NativeLoaded}; XR is excluded.");
+        Log.LogInfo($"Big Beautiful Walk 0.8.5: API={SystemInfo.graphicsDeviceType}, Unity={Application.unityVersion}, game={Application.version}, native loaded={NativeLoaded}; XR is excluded.");
         Log.LogInfo($"GPU vendor reported=0x{reportedVendor:x4} resolved={GpuVendor.Name(GpuVendorId)}; native path={(UsesBridge ? "bridge (OptiScaler)" : "NVIDIA NGX")}{(ForceBridgeNative.Value ? " (forced for testing)" : "")}.");
     }
 
@@ -522,18 +523,4 @@ public sealed class Plugin : BasePlugin
         [DllImport(Dll, EntryPoint = "BW_RequestRetry", CallingConvention = CallingConvention.Cdecl)]
         internal static extern void RequestRetry();
     }
-}
-
-public sealed class Controller : MonoBehaviour
-{
-    public Controller(IntPtr pointer) : base(pointer) { }
-    public void Update()
-    {
-        try { AdvancedGraphics.Update(); Plugin.Tick(); }
-        catch (Exception error) { Plugin.StopAfterError(error); }
-    }
-    public void LateUpdate() => AdvancedGraphics.LateUpdate();
-    public void OnGUI() => AdvancedGraphics.Draw();
-    public void OnApplicationFocus(bool focused) { if (!focused) AdvancedGraphics.Close(); }
-    public void OnApplicationQuit() { AdvancedGraphics.Shutdown(); VegetationShadows.Shutdown(); Plugin.Restore(); }
 }

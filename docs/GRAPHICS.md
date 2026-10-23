@@ -100,3 +100,7 @@ This is a candidate for investigating Extreme's dawn/dusk slowdown, not a verifi
 Unity documents the setting's behaviour and compatibility caveats in [the URP asset reference](https://docs.unity.com/en-us/engine/6000.0/manual/render-pipelines/universal-render-pipeline/urp-reference/universalrp-asset#shadows).
 
 The model-preset explanations follow [NVIDIA’s preset descriptions](https://github.com/NVIDIA-RTX/Streamline/blob/main/include/sl_dlss.h). NR style names and strength semantics follow the [pinned bridge’s menu](https://github.com/Skynizz/optiscaler-dlss5/blob/v1.2.1/OptiScaler/dlssnr/DlssNr_Menu.cpp); style descriptions come from its community testing, and the result still depends on the installed NR model.
+
+## Performance samples and small-plant casters
+
+Overview can record a 30-second read-only performance sample. Vegetation has a separate startup request for supported grass/shrub casters; it needs a restart and can add shadow work. See [the investigation and capture guide](PERFORMANCE.md) for exact controls, evidence and limitations.

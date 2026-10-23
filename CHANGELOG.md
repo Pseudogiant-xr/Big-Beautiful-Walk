@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.5 — alpha
+
+- Add a manual 30-second performance capture on Overview. It records game-frame timings, available native counters, sun/view context and requested settings without changing graphics quality; unsupported GPU counters stay blank.
+- Add a separate, off-by-default startup request for supported grass/shrub prefab casters. It changes only disabled mesh-renderer flags before Flora registration, keeps existing caster modes and ranges, and restores owned flags on shutdown. Native visible results remain unverified.
+- Clarify that experimental shadow culling applies live and stock may already be On. Comparing Enabled/Disabled requires keeping the row’s override enabled.
+- Document the main-light shadow investigation and same-view capture workflow. No atlas, range, cascade or LOD reduction is applied to Extreme; no measured dawn/dusk performance fix is claimed.
+
 ## 0.8.4 — alpha
 
 - Bypass Unity 6's generated `LoadImage` span wrapper, which failed with `MissingMethodException` for both artwork files. Pass pinned PNG bytes to the generated injected decoder binding instead.
