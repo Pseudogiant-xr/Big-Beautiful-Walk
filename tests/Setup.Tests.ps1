@@ -92,8 +92,18 @@ try {
         },$true))
         Assert ($calls.Count -eq 1) 'one production AddScript worker'
         $workerBody=$calls[0].Arguments[0].ScriptBlock.GetScriptBlock().ToString()
-        foreach ($context in @('Default','NoAutoload','Cold')) {
+        foreach ($context in @('Default','NoAutoload','Cold','LocalModel')) {
             $f=New-Fixture ('gui-worker-'+$context); Add-NrFixture $f
+            $expectedModel='community-model-fixture'
+            $local=$null
+            if ($context -eq 'LocalModel') {
+                $expectedModel='local-3109-model-fixture'
+                $local=Join-Path $f.DependencyDirectory 'new-model.dll'; Put $local $expectedModel
+                $lockPath=Join-Path $f.PackagePath 'packaging/dependencies.lock.json'
+                $lock=Get-Content $lockPath -Raw | ConvertFrom-Json
+                @($lock.Dependencies | Where-Object { $_.Id -eq 'nvidia_nr' })[0] | Add-Member NoteProperty LocalModelSHA256 (Get-FileHash $local).Hash
+                Put $lockPath ($lock | ConvertTo-Json -Depth 8)
+            }
             $modulePath=Join-Path $f.PackagePath 'scripts/Setup.Core.psm1'
             [void][IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($modulePath))
             [IO.File]::Copy([IO.Path]::GetFullPath($SetupCorePath),$modulePath)
@@ -115,7 +125,9 @@ try {
                     }
                     $selected=@()
                     if (-not (Test-Path -LiteralPath $model)) { $selected=@('nr','fg') }
-                    [void]$worker.AddScript($workerBody).AddArgument($modulePath).AddArgument($f.GamePath).AddArgument($action).AddArgument($f.DependencyDirectory).AddArgument($selected).AddArgument('Nvidia')
+                    $workerModel=$null
+                    if ($local -and -not (Test-Path -LiteralPath $model)) { $workerModel=$local }
+                    [void]$worker.AddScript($workerBody).AddArgument($modulePath).AddArgument($f.GamePath).AddArgument($action).AddArgument($f.DependencyDirectory).AddArgument($selected).AddArgument('Nvidia').AddArgument($workerModel)
                     $operation=$worker.BeginInvoke()
                     $result=$worker.EndInvoke($operation)
                     Assert (-not $worker.HadErrors) ('GUI worker errors: '+[string]$worker.Streams.Error[0])
@@ -124,7 +136,7 @@ try {
                     if ($runspace) { $runspace.Dispose() }
                 }
                 if ($action -eq 'Install') {
-                    Assert ([IO.File]::ReadAllText($model) -eq 'community-model-fixture') 'GUI worker installs and repairs NR'
+                    Assert ([IO.File]::ReadAllText($model) -eq $expectedModel) 'GUI worker installs and repairs selected NR model'
                     Assert ([IO.File]::ReadAllText($plugin) -eq 'plugin-one') 'GUI worker repairs missing owned plugin'
                     Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'version.dll')) -eq 'experimental-fg-bridge') 'GUI worker includes bridge'
                     if ([IO.File]::ReadAllText($config) -ne 'user-NR-options') {
@@ -495,6 +507,68 @@ try {
         Uninstall $f | Out-Null
         Assert (-not (Test-Path $model) -and -not (Test-Path $bridge)) 'owned model and bridge removed'
         Assert ([IO.File]::ReadAllText($config) -eq 'existing-NR-options') 'NR settings preserved through repair and removal'
+    }
+    Case 'local NR upgrades owned model and survives ordinary repair without a downgrade' {
+        $f=New-Fixture 'local-nr-upgrade'; Add-NrFixture $f
+        Invoke-BbwSetup @f -Mode Install -Features nr | Out-Null
+        $local=Join-Path $f.DependencyDirectory 'new-model.dll'; Put $local 'local-3109-model-fixture'
+        $lockPath=Join-Path $f.PackagePath 'packaging/dependencies.lock.json'
+        $lock=Get-Content $lockPath -Raw | ConvertFrom-Json
+        $nr=@($lock.Dependencies | Where-Object { $_.Id -eq 'nvidia_nr' })[0]
+        $nr | Add-Member NoteProperty LocalModelSHA256 (Get-FileHash $local).Hash
+        Put $lockPath ($lock | ConvertTo-Json -Depth 8)
+        $model=Join-Path $f.GamePath 'OptiScaler/nvngx_dlssnr.dll'
+        $config=Join-Path $f.GamePath 'OptiScaler.ini'; Put $config 'user-NR-settings'
+        $message=Invoke-BbwSetup @f -Mode Install -NeuralModelPath $local
+        Assert ($message -match 'local NR 310.9.16' -and $message -match 'does not enable') 'local model result identifies version and runtime limit'
+        Assert ([IO.File]::ReadAllText($model) -eq 'local-3109-model-fixture') 'owned old model upgraded'
+        Remove-Item -LiteralPath (Join-Path $f.DependencyDirectory 'nvidia_nr.file')
+        Install $f | Out-Null
+        Assert ([IO.File]::ReadAllText($model) -eq 'local-3109-model-fixture') 'repair retains local model without old archive'
+        Assert ([IO.File]::ReadAllText($config) -eq 'user-NR-settings') 'upgrade and repair preserve settings'
+        Remove-Item -LiteralPath $model
+        Expect-Failure { Install $f } 'imported NR 310.9.16 model is missing'
+        Invoke-BbwSetup @f -Mode Install -NeuralModelPath $local | Out-Null
+        Uninstall $f | Out-Null
+        Assert (-not (Test-Path $model)) 'local model remains owned for uninstall'
+        Assert ([IO.File]::ReadAllText($local) -eq 'local-3109-model-fixture') 'source model remains unchanged'
+    }
+    Case 'local NR fresh install implies bridge and rejects unpinned bytes before mutation' {
+        $f=New-Fixture 'local-nr-fresh'; Add-NrFixture $f
+        $local=Join-Path $f.DependencyDirectory 'new-model.dll'; Put $local 'local-3109-model-fixture'
+        $lockPath=Join-Path $f.PackagePath 'packaging/dependencies.lock.json'
+        $lock=Get-Content $lockPath -Raw | ConvertFrom-Json
+        $nr=@($lock.Dependencies | Where-Object { $_.Id -eq 'nvidia_nr' })[0]
+        $nr | Add-Member NoteProperty LocalModelSHA256 (Get-FileHash $local).Hash
+        Put $lockPath ($lock | ConvertTo-Json -Depth 8)
+        Put $local 'wrong-model'
+        Expect-Failure { Invoke-BbwSetup @f -Mode Install -NeuralModelPath $local } 'SHA256 mismatch for local'
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'winhttp.dll'))) 'wrong model cannot partially install core'
+        Put $local 'local-3109-model-fixture'
+        Invoke-BbwSetup @f -Mode Install -NeuralModelPath $local | Out-Null
+        Assert (Test-Path (Join-Path $f.GamePath 'version.dll')) 'local NR automatically installs bridge'
+        $model=Join-Path $f.GamePath 'OptiScaler/nvngx_dlssnr.dll'
+        Assert ([IO.File]::ReadAllText($model) -eq 'local-3109-model-fixture') 'verified local model installed'
+        $config=Get-Content (Join-Path $f.GamePath 'OptiScaler.ini') -Raw
+        Assert (@([regex]::Matches($config,'(?m)^Enabled=false\r?$')).Count -eq 2) 'local model leaves fresh FG and NR off'
+        Put $model 'user-edited-model'
+        Expect-Failure { Invoke-BbwSetup @f -Mode Install -NeuralModelPath $local } 'changed after installation'
+        Assert ([IO.File]::ReadAllText($model) -eq 'user-edited-model') 'edited installed model preserved'
+    }
+    Case 'local NR refuses AMD Intel path and unknown ownership' {
+        $f=New-Fixture 'local-nr-bridge'; Add-NrFixture $f
+        $local=Join-Path $f.DependencyDirectory 'new-model.dll'; Put $local 'local-3109-model-fixture'
+        $lockPath=Join-Path $f.PackagePath 'packaging/dependencies.lock.json'
+        $lock=Get-Content $lockPath -Raw | ConvertFrom-Json
+        @($lock.Dependencies | Where-Object { $_.Id -eq 'nvidia_nr' })[0] | Add-Member NoteProperty LocalModelSHA256 (Get-FileHash $local).Hash
+        Put $lockPath ($lock | ConvertTo-Json -Depth 8)
+        $f.GpuPath='Bridge'
+        Expect-Failure { Invoke-BbwSetup @f -Mode Install -NeuralModelPath $local } 'requires the NVIDIA GPU path'
+        Assert (-not (Test-Path (Join-Path $f.GamePath 'winhttp.dll'))) 'bridge rejection leaves core untouched'
+        $f.GpuPath='Nvidia'
+        $model=Join-Path $f.GamePath 'OptiScaler/nvngx_dlssnr.dll'; Put $model 'other-mod-model'
+        Expect-Failure { Invoke-BbwSetup @f -Mode Install -NeuralModelPath $local } 'Existing file collision'
+        Assert ([IO.File]::ReadAllText($model) -eq 'other-mod-model') 'another installation is never overwritten'
     }
     Case 'FG-only repair never opts into available NR model' {
         $f=New-Fixture 'fg-without-nr'; Add-NrFixture $f

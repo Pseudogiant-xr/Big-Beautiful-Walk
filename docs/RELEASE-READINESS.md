@@ -2,6 +2,8 @@
 
 The alpha uses the tested rendering integration and downloads its dependencies from upstream. It keeps each component's licence and credits. There is no custom OptiScaler fork and no vendor contact. Publishing is the maintainer's decision. This page is not an exhaustive legal clearance or a vendor approval.
 
+NR 310.9.16 can also be imported from a user-supplied, hash-verified compatibility DLL. This runtime is not bundled or downloaded automatically; its Big Walk rendering is unverified. See [local import](FRAME-GENERATION.md#nr-310916-local-import) and [provenance](licenses/RHI-Neural-Rendering-NOTICE.md#nr-310916-local-import).
+
 ## Rights and attribution
 
 | Area | What the release does | Scope and known limits |

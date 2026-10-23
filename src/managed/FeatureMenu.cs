@@ -91,7 +91,7 @@ internal static class FeatureMenu
             GUI.Label(new Rect(x + 25, y + 482, 280, 28), "Model preset", label);
             if (GUI.Button(new Rect(x + 325, y + 481, 34, 28), "‹", button))
             { queued.Preset = (queued.Preset + 3) % 4; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
-            GUI.Label(new Rect(x + 375, y + 482, 485, 28), queued.Preset + " · Model-specific", label);
+            GUI.Label(new Rect(x + 375, y + 482, 485, 28), FeatureOptions.NeuralPresetNames[queued.Preset], label);
             if (GUI.Button(new Rect(x + 875, y + 481, 34, 28), "›", button))
             { queued.Preset = (queued.Preset + 1) % 4; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
             GUI.enabled = enabled;

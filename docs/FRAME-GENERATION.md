@@ -81,11 +81,25 @@ Start with the **Default** style and all strengths at 1.
 - Model preset numbers belong to NR. They are not the same as the SR preset letters.
 - F10 has experimental cache, codec and resolution controls. They can change quality and performance. This mod does not turn them on for you.
 
+### NR 310.9.16 local import
+
+Setup 0.8.1 can import your existing `nvngx_dlssnr.dll` 310.9.16 compatibility build. Click **Use my NR 310.9.16 compatibility DLL...**, select the extracted DLL and choose **Install / Repair**. Selecting it includes the bridge. The supported DLL has SHA-256 `CDFA6C1EC784867182164C7836F324F087B5C9F374D0C9FE46F54999FEABF3ED`, matching [OpenNR's reference output](https://github.com/clshortfuse/openNR/tree/57ca170cb836f549f0e64544f282d535666b0f7d). Other bytes, including the unmodified RTX 50 runtime, are rejected. Neither the model nor a Discord attachment URL is bundled.
+
+The command-line equivalent is:
+
+```powershell
+.\Setup.cmd -Headless -GamePath 'E:\SteamLibrary\steamapps\common\Big Walk' -NeuralModelPath 'E:\Models\nvngx_dlssnr.dll'
+```
+
+With NR 310.9.16, **Home → Neural → Model preset** offers **1 · A: Standard** (the older model) and **2 · B: Lightweight FP8** (the newer model). **0 · Auto** leaves the runtime to choose; 310.9.16 defaults to B. These are NR presets, separate from DLSS SR preset L. Save, quit normally and restart after changing Home settings. The model selection is documented by [the OptiScaler consumer mapping](https://github.com/machiavelli31/DLSS-AiO-Swapper/blob/main/app/src/core/nr-model.js). No Big Walk image-quality or performance improvement is claimed yet.
+
+Install/Repair preserves your existing FG/NR settings and retains an unchanged, installer-owned imported model, even without selecting it again. If that installed model is missing, select the DLL again to repair it. Edited or unowned conflicting models keep the normal refusal protections. Uninstall removes the owned installed copy and leaves your source DLL alone. Without a local selection, fresh NR installs still download the earlier SF-v2 model.
+
 ### The newer NVIDIA model
 
 NVIDIA's [October 13 announcement](https://www.nvidia.com/en-us/geforce/news/dlss-5-faster-ai-model-hogwarts-legacy-rtx-spark-laptops/) says a faster NR model debuts on October 16 in supported products. Its roughly 2× figure is about the model's own speed, not double the frame rate of the whole game.
 
-The optional SF-v2 download is the earlier, tested model, not that update. The project makes no claim that the latest or faster model works. One RTX 4090 test in another game does not mean official support, and does not show that a new model works in Big Walk. Home does not limit NR to RTX 50 GPUs.
+The optional SF-v2 download is the earlier, tested model, not that update. The 310.9.16 local-import option has passed installer checks, but rendering and performance with it in Big Walk remain unverified. One RTX 4090 test in another game does not mean official support, and does not show that a new model works in Big Walk. Home does not limit NR to RTX 50 GPUs.
 
 ## Sources
 

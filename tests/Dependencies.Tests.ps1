@@ -1,18 +1,26 @@
 param(
     [Parameter(Mandatory=$true)][string]$PackagePath,
-    [Parameter(Mandatory=$true)][string]$DependencyDirectory
+    [Parameter(Mandatory=$true)][string]$DependencyDirectory,
+    [string]$NeuralModelPath
 )
 $ErrorActionPreference='Stop'
 Set-StrictMode -Version 2.0
 Import-Module (Join-Path $PSScriptRoot '../scripts/Setup.Core.psm1') -Force
 $scratch=Join-Path ([IO.Path]::GetTempPath()) ('bbw-dependencies-'+[guid]::NewGuid().ToString('N'))
 try {
-    foreach ($feature in @('fg','nr')) {
+    $features=@('fg','nr')
+    if ($NeuralModelPath) { $features+='nr-local' }
+    foreach ($feature in $features) {
         $game=Join-Path $scratch ('game-'+$feature)
         [void][IO.Directory]::CreateDirectory((Join-Path $game 'Big Walk_Data'))
         [IO.File]::WriteAllText((Join-Path $game 'Big Walk.exe'),'Disposable file-operation fixture; never executed.')
         [IO.File]::WriteAllText((Join-Path $game 'GameAssembly.dll'),'Disposable game assembly sentinel.')
         $arguments=@{GamePath=$game;PackagePath=$PackagePath;DependencyDirectory=$DependencyDirectory;Features=@($feature)}
+        $expectedModel='6EB209E764F39872625DEBD6ABAF45E2BB6322F6F270F781F70C059AE30B3927'
+        if ($feature -eq 'nr-local') {
+            $arguments.Features=@('nr'); $arguments.NeuralModelPath=$NeuralModelPath
+            $expectedModel='CDFA6C1EC784867182164C7836F324F087B5C9F374D0C9FE46F54999FEABF3ED'
+        }
         Invoke-BbwSetup @arguments -Mode Install | Out-Null
         $manifest=Get-Content -LiteralPath (Join-Path $game '.big-beautiful-walk/manifest.json') -Raw | ConvertFrom-Json
         foreach ($entry in $manifest.Entries) {
@@ -39,15 +47,15 @@ try {
         $model=Join-Path $game 'OptiScaler/nvngx_dlssnr.dll'
         if ($feature -eq 'fg') {
             if (Test-Path -LiteralPath $model) { throw 'FG-only selection unexpectedly installed the optional NR model.' }
-        } elseif ((Get-FileHash -LiteralPath $model -Algorithm SHA256).Hash -ne '6EB209E764F39872625DEBD6ABAF45E2BB6322F6F270F781F70C059AE30B3927') {
-            throw 'Installed NR model differs from the pinned community RHI SF-v2 model.'
+        } elseif ((Get-FileHash -LiteralPath $model -Algorithm SHA256).Hash -ne $expectedModel) {
+            throw 'Installed NR model differs from the selected pinned model.'
         }
         $ini=Get-Content -LiteralPath (Join-Path $game 'OptiScaler.ini') -Raw
         if (@([regex]::Matches($ini,'(?m)^Enabled=false\r?$')).Count -ne 2) { throw 'Fresh FG and NR defaults must be off.' }
         # Repair with no new opt-in must retain exactly the already-owned features.
         Invoke-BbwSetup -GamePath $game -PackagePath $PackagePath -DependencyDirectory $DependencyDirectory -Mode Install | Out-Null
         if ($feature -eq 'fg' -and (Test-Path -LiteralPath $model)) { throw 'FG-only repair unexpectedly opted into NR.' }
-        if ($feature -eq 'nr' -and (Get-FileHash -LiteralPath $model -Algorithm SHA256).Hash -ne '6EB209E764F39872625DEBD6ABAF45E2BB6322F6F270F781F70C059AE30B3927') { throw 'NR repair changed the pinned model bytes.' }
+        if ($feature -ne 'fg' -and (Get-FileHash -LiteralPath $model -Algorithm SHA256).Hash -ne $expectedModel) { throw 'NR repair changed the pinned model bytes.' }
         Invoke-BbwSetup @arguments -Mode Uninstall | Out-Null
         foreach ($entry in $manifest.Entries) {
             if (-not $entry.PreserveOnRemove -and (Test-Path -LiteralPath (Join-Path $game $entry.Target))) {

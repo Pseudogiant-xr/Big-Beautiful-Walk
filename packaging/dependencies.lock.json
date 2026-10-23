@@ -961,6 +961,8 @@
     {
       "Id": "nvidia_nr",
       "Vendor": "nvidia",
+      "LocalModelSHA256": "CDFA6C1EC784867182164C7836F324F087B5C9F374D0C9FE46F54999FEABF3ED",
+      "LocalModelSourceUrl": "https://github.com/clshortfuse/openNR",
       "Url": "https://github.com/RankFTW/rhi-repo/releases/download/dlssnr-310.8.SF-v2/nvngx_dlssnr_310.8.SF-v2.zip",
       "SHA256": "1DA35941894994EB087E017577829E492454E9BAE3A6A9397027069CEB74955C",
       "Archive": "zip",

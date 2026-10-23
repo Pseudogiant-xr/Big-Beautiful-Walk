@@ -2,6 +2,8 @@
 
 The installer reads `packaging/dependencies.lock.json` (`SchemaVersion: 1`). For each dependency it accepts only the pinned HTTPS URL and SHA-256. A matching hash confirms the downloaded bytes. It does not confirm legal permission or compatibility. `Files` maps each archive member explicitly to a path relative to the game folder. The release ZIP contains none of these runtime downloads.
 
+NR 310.9.16 can also be imported from a user-supplied, hash-verified compatibility DLL. This runtime is not bundled or downloaded automatically; its Big Walk rendering is unverified. See [local import](FRAME-GENERATION.md#nr-310916-local-import) and [provenance](licenses/RHI-Neural-Rendering-NOTICE.md#nr-310916-local-import).
+
 ## Core downloads
 
 | ID | Version / source | SHA-256 |

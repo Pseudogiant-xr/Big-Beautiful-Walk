@@ -25,6 +25,7 @@ internal static class FeatureOptions
     internal static readonly string[] ProviderValues = { "DLSSG", "FSRFG", "XeFG" };
     internal static readonly string[] ProviderNames = { "NVIDIA DLSS Frame Generation", "AMD FSR Frame Generation", "Intel XeSS Frame Generation" };
     internal static readonly string[] StyleNames = { "Default", "Natural", "Cinematic" };
+    internal static readonly string[] NeuralPresetNames = { "0 · Auto (runtime default)", "1 · A: Standard (310.9.16)", "2 · B: Lightweight FP8 (310.9.16)", "3 · Model-specific / legacy" };
     internal static readonly string[] NvidiaFiles = { "OptiScaler/streamline/sl.interposer.dll", "OptiScaler/streamline/sl.common.dll", "OptiScaler/streamline/sl.dlss_g.dll", "OptiScaler/streamline/sl.pcl.dll", "OptiScaler/streamline/sl.reflex.dll", "OptiScaler/streamline/nvngx_dlssg.dll" };
     internal static readonly string[] AmdFiles = { "OptiScaler/amd_fidelityfx_loader_dx12.dll", "OptiScaler/amd_fidelityfx_framegeneration_dx12.dll" };
     internal static readonly string[] IntelFiles = { "OptiScaler/libxess_fg.dll", "OptiScaler/libxell.dll" };
