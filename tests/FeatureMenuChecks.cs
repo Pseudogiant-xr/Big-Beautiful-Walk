@@ -100,8 +100,8 @@ namespace UnityEngine
         internal static bool Button(Rect rectangle, string text, GUIStyle style)
         {
             if (FailedSaveSeen) DrawnAfterFailure = true;
-            bool hit = Hit == text || (Hit == "plus" && text == "+" && rectangle.Y == 346) ||
-                (Hit == "preset-left" && text == "‹" && rectangle.Y == 481);
+            bool hit = Hit == text || (Hit == "plus" && text == "+") ||
+                (Hit == "preset-left" && text == "‹");
             if (hit) Hit = "";
             return hit;
         }

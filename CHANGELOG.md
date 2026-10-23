@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Add short, plain-English explanations of graphics settings, upscaling, frame generation and AI lighting, including picture/performance trade-offs.
+- Refresh Home and Setup with a landscape-inspired earth-and-ochre palette, clearer selected tabs and grouped settings. In-game text is larger and the panel scales to the available screen size.
+- Add visible descriptions of installer extras and hover explanations for installation, removal and file checks.
+
 ## 0.8.1 — alpha
 
 ### Added
