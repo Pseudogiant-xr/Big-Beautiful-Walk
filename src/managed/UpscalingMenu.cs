@@ -29,8 +29,8 @@ internal static class UpscalingMenu
                 GUI.color = colour;
                 GUI.Label(new Rect(x + 38, y + 255, 875, 26), "Restart required · Restart Big Walk to use " + UpscalingPresentation.BackendName(BridgeSettings.NextLaunchBackend) + ".", label);
             }
-            GUI.Label(new Rect(x + 25, y + 284, 900, 32), UpscalingPresentation.BackendHelp(selectedBackend), small);
-            GUI.Label(new Rect(x + 25, y + 321, 900, 28), Plugin.RendererStatus, label);
+            GUI.Label(new Rect(x + 25, y + 285, 900, 38), UpscalingPresentation.BackendHelp(selectedBackend), small);
+            GUI.Label(new Rect(x + 25, y + 325, 900, 26), Plugin.RendererStatus, label);
             GUI.enabled = enabled && Plugin.Compatible && Plugin.NativeLoaded;
             bool nextEnabled = GUI.Toggle(new Rect(x + 25, y + 355, 570, 28), Plugin.Enabled.Value,
                 UpscalingPresentation.ToggleLabel(BridgeSettings.RunningBackend, Plugin.QualityMode.Value), AdvancedGraphics.ToggleStyle);
@@ -45,9 +45,9 @@ internal static class UpscalingMenu
                 Plugin.ResetHistory();
             }
             GUI.enabled = enabled;
-            GUI.Label(new Rect(x + 25, y + 428, 900, 35),
+            GUI.Label(new Rect(x + 25, y + 428, 900, 38),
                 UpscalingPresentation.QualityHelp(Plugin.QualityMode.Value) +
-                $" Drawing at {Plugin.RenderScale.Value * 100:0.#}% of each screen dimension. Changes apply now.", small);
+                " Changes apply now.", small);
             if (BridgeSettings.RunningBackend == 0)
             {
                 GUI.enabled = enabled && Plugin.Compatible && Plugin.NativeLoaded;
@@ -55,11 +55,11 @@ internal static class UpscalingMenu
                     UpscalingOptions.PresetValues, UpscalingOptions.PresetNames, label, button);
                 if (preset != Plugin.Preset.Value) { Plugin.Preset.Value = preset; Plugin.ResetHistory(); }
                 GUI.enabled = enabled;
-                GUI.Label(new Rect(x + 25, y + 505, 900, 31), "Changes how DLSS rebuilds detail, not the image size. Start with L. The driver or runtime can override this choice.", small);
+                GUI.Label(new Rect(x + 25, y + 505, 900, 36), "Chooses a different AI method for rebuilding detail. Letters are not quality levels: later is not always better. Start with L; the driver may override it.", small);
                 if (BridgeSettings.PresetOverride)
                 {
-                    GUI.Label(new Rect(x + 25, y + 540, 555, 37), "OptiScaler controls the model preset until you restart with Home presets enabled.", small);
-                    if (GUI.Button(new Rect(x + 590, y + 541, 335, 31), "Use Home presets after restart", button)) BridgeSettings.UseHomePresets();
+                    GUI.Label(new Rect(x + 25, y + 544, 555, 37), "OptiScaler controls the model preset until you restart with Home presets enabled.", small);
+                    if (GUI.Button(new Rect(x + 590, y + 545, 335, 31), "Use Home presets after restart", button)) BridgeSettings.UseHomePresets();
                 }
             }
             else if (BridgeSettings.UnavailableReason(2).Length > 0)

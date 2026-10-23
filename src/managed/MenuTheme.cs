@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using System.IO;
+using BepInEx;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
 
 namespace BigWalkDLSS;
@@ -14,6 +17,29 @@ internal static class MenuTheme
     internal static readonly Color Muted = new(.77f, .73f, .66f, 1);
     internal static readonly Color Highlight = new(.28f, .24f, .17f, 1);
     private static readonly Dictionary<Color, Texture2D> Textures = new();
+    private static Texture2D? _artwork;
+    private static bool _artworkTried;
+
+    internal static Texture2D? Artwork
+    {
+        get
+        {
+            if (_artworkTried) return _artwork;
+            _artworkTried = true;
+            Texture2D? texture = null;
+            try
+            {
+                string path = Path.Combine(Paths.PluginPath, "BigWalkDLSS", "ui-landscape.png");
+                if (!File.Exists(path)) return null;
+                texture = new Texture2D(2, 2) { hideFlags = HideFlags.HideAndDontSave };
+                if (ImageConversion.LoadImage(texture, new Il2CppStructArray<byte>(File.ReadAllBytes(path)), true))
+                { _artwork = texture; texture = null; }
+            }
+            catch (System.Exception error) { Plugin.Instance.Log.LogWarning("Menu artwork could not be loaded: " + error.GetType().Name); }
+            finally { if (texture != null) UnityEngine.Object.Destroy(texture); }
+            return _artwork;
+        }
+    }
 
     internal static GUIStyle Button(GUIStyle original, bool selected = false)
     {

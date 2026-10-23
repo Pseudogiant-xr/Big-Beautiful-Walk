@@ -10,8 +10,8 @@ internal static class UpscalingPresentation
     };
     internal static string[] QualityNames(int backend) => new[]
     {
-        backend == 0 ? "DLAA · native resolution" : "Native AA · 100%",
-        "Ultra Quality · 77%", "Quality · 67%", "Balanced · 58%", "Performance · 50%", "Ultra Performance · 33%"
+        backend == 0 ? "DLAA · smooth edges at full resolution" : "Native AA · smooth edges at full resolution",
+        "Ultra Quality · more detail", "Quality · clearer picture", "Balanced · picture + speed", "Performance · favour speed", "Ultra Performance · least detail"
     };
     internal static string QualityName(int backend, int quality)
     {
@@ -23,18 +23,18 @@ internal static class UpscalingPresentation
         : "Enable " + BackendName(backend) + " upscaling";
     internal static string BackendHelp(int backend) => backend switch
     {
-        0 => "DLSS rebuilds the picture using an NVIDIA RTX GPU. Quality is the tested starting point.",
-        1 => "FSR 3.1 is an alternative upscaler for different GPU brands. Compare its picture with DLSS or XeSS.",
-        2 => "XeSS is another way to rebuild the picture. It may look different from DLSS or FSR in moving scenes.",
-        3 => "FSR 4 is not available in this alpha. Choose one of the supported upscalers instead.",
+        0 => "DLSS can raise frame rate while keeping a detailed picture. Your GPU draws fewer pixels; AI uses motion and earlier frames to rebuild the missing detail. Needs NVIDIA RTX.",
+        1 => "FSR 3.1 can raise frame rate on different GPU brands. It draws fewer pixels, then combines motion and earlier frames to rebuild detail. Fine edges may look different from DLSS.",
+        2 => "XeSS can raise frame rate while smoothing jagged edges. Like DLSS, it uses AI and earlier frames to rebuild a smaller image; it can work on different GPU brands.",
+        3 => "FSR 4 uses AI to rebuild a detailed picture from fewer pixels on supported AMD GPUs. It is not available in this alpha; choose DLSS, FSR 3.1 or XeSS instead.",
         _ => "An upscaler rebuilds a smaller image to reduce graphics work. Choose a supported option above."
     };
     internal static string QualityHelp(int quality) => quality switch
     {
-        5 => "Smooths jagged edges at full resolution, without the usual upscaling speed benefit. Experimental.",
-        4 => "Draws more detail than Quality, with a heavier graphics load. Experimental.",
-        2 => "A clearer picture with less graphics work than native resolution. The tested starting point.",
-        1 => "Trades some image detail for less graphics work. Try this if Quality feels too slow.",
+        5 => "Draws every screen pixel, then smooths jagged edges. Favours a clean picture rather than a frame-rate boost. Experimental.",
+        4 => "Draws more pixels before rebuilding the picture. Favours fine detail, but gives less of a speed boost. Experimental.",
+        2 => "Draws fewer pixels than full resolution, while keeping more detail than the faster modes. A good starting point.",
+        1 => "Draws fewer pixels than Quality for a bigger speed benefit, with some loss of fine detail.",
         0 => "Draws a smaller image to favour frame rate. Fine details may look softer or less stable.",
         3 => "Uses the smallest image and sacrifices the most detail. Mainly useful at very high screen resolutions.",
         _ => "Choose Quality as a starting point, then compare detail and smoothness in the same view."

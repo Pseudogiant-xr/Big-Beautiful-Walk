@@ -203,9 +203,9 @@ $muted=[Drawing.Color]::FromArgb(196,186,168)
 $form.BackColor=$background
 $form.ForeColor=$ink
 $form.Font=New-Object Drawing.Font('Segoe UI',10)
-$form.ClientSize=New-Object Drawing.Size(690,($form.ClientSize.Height+72))
+$form.ClientSize=New-Object Drawing.Size(690,($form.ClientSize.Height+96))
 foreach ($control in $form.Controls) {
-    $control.Top+=72
+    $control.Top+=96
     $control.ForeColor=$ink
     if ($control -is [Windows.Forms.Button]) {
         $control.FlatStyle='Flat'
@@ -245,6 +245,19 @@ $accent.SetBounds(0,0,$form.ClientSize.Width,4)
 $accent.Anchor='Top,Left,Right'
 $accent.BackColor=$ochre
 $form.Controls.AddRange(@($heading,$subheading,$accent))
+$headerImage=$null
+$artworkPath=Join-Path (Split-Path $PSScriptRoot -Parent) 'packaging/ui-landscape.png'
+try {
+    if ([IO.File]::Exists($artworkPath)) {
+        $headerImage=[Drawing.Image]::FromFile($artworkPath)
+        $illustration=New-Object Windows.Forms.PictureBox
+        $illustration.SetBounds(350,4,320,108)
+        $illustration.SizeMode='Zoom'
+        $illustration.Image=$headerImage
+        $illustration.BackColor=$background
+        $form.Controls.Add($illustration)
+    }
+} catch { $headerImage=$null }
 $buttons[0].BackColor=$ochre
 $buttons[0].ForeColor=$background
 $buttons[0].FlatAppearance.MouseOverBackColor=[Drawing.Color]::FromArgb(232,191,121)
@@ -263,3 +276,4 @@ $form.ResumeLayout($true)
 $tooltips.Dispose()
 $timer.Dispose()
 $form.Dispose()
+if ($headerImage) { $headerImage.Dispose() }

@@ -4,6 +4,8 @@
 
 - Add short, plain-English explanations of graphics settings, upscaling, frame generation and AI lighting, including picture/performance trade-offs.
 - Refresh Home and Setup with a landscape-inspired earth-and-ochre palette, clearer selected tabs and grouped settings. In-game text is larger and the panel scales to the available screen size.
+- Add original generated dot-and-line landscape artwork to Home and Setup headers, with the source prompt included.
+- Add a default-off experimental shadow-culling option that preserves shadow range and resolution; it is not yet a verified dawn/dusk performance fix.
 - Add visible descriptions of installer extras and hover explanations for installation, removal and file checks.
 
 ## 0.8.1 — alpha

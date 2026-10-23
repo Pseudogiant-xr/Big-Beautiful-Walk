@@ -438,6 +438,10 @@ function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyD
         if (-not [IO.File]::Exists($source)) { throw "Release payload is incomplete: missing $name. Extract the complete release ZIP and run Setup.cmd again." }
         $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/plugins/BigWalkDLSS/$name"; FreshOnly=$false; Role='plugin' })
     }
+    $artwork = Resolve-BbwPath $PackagePath 'packaging/ui-landscape.png'
+    if ([IO.File]::Exists($artwork)) {
+        $items.Add([pscustomobject]@{ Source=$artwork; Target='BepInEx/plugins/BigWalkDLSS/ui-landscape.png'; FreshOnly=$false; Role='plugin' })
+    }
     foreach ($name in @('LICENSE','NOTICE','THIRD_PARTY_NOTICES.md')) {
         $source = Resolve-BbwPath $PackagePath $name
         if (-not [IO.File]::Exists($source)) { throw "Release notices are incomplete: missing $name. Extract the complete release ZIP and retry." }

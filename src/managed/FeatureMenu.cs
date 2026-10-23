@@ -50,11 +50,11 @@ internal static class FeatureMenu
                 ". NVIDIA requires RTX 40 Series or newer and Hardware-accelerated GPU Scheduling. No Windows or driver settings are changed here.", small);
             GUI.Label(new Rect(x + 25, y + 543, 900, 49),
                 FeatureOptions.ProviderIndex(queued.Provider) == 0
-                    ? "NVIDIA is the preferred option on the tested RTX 4090. Extra frames can make thin objects shimmer; they improve the look of motion rather than the game's response to input."
+                    ? "NVIDIA uses AI to make the in-between pictures. It was the best-looking option on the tested RTX 4090. Thin objects can shimmer; extra frames do not make controls respond faster."
                     : FeatureOptions.ProviderIndex(queued.Provider) == 2
-                        ? "Intel can work on different GPU brands, but needs windowed or borderless mode. On the tested RTX 4090 it made the game slower; compare before keeping it."
+                        ? "Intel uses AI to make the in-between pictures on supported GPUs. Needs windowed or borderless mode. On the tested RTX 4090 it made the game slower; compare before keeping it."
                         : FeatureOptions.ProviderIndex(queued.Provider) == 1
-                            ? "AMD can work on different GPU brands. On the tested RTX 4090 it looked and ran worse than NVIDIA; compare motion before keeping it."
+                            ? "AMD uses motion between real frames to make the in-between pictures, across different GPU brands. On the tested RTX 4090 it looked and ran worse than NVIDIA."
                             : "A custom provider is selected in F10. Choose a supported provider above to use Home's Frame Generation controls.", small);
             DrawSaveNote(x, y, small);
         }
@@ -87,9 +87,9 @@ internal static class FeatureMenu
                     (queued.Style == i ? "● " : "") + FeatureOptions.StyleNames[i], button))
                 { queued.Style = i; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
             GUI.Label(new Rect(x + 25, y + 333, 900, 21), "Chooses the AI's visual treatment. Default is the tested starting point; compare the alternatives yourself.", small);
-            float intensity = Strength(x, y + 356, "Model strength", "How strongly the AI changes the scene. Start at 1.", queued.Intensity, 2, label, small, button);
+            float intensity = Strength(x, y + 356, "AI effect strength", "How strongly the AI redraws the scene's lighting and surfaces. 1 is the normal amount.", queued.Intensity, 2, label, small, button);
             float detail = Strength(x, y + 401, "Lighting / detail blend", "How much AI lighting and surface detail is blended into the picture.", queued.TransferStrength, 2, label, small, button);
-            float colour = Strength(x, y + 446, "AI colour blend", "How much the AI changes colours. 0 keeps the game's original hues.", queued.ColourStrength, 4, label, small, button);
+            float colour = Strength(x, y + 446, "AI colour amount", "How much the AI changes colours. 0 keeps the game's original hues.", queued.ColourStrength, 4, label, small, button);
             if (intensity != queued.Intensity || detail != queued.TransferStrength || colour != queued.ColourStrength)
             {
                 queued.Intensity = intensity; queued.TransferStrength = detail; queued.ColourStrength = colour;
@@ -102,8 +102,8 @@ internal static class FeatureMenu
             if (GUI.Button(new Rect(x + 875, y + 491, 34, 28), "›", button))
             { queued.Preset = (queued.Preset + 1) % 4; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
             GUI.enabled = enabled;
-            GUI.Label(new Rect(x + 25, y + 525, 900, 31), "With NR 310.9.16: A uses the original model; B uses the smaller, lighter model. Auto lets the runtime choose. 3 depends on your runtime.", small);
-            GUI.Label(new Rect(x + 25, y + 562, 900, 33), unavailable.Length > 0 ? unavailable :
+            GUI.Label(new Rect(x + 25, y + 525, 900, 36), "NR 310.9.16: A keeps the original AI look with more graphics work. B is the faster new model, with a different look. Auto chooses for you; 3 depends on the runtime.", small);
+            GUI.Label(new Rect(x + 25, y + 562, 900, 36), unavailable.Length > 0 ? unavailable :
                 "The required files are present. Check F10 to confirm AI rendering is running, then compare the picture; saved settings alone do not prove it.", small);
             GUI.Label(new Rect(x + 25, y + 600, 900, 23),
                 "Need the model? Extract the optional NR pack from the release page and select its DLL in Setup.", small);
@@ -112,7 +112,7 @@ internal static class FeatureMenu
         finally { GUI.enabled = enabled; }
     }
 
-    private static string Request(bool enabled, string choice) => enabled ? "On requested · " + choice + " · Runtime unverified" : "Off · " + choice;
+    private static string Request(bool enabled, string choice) => enabled ? "On requested · " + choice + " · Check F10" : "Off · " + choice;
 
     private static float Strength(float x, float y, string title, string help, float value, float maximum, GUIStyle label, GUIStyle small, GUIStyle button)
     {

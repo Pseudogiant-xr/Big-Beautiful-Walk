@@ -157,7 +157,7 @@ internal static class AdvancedGraphics
                 ValidateSplits();
                 _asset = asset; _quality = quality;
                 if (!_ready) Register();
-                Log($"pipeline={asset.name}, quality={quality}, LOD bias={QualitySettings.lodBias:F2}, shadow distance={asset.shadowDistance:F1}, cascades={asset.shadowCascadeCount}, atlas={asset.mainLightShadowmapResolution}");
+                Log($"pipeline={asset.name}, quality={quality}, LOD bias={QualitySettings.lodBias:F2}, shadow distance={asset.shadowDistance:F1}, cascades={asset.shadowCascadeCount}, atlas={asset.mainLightShadowmapResolution}, conservative culling={asset.conservativeEnclosingSphere}, sphere iterations={asset.numIterationsEnclosingSphere}");
             }
             var camera = Plugin.RenderingCamera != null ? Plugin.RenderingCamera : Camera.main;
             if (camera == null)
@@ -272,6 +272,8 @@ internal static class AdvancedGraphics
             () => _asset!.supportsMainLightShadows ? 1 : 0, v => _asset!.supportsMainLightShadows = v > .5f, Owner.Pipeline, Kind.Toggle);
         Add(Page.Shadows, "Cascades", "Shadow cascade count", "Splits sunlight shadows into detail zones. More zones help nearby shadows stay sharp over a long distance.", 1, 4,
             () => _asset!.shadowCascadeCount, v => _asset!.shadowCascadeCount = (int)v, Owner.Pipeline, Kind.Integer);
+        Add(Page.Shadows, "ConservativeCulling", "Reduce duplicate shadow work", "Tries to avoid redrawing objects in overlapping shadow zones. Keeps range and resolution; experimental, so compare shadow edges.", 0, 1,
+            () => _asset!.conservativeEnclosingSphere ? 1 : 0, v => _asset!.conservativeEnclosingSphere = v > .5f, Owner.Pipeline, Kind.Toggle);
         for (int count = 2; count <= 4; count++)
         {
             for (int index = 0; index < count - 1; index++)
@@ -521,8 +523,8 @@ internal static class AdvancedGraphics
         if (sr != Plugin.Enabled.Value) { Plugin.Enabled.Value = sr; Plugin.ResetHistory(); }
         if (GUI.Button(new Rect(x + 610, y + 289, 290, 34), "Change upscaler / quality", _button)) _page = Page.Upscaling;
         GUI.Label(new Rect(x + 25, y + 333, 900, 45),
-            BridgeSettings.Recognized ? "F8 toggles reconstruction. Frame Gen and Neural tabs save requests for the next launch. F10 opens experimental controls." :
-                "F8 toggles reconstruction. Setup's optional upscaler pack adds FSR 3.1, XeSS and frame generation controls.", _small);
+            BridgeSettings.Recognized ? "Upscaling: smoother edges with less graphics work. Frame Gen: extra pictures for smoother movement. Neural: AI lighting and surface detail, with a performance cost." :
+                "Upscaling can improve frame rate and smooth jagged edges. Setup's optional bridge adds other upscalers and smoother-motion tools.", _small);
         GUI.enabled = _ready;
         GUI.Label(new Rect(x + 25, y + 398, 900, 34), "Not sure where to start? Try Balanced. Presets replace custom graphics choices; upscaling, frame generation and AI lighting stay as set.", _small);
         string[] presets = { "Game defaults", "Balanced", "Quality", "Extreme" };
@@ -557,21 +559,25 @@ internal static class AdvancedGraphics
                 _title.normal.textColor = MenuTheme.Text; _label.normal.textColor = MenuTheme.Text;
                 _small.normal.textColor = MenuTheme.Muted;
             }
-            float scale = Mathf.Min(1.35f, Mathf.Min(Screen.height / 800f, Screen.width / 1000f));
+            float scale = Mathf.Min(1.35f, Mathf.Min(Screen.height / 832f, Screen.width / 1000f));
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1));
             float w = Screen.width / scale, h = Screen.height / scale;
-            float x = Mathf.Max(8, (w - 960) / 2), y = Mathf.Max(8, (h - 760) / 2);
+            float x = Mathf.Max(8, (w - 960) / 2), y = Mathf.Max(8, (h - 792) / 2);
             GUI.color = new Color(0, 0, 0, .55f); GUI.DrawTexture(new Rect(0, 0, w, h), Texture2D.whiteTexture);
-            MenuTheme.Fill(new Rect(x, y, 960, 760), MenuTheme.Background);
-            MenuTheme.Fill(new Rect(x, y, 960, 88), MenuTheme.Surface);
+            MenuTheme.Fill(new Rect(x, y, 960, 792), MenuTheme.Background);
+            MenuTheme.Fill(new Rect(x, y, 960, 120), MenuTheme.Surface);
+            if (MenuTheme.Artwork is { } artwork)
+                GUI.DrawTexture(new Rect(x + 565, y + 4, 335, 112), artwork, ScaleMode.ScaleToFit, true);
             MenuTheme.Fill(new Rect(x, y, 960, 4), MenuTheme.Ochre);
-            MenuTheme.Fill(new Rect(x + 25, y + 137, 900, 1), MenuTheme.Raised);
+            MenuTheme.Fill(new Rect(x + 25, y + 169, 900, 1), MenuTheme.Raised);
             GUI.color = Color.white;
             GUI.Label(new Rect(x + 25, y + 18, 790, 38), "Big Beautiful Walk", _title);
             GUI.Label(new Rect(x + 25, y + 57, 870, 28), BridgeSettings.Recognized
                 ? "Home closes this panel  •  F10 opens extra upscaler controls"
                 : "Home closes this panel  •  More upscalers are available through Setup", _label);
             if (GUI.Button(new Rect(x + 905, y + 18, 32, 32), "×", _button)) Close();
+            GUI.Label(new Rect(x + 25, y + 91, 535, 21), "Picture quality · smoother motion · lighting and detail", _small);
+            y += 32;
             for (int i = 0; i < TabNames.Length; i++)
                 if (GUI.Button(new Rect(x + 25 + i * 101, y + 98, 94, 35), TabNames[i], _page == (Page)i ? _selectedTab : _tab))
                 { _page = (Page)i; _scroll = Vector2.zero; }
@@ -579,10 +585,10 @@ internal static class AdvancedGraphics
             bool featurePage = _page == Page.FrameGen || _page == Page.Neural;
             GUI.Label(new Rect(x + 25, y + 145, 900, 37), graphicsPage
                 ? "Each setting explains its effect below. Tick a box to use your value; untick it to let the game decide."
-                : _page == Page.FrameGen ? "Adds in-between frames to make motion look smoother. It does not make the controls respond faster. Restart after changing."
-                : _page == Page.Neural ? "AI changes the scene's lighting and surface detail. It can reduce frame rate and change the game's look. Restart after changing."
+                : _page == Page.FrameGen ? "Makes motion look smoother by creating extra pictures between the frames the game draws. Controls do not respond faster. Restart after changing."
+                : _page == Page.Neural ? "Uses AI to redraw lighting and surface detail for a more realistic look. This changes the art style and can lower frame rate; it is not ray tracing."
                 : _page == Page.Credits ? "Libraries and community work used by Big Beautiful Walk."
-                : _page == Page.Upscaling ? "Rebuilds a smaller image to reduce graphics work. Quality favours a clearer picture; Performance favours frame rate."
+                : _page == Page.Upscaling ? "These tools can improve frame rate and smooth jagged edges by rebuilding a detailed picture from fewer pixels. Each option explains how below."
                 : "Start with a graphics preset, then adjust individual settings. Your changes save automatically.", _small);
             if (_page == Page.Overview) DrawOverview(x, y);
             else if (_page == Page.Upscaling) UpscalingMenu.Draw(x, y, _label!, _small!, _button!);
