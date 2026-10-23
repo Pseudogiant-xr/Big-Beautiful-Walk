@@ -194,6 +194,10 @@ $form.Add_FormClosing({
 })
 # Keep the same earth-and-ochre palette as the in-game panel.
 $form.SuspendLayout()
+$form.MinimumSize=New-Object Drawing.Size(0,0)
+$form.AutoScaleMode='None'
+$form.FormBorderStyle='FixedDialog'
+$form.MaximizeBox=$false
 $background=[Drawing.Color]::FromArgb(23,28,23)
 $surface=[Drawing.Color]::FromArgb(36,43,36)
 $raised=[Drawing.Color]::FromArgb(51,59,48)
@@ -203,10 +207,11 @@ $muted=[Drawing.Color]::FromArgb(196,186,168)
 $form.BackColor=$background
 $form.ForeColor=$ink
 $form.Font=New-Object Drawing.Font('Segoe UI',10)
-$form.ClientSize=New-Object Drawing.Size(722,($form.ClientSize.Height+128))
+$form.ClientSize=New-Object Drawing.Size(960,800)
 foreach ($control in $form.Controls) {
-    $control.Top+=112
-    $control.Left+=16
+    $control.Anchor='Top,Left'
+    $control.Top+=136
+    $control.Left+=135
     $control.ForeColor=$ink
     if ($control -is [Windows.Forms.Button]) {
         $control.FlatStyle='Flat'
@@ -219,6 +224,7 @@ foreach ($control in $form.Controls) {
         $control.BackColor=$surface; $control.BorderStyle='FixedSingle'
     }
 }
+$status.Height=220
 $hint.Font=New-Object Drawing.Font('Segoe UI',9)
 $hint.ForeColor=$muted
 foreach ($spec in @(@($hasFg,$fgCheck,'Adds in-between frames for smoother motion, plus other upscaling options. Install the files here; turn features on in Home after restarting.'),
@@ -226,19 +232,19 @@ foreach ($spec in @(@($hasFg,$fgCheck,'Adds in-between frames for smoother motio
     if (-not $spec[0]) { continue }
     $help=New-Object Windows.Forms.Label
     $help.Text=[string]$spec[2]
-    $help.SetBounds(56,($spec[1].Top+29),630,36)
+    $help.SetBounds(175,($spec[1].Top+29),630,36)
     $help.ForeColor=$muted
     $help.Font=New-Object Drawing.Font('Segoe UI',9)
     $form.Controls.Add($help)
 }
 $heading=New-Object Windows.Forms.Label
 $heading.Text='Big Beautiful Walk'
-$heading.SetBounds(36,30,650,32)
+$heading.SetBounds(155,88,650,32)
 $heading.Font=New-Object Drawing.Font('Segoe UI Semibold',20)
 $heading.ForeColor=$ink
 $subheading=New-Object Windows.Forms.Label
 $subheading.Text='Picture quality, smoother motion and optional AI lighting.'
-$subheading.SetBounds(38,65,650,23)
+$subheading.SetBounds(157,123,650,23)
 $subheading.ForeColor=$ochre
 $subheading.Font=New-Object Drawing.Font('Segoe UI',9)
 $form.Controls.AddRange(@($heading,$subheading))
@@ -248,7 +254,7 @@ try {
     if ([IO.File]::Exists($artworkPath)) {
         $headerImage=[Drawing.Image]::FromFile($artworkPath)
         $illustration=New-Object Windows.Forms.PictureBox
-        $illustration.SetBounds(366,20,320,108)
+        $illustration.SetBounds(485,88,320,60)
         $illustration.SizeMode='Zoom'
         $illustration.Image=$headerImage
         $illustration.BackColor=$background
@@ -263,19 +269,10 @@ try {
 $form.Add_Paint({
     param($sender,$paint)
     if (-not $frameImage) { return }
-    $edge=32
-    $xs=@(0,$edge,($form.ClientSize.Width-$edge),$form.ClientSize.Width)
-    $ys=@(0,$edge,($form.ClientSize.Height-$edge),$form.ClientSize.Height)
-    $us=@(0,($frameImage.Width*.12),($frameImage.Width*.88),$frameImage.Width)
-    $vs=@(0,($frameImage.Height*.12),($frameImage.Height*.88),$frameImage.Height)
-    for ($row=0;$row -lt 3;$row++) {
-        for ($col=0;$col -lt 3;$col++) {
-            if ($row -eq 1 -and $col -eq 1) { continue }
-            $destination=New-Object Drawing.RectangleF($xs[$col],$ys[$row],($xs[$col+1]-$xs[$col]),($ys[$row+1]-$ys[$row]))
-            $source=New-Object Drawing.RectangleF($us[$col],$vs[$row],($us[$col+1]-$us[$col]),($vs[$row+1]-$vs[$row]))
-            $paint.Graphics.DrawImage($frameImage,$destination,$source,[Drawing.GraphicsUnit]::Pixel)
-        }
-    }
+    $scale=[Math]::Min($form.ClientSize.Width/[double]$frameImage.Width,$form.ClientSize.Height/[double]$frameImage.Height)
+    $width=$frameImage.Width*$scale; $height=$frameImage.Height*$scale
+    $destination=New-Object Drawing.RectangleF((($form.ClientSize.Width-$width)/2),(($form.ClientSize.Height-$height)/2),$width,$height)
+    $paint.Graphics.DrawImage($frameImage,$destination)
 })
 $form.Add_Resize({ $form.Invalidate() })
 $buttons[0].BackColor=$ochre
@@ -289,7 +286,15 @@ $tooltips.SetToolTip($buttons[2],'Checks the installed files and reports missing
 $tooltips.SetToolTip($modelBrowse,'Select nvngx_dlssnr.dll from the extracted optional NR 310.9.16 pack. Setup checks that it is the supported file.')
 $tooltips.SetToolTip($pathBox,'Choose the Steam folder containing Big Walk.exe. Browse if it is not listed.')
 $workingHeight=[Windows.Forms.Screen]::FromControl($form).WorkingArea.Height
-$form.Height=[Math]::Min($form.Height,[Math]::Max(($status.Top+130),($workingHeight-24)))
+$workingWidth=[Windows.Forms.Screen]::FromControl($form).WorkingArea.Width
+$fit=[Math]::Min(1.0,[Math]::Min(($workingHeight-24)/$form.Height,($workingWidth-24)/$form.Width))
+if ($fit -lt 1) {
+    foreach ($control in $form.Controls) {
+        $control.SetBounds([int][Math]::Round($control.Left*$fit),[int][Math]::Round($control.Top*$fit),[int][Math]::Round($control.Width*$fit),[int][Math]::Round($control.Height*$fit))
+        $control.Font=New-Object Drawing.Font($control.Font.FontFamily,([single]($control.Font.Size*$fit)),$control.Font.Style)
+    }
+    $form.ClientSize=New-Object Drawing.Size(([int][Math]::Round(960*$fit)),([int][Math]::Round(800*$fit)))
+}
 $form.MinimumSize=$form.Size
 $form.ResumeLayout($true)
 [void]$form.ShowDialog()

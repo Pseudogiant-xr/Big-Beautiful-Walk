@@ -5,7 +5,7 @@
 - Add short, plain-English explanations of graphics settings, upscaling, frame generation and AI lighting, including picture/performance trade-offs.
 - Refresh Home and Setup with a landscape-inspired earth-and-ochre palette, clearer selected tabs and grouped settings. In-game text is larger and the panel scales to the available screen size.
 - Add original generated dot-and-line landscape artwork to Home and Setup headers, with the source prompt included.
-- Frame both windows with an original generated dot-art serpent border. Artwork stays outside the controls, and source prompts are included.
+- Frame both windows with an original generated dot-art serpent border. The thicker border uses uniform scaling to keep circles round and artwork clear of the controls; source prompts are included.
 - Add a default-off experimental shadow-culling option that preserves shadow range and resolution; it is not yet a verified dawn/dusk performance fix.
 - Add visible descriptions of installer extras and hover explanations for installation, removal and file checks.
 

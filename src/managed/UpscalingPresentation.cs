@@ -4,6 +4,9 @@ namespace BigWalkDLSS;
 
 internal static class UpscalingPresentation
 {
+    internal static string Introduction(string fsr4Unavailable) => fsr4Unavailable.Length > 0
+        ? "FSR 4 uses newer AI to rebuild detail from fewer pixels. " + fsr4Unavailable
+        : "These tools can improve frame rate and smooth jagged edges by rebuilding a detailed picture from fewer pixels. Each option explains how below.";
     internal static string BackendName(int backend) => backend switch
     {
         0 => "DLSS", 1 => "FSR 3.1", 2 => "XeSS", 3 => "FSR 4", _ => "Automatic upscaler"

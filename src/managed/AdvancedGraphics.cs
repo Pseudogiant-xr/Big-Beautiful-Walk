@@ -559,21 +559,21 @@ internal static class AdvancedGraphics
                 _title.normal.textColor = MenuTheme.Text; _label.normal.textColor = MenuTheme.Text;
                 _small.normal.textColor = MenuTheme.Muted;
             }
-            float scale = Mathf.Min(1.35f, Mathf.Min(Screen.height / 960f, Screen.width / 1128f));
+            float scale = Mathf.Min(1.35f, Mathf.Min(Screen.height / 1040f, Screen.width / 1240f));
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1));
             float w = Screen.width / scale, h = Screen.height / scale;
-            float frameX = Mathf.Max(8, (w - 1088) / 2), frameY = Mathf.Max(8, (h - 920) / 2);
-            float x = frameX + 64, y = frameY + 64;
+            float frameX = Mathf.Max(8, (w - 1200) / 2), frameY = Mathf.Max(8, (h - 1000) / 2);
+            float x = frameX + 120, y = frameY + 104;
             GUI.color = new Color(0, 0, 0, .55f); GUI.DrawTexture(new Rect(0, 0, w, h), Texture2D.whiteTexture);
             GUI.color = Color.white;
-            MenuTheme.Fill(new Rect(frameX, frameY, 1088, 920), MenuTheme.Background);
+            MenuTheme.Fill(new Rect(frameX, frameY, 1200, 1000), MenuTheme.Background);
             MenuTheme.Fill(new Rect(x, y, 960, 792), MenuTheme.Background);
             MenuTheme.Fill(new Rect(x, y, 960, 120), MenuTheme.Surface);
             if (MenuTheme.Artwork is { } artwork)
                 GUI.DrawTexture(new Rect(x + 565, y + 4, 335, 112), artwork, ScaleMode.ScaleToFit, true);
             MenuTheme.Fill(new Rect(x, y, 960, 4), MenuTheme.Ochre);
             MenuTheme.Fill(new Rect(x + 25, y + 169, 900, 1), MenuTheme.Raised);
-            MenuTheme.DrawBorder(new Rect(frameX, frameY, 1088, 920));
+            MenuTheme.DrawBorder(new Rect(frameX, frameY, 1200, 1000));
             GUI.color = Color.white;
             GUI.Label(new Rect(x + 25, y + 18, 790, 38), "Big Beautiful Walk", _title);
             GUI.Label(new Rect(x + 25, y + 57, 870, 28), BridgeSettings.Recognized
@@ -587,12 +587,11 @@ internal static class AdvancedGraphics
                 { _page = (Page)i; _scroll = Vector2.zero; }
             bool graphicsPage = _page >= Page.Geometry && _page <= Page.Textures;
             bool featurePage = _page == Page.FrameGen || _page == Page.Neural;
-            GUI.Label(new Rect(x + 25, y + 145, 900, 37), graphicsPage
+            if (_page != Page.Upscaling) GUI.Label(new Rect(x + 25, y + 145, 900, 37), graphicsPage
                 ? "Each setting explains its effect below. Tick a box to use your value; untick it to let the game decide."
                 : _page == Page.FrameGen ? "Makes motion look smoother by creating extra pictures between the frames the game draws. Controls do not respond faster. Restart after changing."
                 : _page == Page.Neural ? "Uses AI to redraw lighting and surface detail for a more realistic look. This changes the art style and can lower frame rate; it is not ray tracing."
                 : _page == Page.Credits ? "Libraries and community work used by Big Beautiful Walk."
-                : _page == Page.Upscaling ? "These tools can improve frame rate and smooth jagged edges by rebuilding a detailed picture from fewer pixels. Each option explains how below."
                 : "Start with a graphics preset, then adjust individual settings. Your changes save automatically.", _small);
             if (_page == Page.Overview) DrawOverview(x, y);
             else if (_page == Page.Upscaling) UpscalingMenu.Draw(x, y, _label!, _small!, _button!);

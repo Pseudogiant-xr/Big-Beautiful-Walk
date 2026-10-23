@@ -10,6 +10,7 @@ internal static class UpscalingMenu
         bool enabled = GUI.enabled;
         try
         {
+            GUI.Label(new Rect(x + 25, y + 145, 900, 37), UpscalingPresentation.Introduction(BridgeSettings.UnavailableReason(3)), small);
             GUI.Label(new Rect(x + 25, y + 185, 900, 28), "Upscaler · how the picture is rebuilt", label);
             int selectedBackend = BridgeSettings.NextLaunchBackend >= 0 ? BridgeSettings.NextLaunchBackend : BridgeSettings.RunningBackend;
             for (int index = 0; index < BridgeSettings.BackendNames.Length; index++)

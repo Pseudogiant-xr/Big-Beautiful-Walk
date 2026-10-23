@@ -28,18 +28,7 @@ internal static class MenuTheme
     internal static void DrawBorder(Rect rectangle)
     {
         if (Border is not { } border) return;
-        const float edge = 64, sourceEdge = .12f;
-        float width = rectangle.width, height = rectangle.height;
-        void Tile(float x, float y, float w, float h, float u, float v, float uw, float vh) =>
-            GUI.DrawTextureWithTexCoords(new Rect(rectangle.x + x, rectangle.y + y, w, h), border, new Rect(u, v, uw, vh), true);
-        Tile(0, 0, edge, edge, 0, 1 - sourceEdge, sourceEdge, sourceEdge);
-        Tile(edge, 0, width - 2 * edge, edge, sourceEdge, 1 - sourceEdge, 1 - 2 * sourceEdge, sourceEdge);
-        Tile(width - edge, 0, edge, edge, 1 - sourceEdge, 1 - sourceEdge, sourceEdge, sourceEdge);
-        Tile(0, edge, edge, height - 2 * edge, 0, sourceEdge, sourceEdge, 1 - 2 * sourceEdge);
-        Tile(width - edge, edge, edge, height - 2 * edge, 1 - sourceEdge, sourceEdge, sourceEdge, 1 - 2 * sourceEdge);
-        Tile(0, height - edge, edge, edge, 0, 0, sourceEdge, sourceEdge);
-        Tile(edge, height - edge, width - 2 * edge, edge, sourceEdge, 0, 1 - 2 * sourceEdge, sourceEdge);
-        Tile(width - edge, height - edge, edge, edge, 1 - sourceEdge, 0, sourceEdge, sourceEdge);
+        GUI.DrawTexture(rectangle, border, ScaleMode.ScaleToFit, true);
     }
 
     private static Texture2D? LoadArtwork(string filename, ref Texture2D? cached, ref bool tried)
