@@ -576,7 +576,7 @@ internal static class AdvancedGraphics
             MenuTheme.Fill(new Rect(x + 25, y + 169, 900, 1), MenuTheme.Raised);
             MenuTheme.DrawBorder(new Rect(frameX, frameY, 1200, 1000));
             GUI.color = Color.white;
-            GUI.Label(new Rect(x + 25, y + 18, 790, 38), "Big Beautiful Walk 0.8.3", _title);
+            GUI.Label(new Rect(x + 25, y + 18, 790, 38), "Big Beautiful Walk 0.8.4", _title);
             GUI.Label(new Rect(x + 25, y + 57, 870, 28), BridgeSettings.Recognized
                 ? "Home closes this panel  •  F10 opens extra upscaler controls"
                 : "Home closes this panel  •  More upscalers are available through Setup", _label);
