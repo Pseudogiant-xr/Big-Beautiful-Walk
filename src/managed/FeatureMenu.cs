@@ -6,6 +6,7 @@ namespace BigWalkDLSS;
 internal static class FeatureMenu
 {
     private static bool _confirmedHags;
+    internal static bool UserConfirmedHags => _confirmedHags;
 
     internal static void DrawFrameGen(float x, float y, GUIStyle label, GUIStyle small, GUIStyle button)
     {
@@ -24,7 +25,7 @@ internal static class FeatureMenu
             bool next = GUI.Toggle(new Rect(x + 25, y + 268, 900, 30), queued.Enabled, "Enable Frame Generation after restart", AdvancedGraphics.ToggleStyle);
             if (next != queued.Enabled) FeatureSettings.SetFrameGen(next, queued.Provider, vendor, device, _confirmedHags);
             GUI.enabled = enabled;
-            GUI.Label(new Rect(x + 25, y + 310, 900, 27), "Provider · standard 2× (one generated frame)", label);
+            GUI.Label(new Rect(x + 25, y + 310, 900, 27), "Who generates extra frames · 2× adds one between each real frame", label);
             string[] names = { "NVIDIA DLSS Frame Generation", "AMD FSR Frame Generation", "Intel XeSS Frame Generation" };
             for (int i = 0; i < names.Length; i++)
             {
@@ -41,15 +42,21 @@ internal static class FeatureMenu
             GUI.enabled = enabled;
             GUI.Label(new Rect(x + 25, y + 391, 900, 56), unavailable.Length > 0 ? unavailable :
                 FeatureOptions.ProviderIndex(queued.Provider) == 0
-                    ? "Files ready. NVIDIA FG also requests NVIDIA Reflex Low Latency. Check FG in F10; this panel does not confirm Reflex initialization."
-                    : "Files ready. Check provider initialization and active Frame Generation in F10 and the logs. This panel shows saved requests; compare smoothness and controls in the same view.", small);
+                    ? "Files are installed. NVIDIA FG also asks for Reflex to reduce delay. F10 shows whether extra frames are actually being generated; this panel cannot confirm Reflex is running."
+                    : "Files are installed. F10 shows whether extra frames are actually being generated. Compare motion and control response in the same view; a saved choice does not prove it is working.", small);
             if (FeatureOptions.ProviderIndex(queued.Provider) == 0 && FeatureSettings.HagsMode != 1 && FeatureSettings.HagsMode != 2)
                 _confirmedHags = GUI.Toggle(new Rect(x + 25, y + 453, 900, 28), _confirmedHags,
                     "I checked that Hardware-accelerated GPU Scheduling is enabled in Windows", AdvancedGraphics.ToggleStyle);
             GUI.Label(new Rect(x + 25, y + 489, 900, 47), "Detected GPU: " + device +
                 ". NVIDIA requires RTX 40 Series or newer and Hardware-accelerated GPU Scheduling. No Windows or driver settings are changed here.", small);
             GUI.Label(new Rect(x + 25, y + 543, 900, 49),
-                "AMD and Intel providers can work across GPU vendors, subject to runtime support. XeSS Frame Generation requires windowed or borderless mode. Higher multipliers and experimental options are in F10.", small);
+                FeatureOptions.ProviderIndex(queued.Provider) == 0
+                    ? "NVIDIA uses AI to make the in-between pictures. It was the best-looking option on the tested RTX 4090. Thin objects can shimmer; extra frames do not make controls respond faster."
+                    : FeatureOptions.ProviderIndex(queued.Provider) == 2
+                        ? "Intel uses AI to make the in-between pictures on supported GPUs. Needs windowed or borderless mode. On the tested RTX 4090 it made the game slower; compare before keeping it."
+                        : FeatureOptions.ProviderIndex(queued.Provider) == 1
+                            ? "AMD uses motion between real frames to make the in-between pictures, across different GPU brands. On the tested RTX 4090 it looked and ran worse than NVIDIA."
+                            : "A custom provider is selected in F10. Choose a supported provider above to use Home's Frame Generation controls.", small);
             DrawSaveNote(x, y, small);
         }
         finally { GUI.enabled = enabled; }
@@ -80,39 +87,42 @@ internal static class FeatureMenu
                 if (GUI.Button(new Rect(x + 325 + i * 200, y + 300, 190, 31),
                     (queued.Style == i ? "● " : "") + FeatureOptions.StyleNames[i], button))
                 { queued.Style = i; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
-            float intensity = Strength(x, y + 346, "Model strength", queued.Intensity, 2, label, button);
-            float detail = Strength(x, y + 391, "Composed detail", queued.TransferStrength, 2, label, button);
-            float colour = Strength(x, y + 436, "Composed colour", queued.ColourStrength, 4, label, button);
+            GUI.Label(new Rect(x + 25, y + 333, 900, 21), "Chooses the AI's visual treatment. Default is the tested starting point; compare the alternatives yourself.", small);
+            float intensity = Strength(x, y + 356, "AI effect strength", "How strongly the AI redraws the scene's lighting and surfaces. 1 is the normal amount.", queued.Intensity, 2, label, small, button);
+            float detail = Strength(x, y + 401, "Lighting / detail blend", "How much AI lighting and surface detail is blended into the picture.", queued.TransferStrength, 2, label, small, button);
+            float colour = Strength(x, y + 446, "AI colour amount", "How much the AI changes colours. 0 keeps the game's original hues.", queued.ColourStrength, 4, label, small, button);
             if (intensity != queued.Intensity || detail != queued.TransferStrength || colour != queued.ColourStrength)
             {
                 queued.Intensity = intensity; queued.TransferStrength = detail; queued.ColourStrength = colour;
                 if (!FeatureSettings.SetNeural(queued, vendor)) return;
             }
-            GUI.Label(new Rect(x + 25, y + 482, 280, 28), "Model preset", label);
-            if (GUI.Button(new Rect(x + 325, y + 481, 34, 28), "‹", button))
+            GUI.Label(new Rect(x + 25, y + 492, 280, 28), "Model preset", label);
+            if (GUI.Button(new Rect(x + 325, y + 491, 34, 28), "‹", button))
             { queued.Preset = (queued.Preset + 3) % 4; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
-            GUI.Label(new Rect(x + 375, y + 482, 485, 28), FeatureOptions.NeuralPresetNames[queued.Preset], label);
-            if (GUI.Button(new Rect(x + 875, y + 481, 34, 28), "›", button))
+            GUI.Label(new Rect(x + 375, y + 492, 485, 28), FeatureOptions.NeuralPresetNames[queued.Preset], label);
+            if (GUI.Button(new Rect(x + 875, y + 491, 34, 28), "›", button))
             { queued.Preset = (queued.Preset + 1) % 4; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
             GUI.enabled = enabled;
-            GUI.Label(new Rect(x + 25, y + 521, 900, 57), unavailable.Length > 0 ? unavailable :
-                "Forwarder and user model are present. Confirm model initialization in F10 and the logs, then compare the picture. Saved settings do not confirm active rendering.", small);
-            GUI.Label(new Rect(x + 25, y + 582, 900, 39),
-                "For a new install, place your compatible model at OptiScaler/nvngx_dlssnr.dll; existing game-root files are also recognized. Advanced codec and cache options are in F10.", small);
+            GUI.Label(new Rect(x + 25, y + 525, 900, 36), "NR 310.9.16: A keeps the original AI look with more graphics work. B is the faster new model, with a different look. Auto chooses for you; 3 depends on the runtime.", small);
+            GUI.Label(new Rect(x + 25, y + 562, 900, 36), unavailable.Length > 0 ? unavailable :
+                "The required files are present. Check F10 to confirm AI rendering is running, then compare the picture; saved settings alone do not prove it.", small);
+            GUI.Label(new Rect(x + 25, y + 600, 900, 23),
+                "Need the model? Extract the optional NR pack from the release page and select its DLL in Setup.", small);
             DrawSaveNote(x, y, small);
         }
         finally { GUI.enabled = enabled; }
     }
 
-    private static string Request(bool enabled, string choice) => enabled ? "On requested · " + choice + " · Runtime unverified" : "Off · " + choice;
+    private static string Request(bool enabled, string choice) => enabled ? "On requested · " + choice + " · Check F10" : "Off · " + choice;
 
-    private static float Strength(float x, float y, string title, float value, float maximum, GUIStyle label, GUIStyle button)
+    private static float Strength(float x, float y, string title, string help, float value, float maximum, GUIStyle label, GUIStyle small, GUIStyle button)
     {
-        GUI.Label(new Rect(x + 25, y, 280, 28), title, label);
+        GUI.Label(new Rect(x + 25, y, 280, 25), title, label);
         float next = value;
-        if (GUI.Button(new Rect(x + 325, y, 34, 28), "−", button)) next = Math.Max(0, value - .1f);
-        GUI.Label(new Rect(x + 375, y, 485, 28), value.ToString("0.0") + " / " + maximum.ToString("0") + " · 1.0 is the model default", label);
-        if (GUI.Button(new Rect(x + 875, y, 34, 28), "+", button)) next = Math.Min(maximum, value + .1f);
+        if (GUI.Button(new Rect(x + 325, y, 34, 25), "−", button)) next = Math.Max(0, value - .1f);
+        GUI.Label(new Rect(x + 375, y, 485, 25), value.ToString("0.0") + " / " + maximum.ToString("0") + " · 1.0 is the model default", label);
+        if (GUI.Button(new Rect(x + 875, y, 34, 25), "+", button)) next = Math.Min(maximum, value + .1f);
+        GUI.Label(new Rect(x + 25, y + 25, 900, 20), help, small);
         return next == value ? value : (float)Math.Round(next, 2);
     }
 

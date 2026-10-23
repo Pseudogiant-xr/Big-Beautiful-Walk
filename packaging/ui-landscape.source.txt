@@ -1,0 +1,7 @@
+UI landscape artwork
+
+Generated with the built-in image-generation tool on 2026-10-23.
+Original decorative artwork; not attributed to an Aboriginal artist or nation.
+
+Final prompt:
+Create an original decorative UI banner, a wide shallow horizontal landscape ribbon about 3:1, for the Big Beautiful Walk PC game mod. Contemporary Australian Aboriginal dot-painting-inspired drawing style, not a copy of any named artist or existing painting: flowing hand-painted ochre contour lines, clusters of cream and gold dots, red-earth hills, a winding walking path, restrained eucalyptus-leaf silhouettes. Charcoal and deep eucalyptus background tones with ochre, terracotta, warm cream and muted sage. The drawing should be richly detailed but low contrast enough to sit behind a settings-window title. Concentrate the illustration toward the right half and edges; keep the left third mostly quiet dark charcoal for readable light text placed later. No text, letters, UI controls, logo, flags, signatures or watermark. Do not depict ceremonial stories, sacred symbols, or claim an authentic traditional artwork. Transparent outside the painted landscape contours; genuinely transparent background. This is an original decorative landscape asset, not a screenshot or mockup.

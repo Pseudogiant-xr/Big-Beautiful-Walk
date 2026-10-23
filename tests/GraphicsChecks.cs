@@ -33,6 +33,11 @@ foreach (string preset in new[] { "Balanced", "Quality", "Extreme" })
     Check(values["Vegetation.ShadowDistance"] == distance, "Vegetation and main range differ");
 }
 Check(GraphicsPresets.Values("Extreme", 8192)["Shadows.MainResolution"] == 8192, "16K selected on unsupported hardware");
+var extreme = GraphicsPresets.Values("Extreme", 16384);
+Check(extreme["Shadows.MainResolution"] == 16384 && extreme["Shadows.Distance"] == 2000 &&
+    extreme["Vegetation.ShadowDistance"] == 2000 && extreme["Shadows.Cascades"] == 4 && extreme["Geometry.LodBias"] == 4,
+    "Experimental performance work reduced Extreme's image-quality settings");
+Check(!extreme.ContainsKey("Shadows.ConservativeCulling"), "Experimental culling must remain a separate opt-in");
 var captured = new[] { .067f, .2f, .467f };
 var restored = GraphicsLimits.CascadeSplits(captured);
 for (int i = 0; i < captured.Length; i++) Check(restored[i] == captured[i], "Captured splits changed");

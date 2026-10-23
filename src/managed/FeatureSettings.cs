@@ -60,7 +60,7 @@ internal static class FeatureSettings
         if (!FeatureOptions.BridgedBackend(BridgeSettings.NextLaunchBackendValue))
             return "Choose DLSS or XeSS on the Upscaling tab for the next launch. The native FSR 3.1 path has no Neural Rendering call site.";
         if (!HasNeuralFile(FeatureOptions.NeuralFiles[1]))
-            return "Model missing: nvngx_dlssnr.dll was not found in the game root or OptiScaler folder. Supply your own compatible model; none is bundled.";
+            return "Model missing: nvngx_dlssnr.dll was not found. Download the optional NR pack from the release page and select its DLL in Setup.";
         if (!HasNeuralFile(FeatureOptions.NeuralFiles[0]))
             return "Missing Neural Rendering forwarder: nvngx.dll_dlssnr.dll in the game root or OptiScaler folder. Setup supplies the forwarder.";
         return "";

@@ -13,7 +13,7 @@ namespace BigWalkDLSS;
 
 internal static class AdvancedGraphics
 {
-    private enum Page { Overview, Upscaling, FrameGen, Neural, Geometry, Shadows, Vegetation, Terrain, Textures, Credits }
+    private enum Page { Overview, Upscaling, FrameGen, Neural, Geometry, Shadows, Vegetation, Terrain, Textures, Credits, Tools }
     private static readonly string[] TabNames = { "Overview", "Upscaling", "Frame Gen", "Neural", "Geometry", "Shadows", "Vegetation", "Terrain", "Textures" };
     private enum Kind { Number, Integer, Toggle, Choice }
     private enum Owner { Global, Pipeline, Camera, Terrain, Vegetation }
@@ -90,8 +90,9 @@ internal static class AdvancedGraphics
     private static CursorLockMode _cursorLock;
     private static bool _cursorVisible;
     private static string _editing = "", _message = "Changes apply live. Profiles save after you finish editing.";
-    private static GUIStyle? _title, _label, _small, _button, _field, _tab, _toggle;
+    private static GUIStyle? _title, _label, _small, _button, _field, _tab, _selectedTab, _toggle;
     internal static GUIStyle ToggleStyle => _toggle!;
+    internal static void ShowToolGuide() { _page = Page.Tools; ToolGuide.Reset(); }
 
     internal static void Initialize()
     {
@@ -157,7 +158,7 @@ internal static class AdvancedGraphics
                 ValidateSplits();
                 _asset = asset; _quality = quality;
                 if (!_ready) Register();
-                Log($"pipeline={asset.name}, quality={quality}, LOD bias={QualitySettings.lodBias:F2}, shadow distance={asset.shadowDistance:F1}, cascades={asset.shadowCascadeCount}, atlas={asset.mainLightShadowmapResolution}");
+                Log($"pipeline={asset.name}, quality={quality}, LOD bias={QualitySettings.lodBias:F2}, shadow distance={asset.shadowDistance:F1}, cascades={asset.shadowCascadeCount}, atlas={asset.mainLightShadowmapResolution}, conservative culling={asset.conservativeEnclosingSphere}, sphere iterations={asset.numIterationsEnclosingSphere}");
             }
             var camera = Plugin.RenderingCamera != null ? Plugin.RenderingCamera : Camera.main;
             if (camera == null)
@@ -256,28 +257,30 @@ internal static class AdvancedGraphics
     private static void Register()
     {
         var shadow = _asset!;
-        Add(Page.Geometry, "LodBias", "LOD distance bias", "Higher values keep detailed mesh LODs farther away. Only affects authored LOD groups.", .25f, 8f,
+        Add(Page.Geometry, "LodBias", "LOD distance bias", "Keeps detailed objects visible farther away. Higher values can reduce frame rate; only supported objects change.", .25f, 8f,
             () => QualitySettings.lodBias, v => QualitySettings.lodBias = v, unit: "×");
-        Add(Page.Geometry, "MaximumLod", "Highest allowed LOD index", "0 allows the most detailed mesh. Larger indices skip high-detail LODs.", 0, 5,
+        Add(Page.Geometry, "MaximumLod", "Highest allowed LOD index", "0 allows the finest object shapes. Higher values use simpler shapes to reduce drawing work.", 0, 5,
             () => QualitySettings.maximumLODLevel, v => QualitySettings.maximumLODLevel = (int)v, kind: Kind.Integer);
-        Add(Page.Geometry, "MeshLodThreshold", "Mesh LOD pixel threshold", "Lower values keep finer mesh LODs. Only affects meshes with per-mesh LOD data.", .1f, 10f,
+        Add(Page.Geometry, "MeshLodThreshold", "Mesh LOD pixel threshold", "Lower values keep small objects more detailed, at a possible frame-rate cost. Only supported objects change.", .1f, 10f,
             () => QualitySettings.meshLodThreshold, v => QualitySettings.meshLodThreshold = v, unit: "px");
-        Add(Page.Geometry, "FarClip", "Camera draw distance", "The main camera's far clipping plane. Does not force the game's streaming system to load distant objects.", 100, 40000,
+        Add(Page.Geometry, "FarClip", "Camera draw distance", "How far the camera can see. Raising it cannot make the game load objects it normally leaves out.", 100, 40000,
             () => _camera != null ? _camera.farClipPlane : 20000, v => { if (_camera != null) { _camera.farClipPlane = v; Plugin.ResetHistory(); } },
             Owner.Camera, unit: "m");
-        Add(Page.Shadows, "Distance", "Shadow distance", "Maximum main-light shadow range. The camera's draw distance can impose a lower limit.", 1, 2000,
+        Add(Page.Shadows, "Distance", "Shadow distance", "How far sunlight shadows reach. Longer distances cost more and spread the available shadow detail thinner.", 1, 2000,
             () => _asset!.shadowDistance, v => _asset!.shadowDistance = v, Owner.Pipeline, unit: "m", initialOverride: false,
             initialValue: shadow.shadowDistance * Mathf.Clamp(Plugin.ShadowDistanceScale.Value, 1f, 2f));
-        Add(Page.Shadows, "MainEnabled", "Main-light shadows", "Enable the main directional light's existing shadow path.", 0, 1,
+        Add(Page.Shadows, "MainEnabled", "Main-light shadows", "Turns sunlight shadows on or off. Turning them off can improve frame rate but makes the world look flatter.", 0, 1,
             () => _asset!.supportsMainLightShadows ? 1 : 0, v => _asset!.supportsMainLightShadows = v > .5f, Owner.Pipeline, Kind.Toggle);
-        Add(Page.Shadows, "Cascades", "Shadow cascade count", "More cascades divide the shadow range into more detailed regions.", 1, 4,
+        Add(Page.Shadows, "Cascades", "Shadow cascade count", "Splits sunlight shadows into detail zones. More zones help nearby shadows stay sharp over a long distance.", 1, 4,
             () => _asset!.shadowCascadeCount, v => _asset!.shadowCascadeCount = (int)v, Owner.Pipeline, Kind.Integer);
+        Add(Page.Shadows, "ConservativeCulling", "Reduce duplicate shadow work", "Tries to avoid redrawing objects in overlapping shadow zones. Keeps range and resolution; experimental, so compare shadow edges.", 0, 1,
+            () => _asset!.conservativeEnclosingSphere ? 1 : 0, v => _asset!.conservativeEnclosingSphere = v > .5f, Owner.Pipeline, Kind.Toggle);
         for (int count = 2; count <= 4; count++)
         {
             for (int index = 0; index < count - 1; index++)
             {
                 int c = count, i = index;
-                var split = Add(Page.Shadows, "Split" + c + "_" + (i + 1), "Cascade " + (i + 1) + " end", "Expanding this coverage lowers its shadow detail at fixed map resolution. Ends stay ordered.", .005f, .995f,
+                var split = Add(Page.Shadows, "Split" + c + "_" + (i + 1), "Cascade " + (i + 1) + " end", "Where this shadow-detail zone ends. A longer zone covers more ground but spreads its detail more thinly.", .005f, .995f,
                     () => ReadSplit(c, i), v => WriteSplit(c, i, v), Owner.Pipeline, unit: "m");
                 split.DisplayScale = () => _asset!.shadowDistance;
                 split.Applicable = () => _asset!.shadowCascadeCount == c;
@@ -288,64 +291,64 @@ internal static class AdvancedGraphics
         float[] resolutions = { 256, 512, 1024, 2048, 4096, 8192 };
         string[] resolutionNames = { "256", "512", "1024", "2048", "4096", "8192" };
         bool supports16k = SystemInfo.maxTextureSize >= 16384;
-        Add(Page.Shadows, "MainResolution", "Main shadow atlas", "16384 is experimental and expensive: four times the atlas memory of 8192. Higher distance still spreads detail over more ground.", 256, supports16k ? 16384 : 8192,
+        Add(Page.Shadows, "MainResolution", "Main shadow atlas", "Higher values sharpen sunlight shadows and use more graphics memory. Experimental 16384 uses 4x the memory of 8192.", 256, supports16k ? 16384 : 8192,
             () => _asset!.mainLightShadowmapResolution, v => _asset!.mainLightShadowmapResolution = (int)v, Owner.Pipeline, Kind.Choice, "px",
             supports16k ? new float[] { 256, 512, 1024, 2048, 4096, 8192, 16384 } : resolutions,
             supports16k ? new[] { "256", "512", "1024", "2048", "4096", "8192", "16384 (experimental)" } : resolutionNames);
-        Add(Page.Shadows, "FadeBorder", "Final cascade fade", "Fraction of the final cascade used to fade shadows out.", 0, 1,
+        Add(Page.Shadows, "FadeBorder", "Final cascade fade", "Makes distant sunlight shadows disappear gradually instead of ending with a hard line. Higher means a wider fade.", 0, 1,
             () => _asset!.cascadeBorder, v => _asset!.cascadeBorder = v, Owner.Pipeline);
-        Add(Page.Shadows, "DepthBias", "Shadow depth bias", "Offsets shadow depth. Excessive bias can detach shadows from objects.", 0, 10,
+        Add(Page.Shadows, "DepthBias", "Shadow depth bias", "Helps remove dark speckles from surfaces. Too high can make shadows look detached from their objects.", 0, 10,
             () => _asset!.shadowDepthBias, v => _asset!.shadowDepthBias = v, Owner.Pipeline);
-        Add(Page.Shadows, "NormalBias", "Shadow normal bias", "Offsets casters along their normals. Lower values can reveal self-shadowing artefacts.", 0, 10,
+        Add(Page.Shadows, "NormalBias", "Shadow normal bias", "Another fix for dark speckles on surfaces. Too high can shrink or shift shadows; too low can show speckles.", 0, 10,
             () => _asset!.shadowNormalBias, v => _asset!.shadowNormalBias = v, Owner.Pipeline);
-        Add(Page.Shadows, "SoftEnabled", "Soft shadows", "Use the game's existing soft-shadow filter.", 0, 1,
+        Add(Page.Shadows, "SoftEnabled", "Soft shadows", "Smooths hard shadow edges. Can cost more rendering time when supported by the game.", 0, 1,
             () => _asset!.supportsSoftShadows ? 1 : 0, v => _asset!.supportsSoftShadows = v > .5f, Owner.Pipeline, Kind.Toggle);
-        Add(Page.Shadows, "SoftQuality", "Soft-shadow quality", "Filter quality for existing soft-shadow shader variants.", 1, 3,
+        Add(Page.Shadows, "SoftQuality", "Soft-shadow quality", "Higher gives smoother shadow edges, with a possible frame-rate cost. Only applies when soft shadows are on.", 1, 3,
             () => (int)_asset!.softShadowQuality, v => _asset!.softShadowQuality = (SoftShadowQuality)(int)v, Owner.Pipeline, Kind.Choice,
             choices: new float[] { 1, 2, 3 }, names: new[] { "Low", "Medium", "High" });
-        Add(Page.Shadows, "AdditionalEnabled", "Local-light shadows", "Enable existing point/spot-light shadows. Lights must also be configured to cast shadows.", 0, 1,
+        Add(Page.Shadows, "AdditionalEnabled", "Local-light shadows", "Lets lamps and spotlights cast shadows where the game supports them. More shadow-casting lights can slow rendering.", 0, 1,
             () => _asset!.supportsAdditionalLightShadows ? 1 : 0, v => _asset!.supportsAdditionalLightShadows = v > .5f, Owner.Pipeline, Kind.Toggle);
-        Add(Page.Shadows, "AdditionalResolution", "Local-light shadow atlas", "Shared shadow atlas for additional lights.", 256, 8192,
+        Add(Page.Shadows, "AdditionalResolution", "Local-light shadow atlas", "Graphics memory shared by lamp and spotlight shadows. Larger values allow more detail but use more memory.", 256, 8192,
             () => _asset!.additionalLightsShadowmapResolution, v => _asset!.additionalLightsShadowmapResolution = (int)v, Owner.Pipeline, Kind.Choice, "px", resolutions, resolutionNames);
-        Add(Page.Shadows, "LocalLowResolution", "Local shadow low tier", "Per-light resolution used by lights assigned the low tier.", 256, 8192,
+        Add(Page.Shadows, "LocalLowResolution", "Local shadow low tier", "Shadow detail for lights the game marks Low. Higher is sharper and uses more graphics memory.", 256, 8192,
             () => _asset!.additionalLightsShadowResolutionTierLow, v => _asset!.additionalLightsShadowResolutionTierLow = (int)v, Owner.Pipeline, Kind.Choice, "px", resolutions, resolutionNames);
-        Add(Page.Shadows, "LocalMediumResolution", "Local shadow medium tier", "Per-light resolution used by lights assigned the medium tier.", 256, 8192,
+        Add(Page.Shadows, "LocalMediumResolution", "Local shadow medium tier", "Shadow detail for lights the game marks Medium. Higher is sharper and uses more graphics memory.", 256, 8192,
             () => _asset!.additionalLightsShadowResolutionTierMedium, v => _asset!.additionalLightsShadowResolutionTierMedium = (int)v, Owner.Pipeline, Kind.Choice, "px", resolutions, resolutionNames);
-        Add(Page.Shadows, "LocalHighResolution", "Local shadow high tier", "Per-light resolution used by lights assigned the high tier. The shared atlas can limit actual allocation.", 256, 8192,
+        Add(Page.Shadows, "LocalHighResolution", "Local shadow high tier", "Shadow detail for lights the game marks High. Higher uses more memory; the shared shadow-map size still limits it.", 256, 8192,
             () => _asset!.additionalLightsShadowResolutionTierHigh, v => _asset!.additionalLightsShadowResolutionTierHigh = (int)v, Owner.Pipeline, Kind.Choice, "px", resolutions, resolutionNames);
-        Add(Page.Shadows, "ShadowCaching", "Local shadow caching", "Use Big Walk's existing additional-light shadow cache.", 0, 1,
+        Add(Page.Shadows, "ShadowCaching", "Local shadow caching", "Reuses lamp and spotlight shadows when possible, reducing repeated drawing work.", 0, 1,
             () => _asset!.additionalLightsShadowCachingEnabled ? 1 : 0, v => _asset!.additionalLightsShadowCachingEnabled = v > .5f, Owner.Pipeline, Kind.Toggle);
-        Add(Page.Shadows, "CacheUpdates", "Shadow-cache updates/frame", "Maximum regular shadow-cache updates per frame.", 1, 128,
+        Add(Page.Shadows, "CacheUpdates", "Shadow-cache updates/frame", "How many stored lamp shadows can refresh each frame. Higher catches changes sooner but adds rendering work.", 1, 128,
             () => _asset!.additionalLightsShadowCachingMaxUpdatesPerFrame, v => _asset!.additionalLightsShadowCachingMaxUpdatesPerFrame = (int)v, Owner.Pipeline, Kind.Integer);
-        Add(Page.Shadows, "CachePriorityUpdates", "Priority cache updates/frame", "Maximum priority updates to the additional-light shadow cache per frame.", 0, 128,
+        Add(Page.Shadows, "CachePriorityUpdates", "Priority cache updates/frame", "How many urgent lamp-shadow changes can refresh each frame. Higher reacts sooner but adds rendering work.", 0, 128,
             () => _asset!.additionalLightsShadowCachingMaxPriorityUpdatesPerFrame, v => _asset!.additionalLightsShadowCachingMaxPriorityUpdatesPerFrame = (int)v, Owner.Pipeline, Kind.Integer);
-        var vegetation = Add(Page.Vegetation, "ShadowDistance", "Vegetation shadow distance", "Overrides Flora's separate shadow limit and vegetation material fade. Overall shadow range still applies.", 1, 20000,
+        var vegetation = Add(Page.Vegetation, "ShadowDistance", "Vegetation shadow distance", "How far trees and plants cast shadows. The main Shadow distance must also reach that far; longer ranges can slow rendering.", 1, 20000,
             () => VegetationShadows.CurrentDistance, _ => { }, Owner.Vegetation, unit: "m", initialValue: Settings.Find(s => s.Page == Page.Shadows && s.Key == "Distance")!.Value.Value);
-        var vegetationFade = Add(Page.Vegetation, "FadeWidth", "Vegetation shadow fade band", "Distance used to fade vegetation shadows before their cutoff. Applies while the distance override is enabled.", 1, 500,
+        var vegetationFade = Add(Page.Vegetation, "FadeWidth", "Vegetation shadow fade band", "Makes tree and plant shadows fade away smoothly over this distance. Needs the vegetation distance override.", 1, 500,
             () => VegetationShadows.CurrentFadeWidth, _ => { }, Owner.Vegetation, unit: "m", initialValue: 50);
         vegetation.Applicable = () => VegetationShadows.Ready;
         vegetationFade.Applicable = () => VegetationShadows.Ready;
         VegetationShadows.Enabled = () => vegetation.Override.Value;
         VegetationShadows.Distance = () => vegetation.Value.Value;
         VegetationShadows.FadeWidth = () => vegetationFade.Override.Value ? vegetationFade.Value.Value : 50;
-        Add(Page.Textures, "MipmapLimit", "Texture mip reduction", "0 keeps full texture resolution; 1 halves each dimension; 2 quarters it. Individual texture groups can have separate limits.", 0, 4,
+        Add(Page.Textures, "MipmapLimit", "Texture mip reduction", "Full resolution keeps surfaces sharpest. Smaller choices save graphics memory but can look blurry; some textures have separate limits.", 0, 4,
             () => QualitySettings.globalTextureMipmapLimit, v => QualitySettings.globalTextureMipmapLimit = (int)v, kind: Kind.Choice,
             choices: new float[] { 0, 1, 2, 3, 4 }, names: new[] { "Full resolution", "Half", "Quarter", "Eighth", "Sixteenth" });
-        Add(Page.Textures, "Anisotropy", "Anisotropic filtering", "Use the authored texture settings, disable filtering, or force it on eligible textures.", 0, 2,
+        Add(Page.Textures, "Anisotropy", "Anisotropic filtering", "Keeps angled surfaces, such as paths, clearer. Per texture follows the game; Forced applies it wherever supported.", 0, 2,
             () => (int)QualitySettings.anisotropicFiltering, v => QualitySettings.anisotropicFiltering = (AnisotropicFiltering)(int)v, kind: Kind.Choice,
             choices: new float[] { 0, 1, 2 }, names: new[] { "Disabled", "Per texture", "Forced" });
-        Add(Page.Textures, "StreamingBudget", "Texture streaming budget", "Memory budget for textures authored with mip streaming. Inactive if the game's streaming system is disabled.", 128, 8192,
+        Add(Page.Textures, "StreamingBudget", "Texture streaming budget", "Graphics memory available for streamed textures. More can reduce blurry surfaces; has no effect when texture streaming is off.", 128, 8192,
             () => QualitySettings.streamingMipmapsMemoryBudget, v => QualitySettings.streamingMipmapsMemoryBudget = v, unit: "MiB");
-        AddTerrain("PixelError", "Terrain LOD pixel error", "Lower values retain more terrain geometry.", 1, 200, t => t.heightmapPixelError, (t, v) => t.heightmapPixelError = v, 5);
-        AddTerrain("MaximumLod", "Terrain maximum LOD", "0 allows the most detailed terrain geometry.", 0, 8, t => t.heightmapMaximumLOD, (t, v) => t.heightmapMaximumLOD = (int)v, 0, Kind.Integer);
-        AddTerrain("BasemapDistance", "Terrain texture distance", "Range before the distant terrain basemap replaces detailed terrain textures.", 1, 100000, t => t.basemapDistance, (t, v) => t.basemapDistance = v, 1000, unit: "m");
-        AddTerrain("DetailDistance", "Grass/detail distance", "Draw range for Unity Terrain detail objects.", 0, 250, t => t.detailObjectDistance, (t, v) => t.detailObjectDistance = v, 80, unit: "m");
-        AddTerrain("DetailDensity", "Grass/detail density", "Density multiplier for Unity Terrain details.", 0, 1, t => t.detailObjectDensity, (t, v) => t.detailObjectDensity = v, 1, unit: "×");
-        AddTerrain("TreeDistance", "Tree draw distance", "Draw distance for trees owned by Unity Terrain.", 0, 20000, t => t.treeDistance, (t, v) => t.treeDistance = v, 5000, unit: "m");
-        AddTerrain("BillboardDistance", "Tree billboard start", "Distance at which terrain trees switch to billboards.", 1, 10000, t => t.treeBillboardDistance, (t, v) => t.treeBillboardDistance = v, 50, unit: "m");
-        AddTerrain("TreeFade", "Tree crossfade length", "Distance used to blend terrain trees into billboards.", 0, 500, t => t.treeCrossFadeLength, (t, v) => t.treeCrossFadeLength = v, 5, unit: "m");
-        AddTerrain("TreeLodBias", "Terrain tree LOD bias", "Additional LOD bias for supported terrain trees.", .25f, 8, t => t.treeLODBiasMultiplier, (t, v) => t.treeLODBiasMultiplier = v, 1, unit: "×");
-        AddTerrain("FullTreeLimit", "Full-detail tree limit", "Maximum terrain trees retained at full LOD.", 0, 10000, t => t.treeMaximumFullLODCount, (t, v) => t.treeMaximumFullLODCount = (int)v, 50, Kind.Integer);
+        AddTerrain("PixelError", "Terrain LOD pixel error", "Lower values make supported ground surfaces more detailed, at a possible frame-rate cost.", 1, 200, t => t.heightmapPixelError, (t, v) => t.heightmapPixelError = v, 5);
+        AddTerrain("MaximumLod", "Terrain maximum LOD", "0 allows the most detailed ground shapes. Higher values use simpler ground to reduce drawing work.", 0, 8, t => t.heightmapMaximumLOD, (t, v) => t.heightmapMaximumLOD = (int)v, 0, Kind.Integer);
+        AddTerrain("BasemapDistance", "Terrain texture distance", "How far detailed ground textures remain visible before switching to a simpler distant image.", 1, 100000, t => t.basemapDistance, (t, v) => t.basemapDistance = v, 1000, unit: "m");
+        AddTerrain("DetailDistance", "Grass/detail distance", "How far small plants and grass remain visible on supported terrain. Longer ranges draw more objects.", 0, 250, t => t.detailObjectDistance, (t, v) => t.detailObjectDistance = v, 80, unit: "m");
+        AddTerrain("DetailDensity", "Grass/detail density", "How much grass and small vegetation appears on supported terrain. Higher fills out the ground but draws more objects.", 0, 1, t => t.detailObjectDensity, (t, v) => t.detailObjectDensity = v, 1, unit: "×");
+        AddTerrain("TreeDistance", "Tree draw distance", "How far trees remain visible on supported terrain. Longer ranges can reduce frame rate.", 0, 20000, t => t.treeDistance, (t, v) => t.treeDistance = v, 5000, unit: "m");
+        AddTerrain("BillboardDistance", "Tree billboard start", "Where supported trees switch to a flat distant image. Raise it to keep full tree shapes visible farther away.", 1, 10000, t => t.treeBillboardDistance, (t, v) => t.treeBillboardDistance = v, 50, unit: "m");
+        AddTerrain("TreeFade", "Tree crossfade length", "How gradually supported trees blend into their flat distant images. A wider blend makes the switch less abrupt.", 0, 500, t => t.treeCrossFadeLength, (t, v) => t.treeCrossFadeLength = v, 5, unit: "m");
+        AddTerrain("TreeLodBias", "Terrain tree LOD bias", "Keeps supported terrain trees detailed farther away. Higher values can reduce frame rate.", .25f, 8, t => t.treeLODBiasMultiplier, (t, v) => t.treeLODBiasMultiplier = v, 1, unit: "×");
+        AddTerrain("FullTreeLimit", "Full-detail tree limit", "Maximum number of supported terrain trees drawn at full detail. Higher can look better but draw more geometry.", 0, 10000, t => t.treeMaximumFullLODCount, (t, v) => t.treeMaximumFullLODCount = (int)v, 50, Kind.Integer);
         _ready = true; Log($"registered {Settings.Count} controls; initial shadow range={Settings.Find(s => s.Key == "Distance")!.Value.Value:F1}m");
     }
 
@@ -521,15 +524,15 @@ internal static class AdvancedGraphics
         if (sr != Plugin.Enabled.Value) { Plugin.Enabled.Value = sr; Plugin.ResetHistory(); }
         if (GUI.Button(new Rect(x + 610, y + 289, 290, 34), "Change upscaler / quality", _button)) _page = Page.Upscaling;
         GUI.Label(new Rect(x + 25, y + 333, 900, 45),
-            BridgeSettings.Recognized ? "F8 toggles reconstruction. Frame Gen and Neural tabs save requests for the next launch. F10 opens experimental controls." :
-                "F8 toggles reconstruction. Setup's optional upscaler pack adds FSR 3.1, XeSS and frame generation controls.", _small);
+            BridgeSettings.Recognized ? "Upscaling: smoother edges with less graphics work. Frame Gen: extra pictures for smoother movement. Neural: AI lighting and surface detail, with a performance cost." :
+                "Upscaling can improve frame rate and smooth jagged edges. Setup's optional bridge adds other upscalers and smoother-motion tools.", _small);
         GUI.enabled = _ready;
-        GUI.Label(new Rect(x + 25, y + 398, 900, 34), "Graphics presets replace all custom graphics overrides. Your upscaler choice stays as selected.", _small);
+        GUI.Label(new Rect(x + 25, y + 398, 900, 34), "Not sure where to start? Try Balanced. Presets replace custom graphics choices; upscaling, frame generation and AI lighting stay as set.", _small);
         string[] presets = { "Game defaults", "Balanced", "Quality", "Extreme" };
         for (int i = 0; i < presets.Length; i++)
             if (GUI.Button(new Rect(x + 25 + i * 225, y + 443, 210, 40), presets[i], _button)) ApplyPreset(presets[i]);
         GUI.Label(new Rect(x + 25, y + 495, 900, 85),
-            "Balanced: 300 m shadows / 4K atlas. Quality: 1 km / 8K. Extreme: 2 km / 16K where supported, with a substantial frame-rate cost. Presets are starting points, not performance guarantees.", _small);
+            "Game defaults: let the game choose. Balanced: more detail with a lighter graphics load. Quality: sharper, longer shadows. Extreme: the longest shadows and highest detail, with a large performance cost. Try each in the same view.", _small);
         GUI.enabled = true;
         GUI.Label(new Rect(x + 25, y + 591, 900, 60),
             "Monitor play on DirectX 11 only. Disable the mod and optional injector before VR. In-world time continues while this panel is open.", _small);
@@ -544,52 +547,68 @@ internal static class AdvancedGraphics
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
             if (_title == null)
             {
-                _title = new GUIStyle(GUI.skin.label) { fontSize = 25, fontStyle = FontStyle.Bold };
+                _title = new GUIStyle(GUI.skin.label) { fontSize = 28, fontStyle = FontStyle.Bold };
                 _label = new GUIStyle(GUI.skin.label) { fontSize = 16 };
                 _toggle = new GUIStyle(GUI.skin.toggle) { fontSize = 16 };
-                _toggle.normal.textColor = Color.white; _toggle.onNormal.textColor = Color.white;
-                _small = new GUIStyle(GUI.skin.label) { fontSize = 13, wordWrap = true };
-                _button = new GUIStyle(GUI.skin.button) { fontSize = 15 };
+                _toggle.normal.textColor = MenuTheme.Text; _toggle.onNormal.textColor = MenuTheme.Ochre;
+                _small = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true };
+                _button = MenuTheme.Button(GUI.skin.button);
                 _tab = new GUIStyle(_button) { fontSize = 13, padding = new RectOffset(4, 4, 4, 4) };
-                _field = new GUIStyle(GUI.skin.textField) { fontSize = 16, alignment = TextAnchor.MiddleRight };
-                _title.normal.textColor = Color.white; _label.normal.textColor = Color.white;
-                _small.normal.textColor = new Color(.76f, .81f, .85f, 1);
+                _selectedTab = MenuTheme.Button(_tab, true);
+                _selectedTab.fontSize = 13;
+                _field = MenuTheme.Field(GUI.skin.textField);
+                _title.normal.textColor = MenuTheme.Text; _label.normal.textColor = MenuTheme.Text;
+                _small.normal.textColor = MenuTheme.Muted;
             }
-            float scale = Mathf.Clamp(Screen.height / 1000f, .65f, 1.35f);
+            float scale = Mathf.Min(1.35f, Mathf.Min(Screen.height / 1040f, Screen.width / 1240f));
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1));
             float w = Screen.width / scale, h = Screen.height / scale;
-            float x = Mathf.Max(8, (w - 960) / 2), y = Mathf.Max(8, (h - 760) / 2);
+            float frameX = Mathf.Max(8, (w - 1200) / 2), frameY = Mathf.Max(8, (h - 1000) / 2);
+            float x = frameX + 120, y = frameY + 104;
             GUI.color = new Color(0, 0, 0, .55f); GUI.DrawTexture(new Rect(0, 0, w, h), Texture2D.whiteTexture);
-            GUI.color = new Color(.08f, .105f, .13f, 1); GUI.DrawTexture(new Rect(x, y, 960, 760), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            MenuTheme.Fill(new Rect(frameX, frameY, 1200, 1000), MenuTheme.Background);
+            MenuTheme.Fill(new Rect(x, y, 960, 792), MenuTheme.Background);
+            MenuTheme.Fill(new Rect(x, y, 960, 120), MenuTheme.Surface);
+            if (MenuTheme.Artwork is { } artwork)
+                GUI.DrawTexture(new Rect(x + 565, y + 4, 335, 112), artwork, ScaleMode.ScaleToFit, true);
+            MenuTheme.Fill(new Rect(x, y, 960, 4), MenuTheme.Ochre);
+            MenuTheme.Fill(new Rect(x + 25, y + 169, 900, 1), MenuTheme.Raised);
+            MenuTheme.DrawBorder(new Rect(frameX, frameY, 1200, 1000));
             GUI.color = Color.white;
             GUI.Label(new Rect(x + 25, y + 18, 790, 38), "Big Beautiful Walk", _title);
             GUI.Label(new Rect(x + 25, y + 57, 870, 28), BridgeSettings.Recognized
                 ? "Home closes this panel  •  F10 opens extra upscaler controls"
                 : "Home closes this panel  •  More upscalers are available through Setup", _label);
             if (GUI.Button(new Rect(x + 905, y + 18, 32, 32), "×", _button)) Close();
+            GUI.Label(new Rect(x + 25, y + 91, 535, 21), "Picture quality · smoother motion · lighting and detail", _small);
+            y += 32;
             for (int i = 0; i < TabNames.Length; i++)
-                if (GUI.Button(new Rect(x + 25 + i * 101, y + 98, 94, 35), (_page == (Page)i ? "● " : "") + TabNames[i], _tab))
+                if (GUI.Button(new Rect(x + 25 + i * 101, y + 98, 94, 35), TabNames[i], _page == (Page)i ? _selectedTab : _tab))
                 { _page = (Page)i; _scroll = Vector2.zero; }
             bool graphicsPage = _page >= Page.Geometry && _page <= Page.Textures;
             bool featurePage = _page == Page.FrameGen || _page == Page.Neural;
-            GUI.Label(new Rect(x + 25, y + 145, 900, 37), graphicsPage
-                ? "Change a setting to enable its override. Untick its box to return control to the game."
-                : featurePage ? "Optional features start off. Changes save for the next launch and require a restart; runtime support remains unverified."
+            if (_page != Page.Upscaling) GUI.Label(new Rect(x + 25, y + 145, 900, 37), graphicsPage
+                ? "Each setting explains its effect below. Tick a box to use your value; untick it to let the game decide."
+                : _page == Page.FrameGen ? "Makes motion look smoother by creating extra pictures between the frames the game draws. Controls do not respond faster. Restart after changing."
+                : _page == Page.Neural ? "Uses AI to redraw lighting and surface detail for a more realistic look. This changes the art style and can lower frame rate; it is not ray tracing."
                 : _page == Page.Credits ? "Libraries and community work used by Big Beautiful Walk."
-                : "Choose a renderer and quality level, or customise the game's graphics. Changes save automatically.", _small);
+                : _page == Page.Tools ? "Read about every tool, including unavailable ones. This guide does not change your settings."
+                : "Start with a graphics preset, then adjust individual settings. Your changes save automatically.", _small);
             if (_page == Page.Overview) DrawOverview(x, y);
             else if (_page == Page.Upscaling) UpscalingMenu.Draw(x, y, _label!, _small!, _button!);
             else if (_page == Page.FrameGen) FeatureMenu.DrawFrameGen(x, y, _label!, _small!, _button!);
             else if (_page == Page.Neural) FeatureMenu.DrawNeural(x, y, _label!, _small!, _button!);
             else if (_page == Page.Credits) CreditsMenu.Draw(x, y, _label!, _small!, _button!);
+            else if (_page == Page.Tools) ToolGuide.Draw(x, y, _label!, _small!);
             else if (!_ready) GUI.Label(new Rect(x + 25, y + 200, 900, 70), Plugin.Compatible ? "Waiting for the game's rendering pipeline…" : Plugin.SupportMessage, _label);
             else
             {
                 int terrainCount = 0; foreach (var snapshot in Terrains.Values) if (snapshot.Terrain != null) terrainCount++;
-                string note = _page == Page.Vegetation ? (VegetationShadows.Ready ? "Flora and material shadow fade have separate limits from the main shadow range. Restore disables this override." : "Vegetation controls become available after entering the world.") :
-                    _page == Page.Terrain ? $"Unity Terrain components: {terrainCount}. These controls do not affect mesh-based landscape/foliage." :
-                    _page == Page.Geometry ? "LOD controls require matching LOD data. Camera distance does not bypass object streaming/culling." :
-                    _page == Page.Textures ? $"Texture streaming is {(QualitySettings.streamingMipmapsActive ? "active" : "inactive")} in the current game profile." :
+                string note = _page == Page.Vegetation ? (VegetationShadows.Ready ? "Trees and plants have their own shadow limit. Raise the main Shadow distance too if you want longer shadows." : "Vegetation controls become available after entering the world.") :
+                    _page == Page.Terrain ? $"Supported terrain areas: {terrainCount}. These controls only affect ground and plants that use Unity Terrain." :
+                    _page == Page.Geometry ? "Choose how detailed objects stay as you walk away. Only objects that support these controls will change." :
+                    _page == Page.Textures ? $"Textures are the surface images on objects. On-demand texture loading is {(QualitySettings.streamingMipmapsActive ? "on" : "off")} in this game profile." :
                     $"Range: {_asset!.shadowDistance:F0} m  •  Cascades: {_asset.shadowCascadeCount}  •  Atlas setting: {_asset.mainLightShadowmapResolution}px";
                 GUI.Label(new Rect(x + 25, y + 181, 900, 40), note, _small);
                 var rows = Settings.FindAll(s => s.Page == _page && (s.Applicable?.Invoke() ?? true));
@@ -625,6 +644,7 @@ internal static class AdvancedGraphics
             }
             else if (_page == Page.Overview && GUI.Button(new Rect(x + 25, y + 680, 260, 36), "Credits and licences", _button)) _page = Page.Credits;
             else if (featurePage && GUI.Button(new Rect(x + 25, y + 680, 260, 36), "Refresh saved settings", _button)) BridgeSettings.Reload();
+            if (!graphicsPage && _page != Page.Tools && GUI.Button(new Rect(x + 420, y + 680, 285, 36), "Learn these tools", _button)) ShowToolGuide();
             if (!graphicsPage && GUI.Button(new Rect(x + 735, y + 680, 190, 36), "Done", _button)) Close();
             GUI.Label(new Rect(x + 25, y + 724, 905, 28), graphicsPage ? _message : featurePage
                 ? "Settings save automatically for the next launch. The world continues running while this panel is open."
@@ -636,6 +656,8 @@ internal static class AdvancedGraphics
 
     private static void DrawSetting(Setting setting, float y)
     {
+        MenuTheme.Fill(new Rect(0, y, 885, 65), MenuTheme.Surface);
+        if (setting.Override.Value) MenuTheme.Fill(new Rect(0, y, 3, 65), MenuTheme.Ochre);
         string key = setting.Page + "." + setting.Key;
         bool custom = GUI.Toggle(new Rect(2, y + 5, 23, 25), setting.Override.Value, "");
         if (custom != setting.Override.Value)
@@ -644,7 +666,7 @@ internal static class AdvancedGraphics
             setting.Override.Value = custom; MarkDirty();
         }
         GUI.Label(new Rect(30, y + 1, 258, 27), setting.Label, _label);
-        GUI.Label(new Rect(30, y + 29, 820, 34), setting.Help, _small);
+        GUI.Label(new Rect(30, y + 29, 820, 36), setting.Help, _small);
         float value = setting.Shown;
         if (!float.IsFinite(value)) value = setting.Min;
         if (setting.Kind == Kind.Toggle)

@@ -17,10 +17,10 @@ try {
     $hasNr=@($releaseLock.Dependencies | Where-Object { $_.Feature -eq 'nr' }).Count -gt 0
 } catch { }
 $optionalHeight=0
-if ($hasFg) { $optionalHeight=32 }
-if ($hasNr) { $optionalHeight+=64 }
+if ($hasFg) { $optionalHeight=72 }
+if ($hasNr) { $optionalHeight+=104 }
 $form = New-Object Windows.Forms.Form
-$form.Text = 'Big Beautiful Walk - Setup 0.8.1'
+$form.Text = 'Big Beautiful Walk - Setup 0.8.2'
 $form.ClientSize = New-Object Drawing.Size(690,(470+$optionalHeight))
 $form.StartPosition = 'CenterScreen'
 $form.MinimumSize = $form.Size
@@ -47,7 +47,7 @@ $browse.Add_Click({
     $dialog.Dispose()
 })
 $hint=New-Object Windows.Forms.Label
-$hint.Text='Core: DLSS Super Resolution + Advanced Graphics. Close the game to install or remove. Install the x64 Visual C++ runtime first; see the installation guide. Existing settings and saves are preserved.'
+$hint.Text='Core install smooths jagged edges and adds graphics controls. Close the game first. Needs the x64 Visual C++ runtime; see the guide. Your settings and saves are kept.'
 $hint.SetBounds(20,84,650,38)
 $status=New-Object Windows.Forms.TextBox
 $status.Multiline=$true
@@ -58,7 +58,7 @@ $status.SetBounds(20,(170+$optionalHeight),650,270)
 $status.Anchor='Top,Bottom,Left,Right'
 $status.Text='Ready. Install/Repair installs core Super Resolution + Advanced Graphics and verifies dependencies before changing files. Optional Frame Generation and Neural Rendering require manual setup; open the FG / NR guide. Diagnose only reads files.'
 $fgCheck=New-Object Windows.Forms.CheckBox
-$fgCheck.Text='Install alternative upscalers and Frame Generation bridge (experimental)'
+$fgCheck.Text='Frame Generation and extra upscalers (optional bridge)'
 $fgCheck.SetBounds(20,122,650,28)
 $fgCheck.Checked=$false
 $fgCheck.TabIndex=2
@@ -67,18 +67,18 @@ if ($hasFg) {
     $status.Text='Ready. The optional bridge adds NVIDIA, AMD and Intel Frame Generation runtimes and Home controls; fresh defaults leave FG and NR off. Neural Rendering needs a separately obtained model. Install/Repair also repairs previously installed optional components when this box is off. Diagnose only reads files. Read the guides and licences before installing.'
 }
 $nrCheck=New-Object Windows.Forms.CheckBox
-$nrCheck.Text='Install community RHI SF-v2 Neural Rendering model (~111 MiB download; includes bridge)'
-$nrCheck.SetBounds(20,(122+$(if ($hasFg) {32} else {0})),650,28)
+$nrCheck.Text='Download AI lighting model (community RHI SF-v2; ~111 MiB; includes bridge)'
+$nrCheck.SetBounds(20,(122+$(if ($hasFg) {72} else {0})),650,28)
 $nrCheck.Checked=$false
 $nrCheck.TabIndex=3
 if ($hasNr) {
     $form.Controls.Add($nrCheck)
-    $status.Text='Ready. Optional bridge and community RHI SF-v2 NR model downloads are separate choices. The unsigned model is distributed by RHI; read the guides and NVIDIA terms. Selecting NR includes the bridge. Fresh defaults leave FG and NR off. Install/Repair retains previously installed optional components. Diagnose only reads files.'
+    $status.Text='Ready. Choose your game folder and any extras, then Install / Repair. Turn Frame Generation or AI lighting on in the game with Home when you want them. The RHI model is an unsigned community download; see Licences. Repairs keep previously installed extras. Diagnose checks files without changing them.'
 }
 $script:neuralModelSelection=$NeuralModelPath
 $modelBrowse=New-Object Windows.Forms.Button
 $modelBrowse.Text='Use my NR 310.9.16 compatibility DLL...'
-$modelBrowse.SetBounds(20,(154+$(if ($hasFg) {32} else {0})),650,28)
+$modelBrowse.SetBounds(20,(190+$(if ($hasFg) {72} else {0})),650,28)
 $modelBrowse.TabIndex=4
 $modelBrowse.Add_Click({
     $dialog=New-Object Windows.Forms.OpenFileDialog
@@ -192,6 +192,114 @@ $form.Add_FormClosing({
         $status.AppendText([Environment]::NewLine + 'Setup is still working. Wait for its result before closing this window.')
     }
 })
+# Keep the same earth-and-ochre palette as the in-game panel.
+$form.SuspendLayout()
+$form.MinimumSize=New-Object Drawing.Size(0,0)
+$form.AutoScaleMode='None'
+$form.FormBorderStyle='FixedDialog'
+$form.MaximizeBox=$false
+$background=[Drawing.Color]::FromArgb(23,28,23)
+$surface=[Drawing.Color]::FromArgb(36,43,36)
+$raised=[Drawing.Color]::FromArgb(51,59,48)
+$ochre=[Drawing.Color]::FromArgb(214,171,99)
+$ink=[Drawing.Color]::FromArgb(245,235,219)
+$muted=[Drawing.Color]::FromArgb(196,186,168)
+$form.BackColor=$background
+$form.ForeColor=$ink
+$form.Font=New-Object Drawing.Font('Segoe UI',10)
+$form.ClientSize=New-Object Drawing.Size(960,800)
+foreach ($control in $form.Controls) {
+    $control.Anchor='Top,Left'
+    $control.Top+=136
+    $control.Left+=135
+    $control.ForeColor=$ink
+    if ($control -is [Windows.Forms.Button]) {
+        $control.FlatStyle='Flat'
+        $control.BackColor=$raised
+        $control.FlatAppearance.BorderColor=[Drawing.Color]::FromArgb(102,94,75)
+        $control.FlatAppearance.MouseOverBackColor=[Drawing.Color]::FromArgb(71,61,43)
+    } elseif ($control -is [Windows.Forms.ComboBox]) {
+        $control.FlatStyle='Flat'; $control.BackColor=$surface
+    } elseif ($control -is [Windows.Forms.TextBox]) {
+        $control.BackColor=$surface; $control.BorderStyle='FixedSingle'
+    }
+}
+$status.Height=220
+$hint.Font=New-Object Drawing.Font('Segoe UI',9)
+$hint.ForeColor=$muted
+foreach ($spec in @(@($hasFg,$fgCheck,'Adds in-between frames for smoother motion, plus other upscaling options. Install the files here; turn features on in Home after restarting.'),
+                     @($hasNr,$nrCheck,'AI changes scene lighting and surfaces, with a possible frame-rate cost. For the new model, use the optional NR pack and choose its DLL below.'))) {
+    if (-not $spec[0]) { continue }
+    $help=New-Object Windows.Forms.Label
+    $help.Text=[string]$spec[2]
+    $help.SetBounds(175,($spec[1].Top+29),630,36)
+    $help.ForeColor=$muted
+    $help.Font=New-Object Drawing.Font('Segoe UI',9)
+    $form.Controls.Add($help)
+}
+$heading=New-Object Windows.Forms.Label
+$heading.Text='Big Beautiful Walk'
+$heading.SetBounds(155,88,650,32)
+$heading.Font=New-Object Drawing.Font('Segoe UI Semibold',20)
+$heading.ForeColor=$ink
+$subheading=New-Object Windows.Forms.Label
+$subheading.Text='Picture quality, smoother motion and optional AI lighting.'
+$subheading.SetBounds(157,123,650,23)
+$subheading.ForeColor=$ochre
+$subheading.Font=New-Object Drawing.Font('Segoe UI',9)
+$form.Controls.AddRange(@($heading,$subheading))
+$headerImage=$null
+$artworkPath=Join-Path (Split-Path $PSScriptRoot -Parent) 'packaging/ui-landscape.png'
+try {
+    if ([IO.File]::Exists($artworkPath)) {
+        $headerImage=[Drawing.Image]::FromFile($artworkPath)
+        $illustration=New-Object Windows.Forms.PictureBox
+        $illustration.SetBounds(485,88,320,60)
+        $illustration.SizeMode='Zoom'
+        $illustration.Image=$headerImage
+        $illustration.BackColor=$background
+        $form.Controls.Add($illustration)
+    }
+} catch { $headerImage=$null }
+$frameImage=$null
+$borderPath=Join-Path (Split-Path $PSScriptRoot -Parent) 'packaging/ui-border.png'
+try {
+    if ([IO.File]::Exists($borderPath)) { $frameImage=[Drawing.Image]::FromFile($borderPath) }
+} catch { $frameImage=$null }
+$form.Add_Paint({
+    param($sender,$paint)
+    if (-not $frameImage) { return }
+    $scale=[Math]::Min($form.ClientSize.Width/[double]$frameImage.Width,$form.ClientSize.Height/[double]$frameImage.Height)
+    $width=$frameImage.Width*$scale; $height=$frameImage.Height*$scale
+    $destination=New-Object Drawing.RectangleF((($form.ClientSize.Width-$width)/2),(($form.ClientSize.Height-$height)/2),$width,$height)
+    $paint.Graphics.DrawImage($frameImage,$destination)
+})
+$form.Add_Resize({ $form.Invalidate() })
+$buttons[0].BackColor=$ochre
+$buttons[0].ForeColor=$background
+$buttons[0].FlatAppearance.MouseOverBackColor=[Drawing.Color]::FromArgb(232,191,121)
+$tooltips=New-Object Windows.Forms.ToolTip
+$tooltips.AutoPopDelay=12000
+$tooltips.SetToolTip($buttons[0],'Installs or repairs the mod, checks downloaded files, and keeps your saved settings.')
+$tooltips.SetToolTip($buttons[1],'Removes files installed by this mod and restores its original backups. Your saves and settings are kept.')
+$tooltips.SetToolTip($buttons[2],'Checks the installed files and reports missing or changed files. Nothing is changed.')
+$tooltips.SetToolTip($modelBrowse,'Select nvngx_dlssnr.dll from the extracted optional NR 310.9.16 pack. Setup checks that it is the supported file.')
+$tooltips.SetToolTip($pathBox,'Choose the Steam folder containing Big Walk.exe. Browse if it is not listed.')
+$workingHeight=[Windows.Forms.Screen]::FromControl($form).WorkingArea.Height
+$workingWidth=[Windows.Forms.Screen]::FromControl($form).WorkingArea.Width
+$fit=[Math]::Min(1.0,[Math]::Min(($workingHeight-24)/$form.Height,($workingWidth-24)/$form.Width))
+if ($fit -lt 1) {
+    foreach ($control in $form.Controls) {
+        $control.SetBounds([int][Math]::Round($control.Left*$fit),[int][Math]::Round($control.Top*$fit),[int][Math]::Round($control.Width*$fit),[int][Math]::Round($control.Height*$fit))
+        $control.Font=New-Object Drawing.Font($control.Font.FontFamily,([single]($control.Font.Size*$fit)),$control.Font.Style)
+    }
+    $form.ClientSize=New-Object Drawing.Size(([int][Math]::Round(960*$fit)),([int][Math]::Round(800*$fit)))
+}
+$form.MinimumSize=$form.Size
+$form.ResumeLayout($true)
 [void]$form.ShowDialog()
+$tooltips.Dispose()
 $timer.Dispose()
 $form.Dispose()
+if ($headerImage) { $headerImage.Dispose() }
+if ($frameImage) { $frameImage.Dispose() }

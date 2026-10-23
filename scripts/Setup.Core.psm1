@@ -361,7 +361,7 @@ function Invoke-BbwDownloadRequest([uri]$Uri, [string]$Destination, [int]$Timeou
     $request.PreAuthenticate=$false
     $request.Timeout=$TimeoutMilliseconds
     $request.ReadWriteTimeout=$TimeoutMilliseconds
-    $request.UserAgent='BigBeautifulWalk-Setup/0.8.1'
+    $request.UserAgent='BigBeautifulWalk-Setup/0.8.2'
     $response=$null
     $elapsed=[Diagnostics.Stopwatch]::StartNew()
     try {
@@ -437,6 +437,12 @@ function Get-BbwStage([string]$PackagePath, [string]$Stage, [string]$DependencyD
         $source = Resolve-BbwPath $PackagePath "payload/BigWalkDLSS/$name"
         if (-not [IO.File]::Exists($source)) { throw "Release payload is incomplete: missing $name. Extract the complete release ZIP and run Setup.cmd again." }
         $items.Add([pscustomobject]@{ Source=$source; Target="BepInEx/plugins/BigWalkDLSS/$name"; FreshOnly=$false; Role='plugin' })
+    }
+    foreach ($name in @('ui-landscape.png','ui-border.png')) {
+        $artwork = Resolve-BbwPath $PackagePath ('packaging/'+$name)
+        if ([IO.File]::Exists($artwork)) {
+            $items.Add([pscustomobject]@{ Source=$artwork; Target=('BepInEx/plugins/BigWalkDLSS/'+$name); FreshOnly=$false; Role='plugin' })
+        }
     }
     foreach ($name in @('LICENSE','NOTICE','THIRD_PARTY_NOTICES.md')) {
         $source = Resolve-BbwPath $PackagePath $name
@@ -741,7 +747,7 @@ function Invoke-BbwSetup {
             $applied++
             if ($FaultAfter -gt 0 -and $applied -eq $FaultAfter) { throw 'Injected transaction failure.' }
         }
-        if ($Mode -eq 'Install' -or $entries.Count -gt 0) { Write-BbwJson $manifestPath ([pscustomobject]@{ SchemaVersion=1; Version='0.8.1'; Entries=@($entries.ToArray()) }) }
+        if ($Mode -eq 'Install' -or $entries.Count -gt 0) { Write-BbwJson $manifestPath ([pscustomobject]@{ SchemaVersion=1; Version='0.8.2'; Entries=@($entries.ToArray()) }) }
         elseif ([IO.File]::Exists($manifestPath)) { [IO.File]::Delete($manifestPath) }
         [IO.File]::Delete($journalPath)
         if ($Mode -eq 'Install') {

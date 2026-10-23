@@ -30,6 +30,13 @@ internal static class FeatureOptions
     internal static readonly string[] AmdFiles = { "OptiScaler/amd_fidelityfx_loader_dx12.dll", "OptiScaler/amd_fidelityfx_framegeneration_dx12.dll" };
     internal static readonly string[] IntelFiles = { "OptiScaler/libxess_fg.dll", "OptiScaler/libxell.dll" };
     internal static readonly string[] NeuralFiles = { "OptiScaler/nvngx.dll_dlssnr.dll", "OptiScaler/nvngx_dlssnr.dll" };
+    internal static string ProviderHelp(int index) => index switch
+    {
+        0 => "NVIDIA uses AI to make in-between pictures for smoother motion. Needs a supported RTX 40 Series or newer GPU. It looked best on the tested RTX 4090; thin objects can shimmer.",
+        1 => "AMD uses motion between real frames to make in-between pictures, across different GPU brands. On the tested RTX 4090 it looked and ran worse than NVIDIA.",
+        2 => "Intel uses AI to make in-between pictures on supported GPUs. Needs windowed or borderless mode. On the tested RTX 4090 it made the game slower; compare before keeping it.",
+        _ => "A custom provider is selected in F10. Choose a supported provider to use Home's Frame Generation controls."
+    };
 
     internal static int ProviderIndex(string value) => Array.FindIndex(ProviderValues, item => string.Equals(value, item, StringComparison.OrdinalIgnoreCase));
     internal static string ProviderName(string value)

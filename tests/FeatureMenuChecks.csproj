@@ -1,8 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><EnableDefaultCompileItems>false</EnableDefaultCompileItems><Nullable>enable</Nullable></PropertyGroup>
+  <PropertyGroup><UpscalingMenuSource Condition="'$(UpscalingMenuSource)' == ''">../src/managed/UpscalingMenu.cs</UpscalingMenuSource></PropertyGroup>
   <ItemGroup>
     <Compile Include="FeatureMenuChecks.cs" />
     <Compile Include="../src/managed/FeatureMenu.cs" />
     <Compile Include="../src/managed/FeatureOptions.cs" />
+    <Compile Include="$(UpscalingMenuSource)" />
+    <Compile Include="../src/managed/UpscalingPresentation.cs" />
+    <Compile Include="../src/managed/UpscalingOptions.cs" />
+    <Compile Include="../src/managed/ToolGuide.cs" />
   </ItemGroup>
 </Project>

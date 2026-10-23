@@ -291,6 +291,25 @@ try {
         Assert (-not (Test-Path (Join-Path $f.GamePath 'BepInEx/BigWalkDLSS/notices/NOTICE'))) 'owned notices removed when shared loader removed'
         Assert ([IO.File]::ReadAllText((Join-Path $f.GamePath 'GameAssembly.dll')) -eq 'game-assembly-do-not-touch') 'game assembly preserved'
     }
+    Case 'UI artwork updates as an owned payload and preserves edited files' {
+        foreach ($name in @('ui-landscape.png','ui-border.png')) {
+            $f=New-Fixture ('ui-artwork-'+$name)
+            $source=Join-Path $f.PackagePath ('packaging/'+$name)
+            $target=Join-Path $f.GamePath ('BepInEx/plugins/BigWalkDLSS/'+$name)
+            Put $source 'first-artwork-fixture'
+            Install $f | Out-Null
+            Assert ([IO.File]::ReadAllText($target) -eq 'first-artwork-fixture') 'artwork installs with the core'
+            Put $source 'updated-artwork-fixture'
+            Install $f | Out-Null
+            Assert ([IO.File]::ReadAllText($target) -eq 'updated-artwork-fixture') 'owned artwork updates on repair'
+            Put $target 'user-artwork-fixture'
+            Expect-Failure { Uninstall $f } 'changed after installation'
+            Assert ([IO.File]::ReadAllText($target) -eq 'user-artwork-fixture') 'uninstall preserves edited artwork'
+            Put $target 'updated-artwork-fixture'
+            Uninstall $f | Out-Null
+            Assert (-not (Test-Path $target)) 'unchanged owned artwork removes on uninstall'
+        }
+    }
     Case 'missing release attribution refuses before mutation' {
         $f=New-Fixture 'missing-notice'
         Remove-Item -LiteralPath (Join-Path $f.PackagePath 'NOTICE')

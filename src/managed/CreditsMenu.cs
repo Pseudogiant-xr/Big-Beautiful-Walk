@@ -18,7 +18,7 @@ internal static class CreditsMenu
         GUI.Label(new Rect(x + 25, y + 457, 900, 58),
             "This software contains source code provided by NVIDIA Corporation. Core uses NVIDIA DLSS / NGX on NVIDIA GPUs, OptiScaler on AMD and Intel. Optional: Streamline, NVIDIA Reflex Low Latency, AMD FidelityFX, Intel XeSS / XeLL.", small);
         GUI.Label(new Rect(x + 25, y + 515, 900, 55),
-            "Full copyright statements, licence texts and pinned sources are included in the release and installed under BepInEx/BigWalkDLSS/notices. A Neural Rendering model is not included.", small);
+            "Full copyright statements, licence texts and pinned sources are included in the release and installed under BepInEx/BigWalkDLSS/notices. The Neural Rendering model is a separate optional download.", small);
         GUI.Label(new Rect(x + 25, y + 588, 900, 42),
             "Product names identify their respective owners. No affiliation or endorsement is implied. See THIRD_PARTY_NOTICES.md for component-specific terms.", small);
     }
