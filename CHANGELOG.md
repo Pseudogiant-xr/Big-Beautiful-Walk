@@ -3,6 +3,7 @@
 ## 0.8.2 — alpha
 
 - Add short, plain-English explanations of graphics settings, upscaling, frame generation and AI lighting, including picture/performance trade-offs.
+- Add a read-only tool guide that explains unavailable upscalers and their requirements without selecting or enabling them.
 - Refresh Home and Setup with a landscape-inspired earth-and-ochre palette, clearer selected tabs and grouped settings. In-game text is larger and the panel scales to the available screen size.
 - Add original generated dot-and-line landscape artwork to Home and Setup headers, with the source prompt included.
 - Frame both windows with an original generated dot-art serpent border. The thicker border uses uniform scaling to keep circles round and artwork clear of the controls; source prompts are included.

@@ -6,6 +6,7 @@ namespace BigWalkDLSS;
 internal static class FeatureMenu
 {
     private static bool _confirmedHags;
+    internal static bool UserConfirmedHags => _confirmedHags;
 
     internal static void DrawFrameGen(float x, float y, GUIStyle label, GUIStyle small, GUIStyle button)
     {

@@ -13,7 +13,7 @@ namespace BigWalkDLSS;
 
 internal static class AdvancedGraphics
 {
-    private enum Page { Overview, Upscaling, FrameGen, Neural, Geometry, Shadows, Vegetation, Terrain, Textures, Credits }
+    private enum Page { Overview, Upscaling, FrameGen, Neural, Geometry, Shadows, Vegetation, Terrain, Textures, Credits, Tools }
     private static readonly string[] TabNames = { "Overview", "Upscaling", "Frame Gen", "Neural", "Geometry", "Shadows", "Vegetation", "Terrain", "Textures" };
     private enum Kind { Number, Integer, Toggle, Choice }
     private enum Owner { Global, Pipeline, Camera, Terrain, Vegetation }
@@ -92,6 +92,7 @@ internal static class AdvancedGraphics
     private static string _editing = "", _message = "Changes apply live. Profiles save after you finish editing.";
     private static GUIStyle? _title, _label, _small, _button, _field, _tab, _selectedTab, _toggle;
     internal static GUIStyle ToggleStyle => _toggle!;
+    internal static void ShowToolGuide() { _page = Page.Tools; ToolGuide.Reset(); }
 
     internal static void Initialize()
     {
@@ -592,12 +593,14 @@ internal static class AdvancedGraphics
                 : _page == Page.FrameGen ? "Makes motion look smoother by creating extra pictures between the frames the game draws. Controls do not respond faster. Restart after changing."
                 : _page == Page.Neural ? "Uses AI to redraw lighting and surface detail for a more realistic look. This changes the art style and can lower frame rate; it is not ray tracing."
                 : _page == Page.Credits ? "Libraries and community work used by Big Beautiful Walk."
+                : _page == Page.Tools ? "Read about every tool, including unavailable ones. This guide does not change your settings."
                 : "Start with a graphics preset, then adjust individual settings. Your changes save automatically.", _small);
             if (_page == Page.Overview) DrawOverview(x, y);
             else if (_page == Page.Upscaling) UpscalingMenu.Draw(x, y, _label!, _small!, _button!);
             else if (_page == Page.FrameGen) FeatureMenu.DrawFrameGen(x, y, _label!, _small!, _button!);
             else if (_page == Page.Neural) FeatureMenu.DrawNeural(x, y, _label!, _small!, _button!);
             else if (_page == Page.Credits) CreditsMenu.Draw(x, y, _label!, _small!, _button!);
+            else if (_page == Page.Tools) ToolGuide.Draw(x, y, _label!, _small!);
             else if (!_ready) GUI.Label(new Rect(x + 25, y + 200, 900, 70), Plugin.Compatible ? "Waiting for the game's rendering pipeline…" : Plugin.SupportMessage, _label);
             else
             {
@@ -641,6 +644,7 @@ internal static class AdvancedGraphics
             }
             else if (_page == Page.Overview && GUI.Button(new Rect(x + 25, y + 680, 260, 36), "Credits and licences", _button)) _page = Page.Credits;
             else if (featurePage && GUI.Button(new Rect(x + 25, y + 680, 260, 36), "Refresh saved settings", _button)) BridgeSettings.Reload();
+            if (!graphicsPage && _page != Page.Tools && GUI.Button(new Rect(x + 420, y + 680, 285, 36), "Learn these tools", _button)) ShowToolGuide();
             if (!graphicsPage && GUI.Button(new Rect(x + 735, y + 680, 190, 36), "Done", _button)) Close();
             GUI.Label(new Rect(x + 25, y + 724, 905, 28), graphicsPage ? _message : featurePage
                 ? "Settings save automatically for the next launch. The world continues running while this panel is open."

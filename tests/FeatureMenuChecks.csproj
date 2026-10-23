@@ -8,5 +8,6 @@
     <Compile Include="$(UpscalingMenuSource)" />
     <Compile Include="../src/managed/UpscalingPresentation.cs" />
     <Compile Include="../src/managed/UpscalingOptions.cs" />
+    <Compile Include="../src/managed/ToolGuide.cs" />
   </ItemGroup>
 </Project>

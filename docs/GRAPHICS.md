@@ -6,6 +6,8 @@ Press **Home** to open Big Beautiful Walk. All graphics overrides start off, so 
 
 Each graphics row has a short explanation underneath it, including what higher or lower values do and where extra detail can cost frame rate or graphics memory. Upscaling, Frame Gen and Neural also explain their choices. Start with Balanced on Overview; try Quality or Extreme in the same view if you want more detail.
 
+**Learn these tools** opens a read-only guide to every upscaler, frame-generation provider, Neural Rendering and native antialiasing. It also explains unavailable tools and their requirements; opening or scrolling the guide does not change your renderer or saved settings.
+
 Changing a control turns on its override. Number fields take effect when you press **Enter**. Changes save a moment after you stop editing.
 
 Untick an override to go back to the value the game had before. This works unless another system has changed that value in the meantime. Changing the game's own quality preset can still affect any setting you have not overridden.
