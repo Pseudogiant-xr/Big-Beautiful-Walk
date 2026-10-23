@@ -1,32 +1,10 @@
-Foreword:
-
-G'day people, this is Big Beautiful Walk. The game is awesome and great fun with my mates, but the horrible jaggies and lack of graphics options galled me, so I decided to AI sloppify a fix to make it better!
-
-I hope it makes your walk even more beautiful, and now for a bit of satire:
-
-----------------------------------------------------------------------------------------
-
-A Very Big, Very Beautiful Walk
-
-Folks, let me tell you about this mod. Tremendous mod. People are saying it’s the most beautiful walk they’ve ever seen, and I’ve seen a lot of walks. Believe me.
-
-Before this mod, the shadows were short. Sad! Three hundred metres, maybe. Now? Two thousand metres. Two thousand. Nobody’s ever seen shadows like this. The trees are saying, “Sir, thank you, we’ve never been shaded like this before.” True story.
-
-And DLSS, which is a very smart technology, NVIDIA, great company, very rich. We put in Quality, Preset L. The best preset. Some people like Preset K. Low energy. We don’t talk about Preset K.
-
-The installer? Perfect installer. Hashes everything. SHA-256, which is a big number, maybe the biggest. It refuses to run while the game is open. Very strong, very tough on running games. Other installers let anything happen. Not ours.
-
-We had a junction problem, a total disaster left over from the previous administration, and we fixed it. Fast. Many people didn’t think it could be done.
-
-Frame generation, folks: we made frames out of nothing. Intel’s frame generation, not so good, lost thirty frames, very unfair. But NVIDIA’s? Fantastic.
-
-So download it. It’s free, which is a very good price. Make Big Walk Beautiful Again.
-
-----------------------------------------------------------------------------------------
-
 # Big Beautiful Walk 0.8.2
 
 An unofficial graphics mod for **Big Walk** on Windows. It adds DLSS Super Resolution, FSR 3.1, FSR 4 and XeSS, DLSS5 Neural Rendering, Frame Generation and an in-game graphics panel, opened with the **Home** key, with controls for upscaling, shadows, vegetation, textures and more.
+
+**[Download the Windows alpha](https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/releases)** · [Installation](#install) · [Compatibility](docs/COMPATIBILITY.md)
+
+Open the newest release and download `Big-Beautiful-Walk-<version>-alpha.zip` from **Assets**. Extract the whole ZIP and run **Setup.exe** with Big Walk closed.
 
 **Game defaults: no DLSS, no Neural Rendering**
 
@@ -99,3 +77,34 @@ The project's own code is licensed under Apache 2.0. The Unity-adapted post-proc
 ## Reporting problems
 
 Open a [GitHub issue](https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/issues). Include the mod version, game version, GPU, driver, graphics API and the shortest log excerpt that shows the problem. Remove account names and personal paths from logs before posting them.
+
+<details>
+<summary>Author’s foreword and satire</summary>
+
+Foreword:
+
+G'day people, this is Big Beautiful Walk. The game is awesome and great fun with my mates, but the horrible jaggies and lack of graphics options galled me, so I decided to AI sloppify a fix to make it better!
+
+I hope it makes your walk even more beautiful, and now for a bit of satire:
+
+----------------------------------------------------------------------------------------
+
+A Very Big, Very Beautiful Walk
+
+Folks, let me tell you about this mod. Tremendous mod. People are saying it’s the most beautiful walk they’ve ever seen, and I’ve seen a lot of walks. Believe me.
+
+Before this mod, the shadows were short. Sad! Three hundred metres, maybe. Now? Two thousand metres. Two thousand. Nobody’s ever seen shadows like this. The trees are saying, “Sir, thank you, we’ve never been shaded like this before.” True story.
+
+And DLSS, which is a very smart technology, NVIDIA, great company, very rich. We put in Quality, Preset L. The best preset. Some people like Preset K. Low energy. We don’t talk about Preset K.
+
+The installer? Perfect installer. Hashes everything. SHA-256, which is a big number, maybe the biggest. It refuses to run while the game is open. Very strong, very tough on running games. Other installers let anything happen. Not ours.
+
+We had a junction problem, a total disaster left over from the previous administration, and we fixed it. Fast. Many people didn’t think it could be done.
+
+Frame generation, folks: we made frames out of nothing. Intel’s frame generation, not so good, lost thirty frames, very unfair. But NVIDIA’s? Fantastic.
+
+So download it. It’s free, which is a very good price. Make Big Walk Beautiful Again.
+
+----------------------------------------------------------------------------------------
+
+</details>
