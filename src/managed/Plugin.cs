@@ -16,7 +16,7 @@ using PassData = UnityEngine.Rendering.Universal.PostProcessPassRenderGraph.DoFG
 
 namespace BigWalkDLSS;
 
-[BepInPlugin("local.bigwalk.native-dlss", "Big Beautiful Walk", "0.8.1")]
+[BepInPlugin("local.bigwalk.native-dlss", "Big Beautiful Walk", "0.8.2")]
 public sealed class Plugin : BasePlugin
 {
     internal static Plugin Instance = null!;
@@ -123,7 +123,7 @@ public sealed class Plugin : BasePlugin
         }
         else Log.LogWarning(SupportMessage);
         AddComponent<Controller>();
-        Log.LogInfo($"Big Beautiful Walk 0.8.1: API={SystemInfo.graphicsDeviceType}, Unity={Application.unityVersion}, game={Application.version}, native loaded={NativeLoaded}; XR is excluded.");
+        Log.LogInfo($"Big Beautiful Walk 0.8.2: API={SystemInfo.graphicsDeviceType}, Unity={Application.unityVersion}, game={Application.version}, native loaded={NativeLoaded}; XR is excluded.");
         Log.LogInfo($"GPU vendor reported=0x{reportedVendor:x4} resolved={GpuVendor.Name(GpuVendorId)}; native path={(UsesBridge ? "bridge (OptiScaler)" : "NVIDIA NGX")}{(ForceBridgeNative.Value ? " (forced for testing)" : "")}.");
     }
 

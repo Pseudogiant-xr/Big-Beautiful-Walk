@@ -83,7 +83,9 @@ Start with the **Default** style and all strengths at 1.
 
 ### NR 310.9.16 local import
 
-Setup 0.8.1 can import your existing `nvngx_dlssnr.dll` 310.9.16 compatibility build. Click **Use my NR 310.9.16 compatibility DLL...**, select the extracted DLL and choose **Install / Repair**. Selecting it includes the bridge. The supported DLL has SHA-256 `CDFA6C1EC784867182164C7836F324F087B5C9F374D0C9FE46F54999FEABF3ED`, matching [OpenNR's reference output](https://github.com/clshortfuse/openNR/tree/57ca170cb836f549f0e64544f282d535666b0f7d). Other bytes, including the unmodified RTX 50 runtime, are rejected. Neither the model nor a Discord attachment URL is bundled.
+For a new install, download and extract the separate [NR 310.9.16 pack](https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/releases/download/v0.8.1-alpha/Big-Beautiful-Walk-NR-310.9.16.zip), then select its DLL with Setup. This same pack works with 0.8.2.
+
+Setup can import your existing `nvngx_dlssnr.dll` 310.9.16 compatibility build. Click **Use my NR 310.9.16 compatibility DLL...**, select the extracted DLL and choose **Install / Repair**. Selecting it includes the bridge. The supported DLL has SHA-256 `CDFA6C1EC784867182164C7836F324F087B5C9F374D0C9FE46F54999FEABF3ED`, matching [OpenNR's reference output](https://github.com/clshortfuse/openNR/tree/57ca170cb836f549f0e64544f282d535666b0f7d). Other bytes, including the unmodified RTX 50 runtime, are rejected. The main mod ZIP does not contain the model; the separate optional NR pack supplies it. No Discord attachment URL is used.
 
 The command-line equivalent is:
 

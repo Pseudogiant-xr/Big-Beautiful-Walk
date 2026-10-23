@@ -19,26 +19,45 @@ internal static class MenuTheme
     private static readonly Dictionary<Color, Texture2D> Textures = new();
     private static Texture2D? _artwork;
     private static bool _artworkTried;
+    private static Texture2D? _border;
+    private static bool _borderTried;
 
-    internal static Texture2D? Artwork
+    internal static Texture2D? Artwork => LoadArtwork("ui-landscape.png", ref _artwork, ref _artworkTried);
+    internal static Texture2D? Border => LoadArtwork("ui-border.png", ref _border, ref _borderTried);
+
+    internal static void DrawBorder(Rect rectangle)
     {
-        get
+        if (Border is not { } border) return;
+        const float edge = 64, sourceEdge = .12f;
+        float width = rectangle.width, height = rectangle.height;
+        void Tile(float x, float y, float w, float h, float u, float v, float uw, float vh) =>
+            GUI.DrawTextureWithTexCoords(new Rect(rectangle.x + x, rectangle.y + y, w, h), border, new Rect(u, v, uw, vh), true);
+        Tile(0, 0, edge, edge, 0, 1 - sourceEdge, sourceEdge, sourceEdge);
+        Tile(edge, 0, width - 2 * edge, edge, sourceEdge, 1 - sourceEdge, 1 - 2 * sourceEdge, sourceEdge);
+        Tile(width - edge, 0, edge, edge, 1 - sourceEdge, 1 - sourceEdge, sourceEdge, sourceEdge);
+        Tile(0, edge, edge, height - 2 * edge, 0, sourceEdge, sourceEdge, 1 - 2 * sourceEdge);
+        Tile(width - edge, edge, edge, height - 2 * edge, 1 - sourceEdge, sourceEdge, sourceEdge, 1 - 2 * sourceEdge);
+        Tile(0, height - edge, edge, edge, 0, 0, sourceEdge, sourceEdge);
+        Tile(edge, height - edge, width - 2 * edge, edge, sourceEdge, 0, 1 - 2 * sourceEdge, sourceEdge);
+        Tile(width - edge, height - edge, edge, edge, 1 - sourceEdge, 0, sourceEdge, sourceEdge);
+    }
+
+    private static Texture2D? LoadArtwork(string filename, ref Texture2D? cached, ref bool tried)
+    {
+        if (tried) return cached;
+        tried = true;
+        Texture2D? texture = null;
+        try
         {
-            if (_artworkTried) return _artwork;
-            _artworkTried = true;
-            Texture2D? texture = null;
-            try
-            {
-                string path = Path.Combine(Paths.PluginPath, "BigWalkDLSS", "ui-landscape.png");
-                if (!File.Exists(path)) return null;
-                texture = new Texture2D(2, 2) { hideFlags = HideFlags.HideAndDontSave };
-                if (ImageConversion.LoadImage(texture, new Il2CppStructArray<byte>(File.ReadAllBytes(path)), true))
-                { _artwork = texture; texture = null; }
-            }
-            catch (System.Exception error) { Plugin.Instance.Log.LogWarning("Menu artwork could not be loaded: " + error.GetType().Name); }
-            finally { if (texture != null) UnityEngine.Object.Destroy(texture); }
-            return _artwork;
+            string path = Path.Combine(Paths.PluginPath, "BigWalkDLSS", filename);
+            if (!File.Exists(path)) return null;
+            texture = new Texture2D(2, 2) { hideFlags = HideFlags.HideAndDontSave };
+            if (ImageConversion.LoadImage(texture, new Il2CppStructArray<byte>(File.ReadAllBytes(path)), true))
+            { cached = texture; texture = null; }
         }
+        catch (System.Exception error) { Plugin.Instance.Log.LogWarning("Menu artwork could not be loaded: " + error.GetType().Name); }
+        finally { if (texture != null) UnityEngine.Object.Destroy(texture); }
+        return cached;
     }
 
     internal static GUIStyle Button(GUIStyle original, bool selected = false)

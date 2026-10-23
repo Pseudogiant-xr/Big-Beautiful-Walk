@@ -20,7 +20,7 @@ $optionalHeight=0
 if ($hasFg) { $optionalHeight=72 }
 if ($hasNr) { $optionalHeight+=104 }
 $form = New-Object Windows.Forms.Form
-$form.Text = 'Big Beautiful Walk - Setup 0.8.1'
+$form.Text = 'Big Beautiful Walk - Setup 0.8.2'
 $form.ClientSize = New-Object Drawing.Size(690,(470+$optionalHeight))
 $form.StartPosition = 'CenterScreen'
 $form.MinimumSize = $form.Size
@@ -203,9 +203,10 @@ $muted=[Drawing.Color]::FromArgb(196,186,168)
 $form.BackColor=$background
 $form.ForeColor=$ink
 $form.Font=New-Object Drawing.Font('Segoe UI',10)
-$form.ClientSize=New-Object Drawing.Size(690,($form.ClientSize.Height+96))
+$form.ClientSize=New-Object Drawing.Size(722,($form.ClientSize.Height+128))
 foreach ($control in $form.Controls) {
-    $control.Top+=96
+    $control.Top+=112
+    $control.Left+=16
     $control.ForeColor=$ink
     if ($control -is [Windows.Forms.Button]) {
         $control.FlatStyle='Flat'
@@ -225,39 +226,58 @@ foreach ($spec in @(@($hasFg,$fgCheck,'Adds in-between frames for smoother motio
     if (-not $spec[0]) { continue }
     $help=New-Object Windows.Forms.Label
     $help.Text=[string]$spec[2]
-    $help.SetBounds(40,($spec[1].Top+29),630,36)
+    $help.SetBounds(56,($spec[1].Top+29),630,36)
     $help.ForeColor=$muted
     $help.Font=New-Object Drawing.Font('Segoe UI',9)
     $form.Controls.Add($help)
 }
 $heading=New-Object Windows.Forms.Label
 $heading.Text='Big Beautiful Walk'
-$heading.SetBounds(20,14,650,32)
+$heading.SetBounds(36,30,650,32)
 $heading.Font=New-Object Drawing.Font('Segoe UI Semibold',20)
 $heading.ForeColor=$ink
 $subheading=New-Object Windows.Forms.Label
 $subheading.Text='Picture quality, smoother motion and optional AI lighting.'
-$subheading.SetBounds(22,49,650,23)
+$subheading.SetBounds(38,65,650,23)
 $subheading.ForeColor=$ochre
 $subheading.Font=New-Object Drawing.Font('Segoe UI',9)
-$accent=New-Object Windows.Forms.Panel
-$accent.SetBounds(0,0,$form.ClientSize.Width,4)
-$accent.Anchor='Top,Left,Right'
-$accent.BackColor=$ochre
-$form.Controls.AddRange(@($heading,$subheading,$accent))
+$form.Controls.AddRange(@($heading,$subheading))
 $headerImage=$null
 $artworkPath=Join-Path (Split-Path $PSScriptRoot -Parent) 'packaging/ui-landscape.png'
 try {
     if ([IO.File]::Exists($artworkPath)) {
         $headerImage=[Drawing.Image]::FromFile($artworkPath)
         $illustration=New-Object Windows.Forms.PictureBox
-        $illustration.SetBounds(350,4,320,108)
+        $illustration.SetBounds(366,20,320,108)
         $illustration.SizeMode='Zoom'
         $illustration.Image=$headerImage
         $illustration.BackColor=$background
         $form.Controls.Add($illustration)
     }
 } catch { $headerImage=$null }
+$frameImage=$null
+$borderPath=Join-Path (Split-Path $PSScriptRoot -Parent) 'packaging/ui-border.png'
+try {
+    if ([IO.File]::Exists($borderPath)) { $frameImage=[Drawing.Image]::FromFile($borderPath) }
+} catch { $frameImage=$null }
+$form.Add_Paint({
+    param($sender,$paint)
+    if (-not $frameImage) { return }
+    $edge=32
+    $xs=@(0,$edge,($form.ClientSize.Width-$edge),$form.ClientSize.Width)
+    $ys=@(0,$edge,($form.ClientSize.Height-$edge),$form.ClientSize.Height)
+    $us=@(0,($frameImage.Width*.12),($frameImage.Width*.88),$frameImage.Width)
+    $vs=@(0,($frameImage.Height*.12),($frameImage.Height*.88),$frameImage.Height)
+    for ($row=0;$row -lt 3;$row++) {
+        for ($col=0;$col -lt 3;$col++) {
+            if ($row -eq 1 -and $col -eq 1) { continue }
+            $destination=New-Object Drawing.RectangleF($xs[$col],$ys[$row],($xs[$col+1]-$xs[$col]),($ys[$row+1]-$ys[$row]))
+            $source=New-Object Drawing.RectangleF($us[$col],$vs[$row],($us[$col+1]-$us[$col]),($vs[$row+1]-$vs[$row]))
+            $paint.Graphics.DrawImage($frameImage,$destination,$source,[Drawing.GraphicsUnit]::Pixel)
+        }
+    }
+})
+$form.Add_Resize({ $form.Invalidate() })
 $buttons[0].BackColor=$ochre
 $buttons[0].ForeColor=$background
 $buttons[0].FlatAppearance.MouseOverBackColor=[Drawing.Color]::FromArgb(232,191,121)
@@ -277,3 +297,4 @@ $tooltips.Dispose()
 $timer.Dispose()
 $form.Dispose()
 if ($headerImage) { $headerImage.Dispose() }
+if ($frameImage) { $frameImage.Dispose() }

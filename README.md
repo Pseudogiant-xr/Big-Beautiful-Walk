@@ -24,7 +24,7 @@ So download it. It’s free, which is a very good price. Make Big Walk Beautiful
 
 ----------------------------------------------------------------------------------------
 
-# Big Beautiful Walk 0.8.1
+# Big Beautiful Walk 0.8.2
 
 An unofficial graphics mod for **Big Walk** on Windows. It adds DLSS Super Resolution, FSR 3.1, FSR 4 and XeSS, DLSS5 Neural Rendering, Frame Generation and an in-game graphics panel, opened with the **Home** key, with controls for upscaling, shadows, vegetation, textures and more.
 
@@ -55,7 +55,7 @@ Big Beautiful Walk is not affiliated with or endorsed by House House, Unity or N
    - the bridge, which adds alternative upscalers and NVIDIA, AMD and Intel frame generation;
    - the Neural Rendering model, RHI's community-hosted SF-v2 model. This also installs the bridge.
 
-   For NR 310.9.16, click **Use my NR 310.9.16 compatibility DLL...** and select your existing `nvngx_dlssnr.dll`. Setup verifies the supported compatibility build by SHA-256 and uses it instead of the older download. See [the NR guide](docs/FRAME-GENERATION.md#nr-310916-local-import).
+   For NR 310.9.16, download and extract the separate [optional NR pack](https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/releases/download/v0.8.1-alpha/Big-Beautiful-Walk-NR-310.9.16.zip). Click **Use my NR 310.9.16 compatibility DLL...** and select `nvngx_dlssnr.dll` from that extracted pack (or your existing compatible DLL). Setup verifies the supported compatibility build by SHA-256 and uses it instead of the older download. See [the NR guide](docs/FRAME-GENERATION.md#nr-310916-local-import).
 
    Frame generation and Neural Rendering stay off until you turn them on in the game. Sources and terms for each component are in [the notices](THIRD_PARTY_NOTICES.md).
 5. Start Big Walk normally. The first launch takes longer while BepInEx prepares its interop files.
@@ -65,7 +65,7 @@ Big Beautiful Walk is not affiliated with or endorsed by House House, Unity or N
 
 ## First steps
 
-- Start with DLSS Quality and Preset L, the tested baseline. Press **F8** to switch reconstruction off and on to compare.
+- Start with DLSS Quality and Preset L, the tested baseline. Press **F8** to switch reconstruction off and on to compare. Home explains each tool’s benefit and how it works, and each graphics row describes what its setting changes.
 - Try the Balanced, Quality and Extreme presets one at a time. **Game defaults** removes the graphics overrides. It does not change upscaling, frame generation or Neural Rendering, which have their own controls.
 - Frame generation and Neural Rendering apply on the next launch. Choose them under **Home → Frame Gen** or **Neural**, quit the game normally, then start it again.
 

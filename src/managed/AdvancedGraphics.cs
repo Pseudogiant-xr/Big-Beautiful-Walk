@@ -559,17 +559,21 @@ internal static class AdvancedGraphics
                 _title.normal.textColor = MenuTheme.Text; _label.normal.textColor = MenuTheme.Text;
                 _small.normal.textColor = MenuTheme.Muted;
             }
-            float scale = Mathf.Min(1.35f, Mathf.Min(Screen.height / 832f, Screen.width / 1000f));
+            float scale = Mathf.Min(1.35f, Mathf.Min(Screen.height / 960f, Screen.width / 1128f));
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1));
             float w = Screen.width / scale, h = Screen.height / scale;
-            float x = Mathf.Max(8, (w - 960) / 2), y = Mathf.Max(8, (h - 792) / 2);
+            float frameX = Mathf.Max(8, (w - 1088) / 2), frameY = Mathf.Max(8, (h - 920) / 2);
+            float x = frameX + 64, y = frameY + 64;
             GUI.color = new Color(0, 0, 0, .55f); GUI.DrawTexture(new Rect(0, 0, w, h), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+            MenuTheme.Fill(new Rect(frameX, frameY, 1088, 920), MenuTheme.Background);
             MenuTheme.Fill(new Rect(x, y, 960, 792), MenuTheme.Background);
             MenuTheme.Fill(new Rect(x, y, 960, 120), MenuTheme.Surface);
             if (MenuTheme.Artwork is { } artwork)
                 GUI.DrawTexture(new Rect(x + 565, y + 4, 335, 112), artwork, ScaleMode.ScaleToFit, true);
             MenuTheme.Fill(new Rect(x, y, 960, 4), MenuTheme.Ochre);
             MenuTheme.Fill(new Rect(x + 25, y + 169, 900, 1), MenuTheme.Raised);
+            MenuTheme.DrawBorder(new Rect(frameX, frameY, 1088, 920));
             GUI.color = Color.white;
             GUI.Label(new Rect(x + 25, y + 18, 790, 38), "Big Beautiful Walk", _title);
             GUI.Label(new Rect(x + 25, y + 57, 870, 28), BridgeSettings.Recognized
