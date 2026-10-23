@@ -273,7 +273,7 @@ internal static class AdvancedGraphics
             () => _asset!.supportsMainLightShadows ? 1 : 0, v => _asset!.supportsMainLightShadows = v > .5f, Owner.Pipeline, Kind.Toggle);
         Add(Page.Shadows, "Cascades", "Shadow cascade count", "Splits sunlight shadows into detail zones. More zones help nearby shadows stay sharp over a long distance.", 1, 4,
             () => _asset!.shadowCascadeCount, v => _asset!.shadowCascadeCount = (int)v, Owner.Pipeline, Kind.Integer);
-        Add(Page.Shadows, "ConservativeCulling", "Reduce duplicate shadow work", "Tries to avoid redrawing objects in overlapping shadow zones. Keeps range and resolution; experimental, so compare shadow edges.", 0, 1,
+        Add(Page.Shadows, "ConservativeCulling", "Experimental shadow culling", "Changes which objects Unity includes in each shadow zone. May reduce drawing work; compare shadow edges and frame rate.", 0, 1,
             () => _asset!.conservativeEnclosingSphere ? 1 : 0, v => _asset!.conservativeEnclosingSphere = v > .5f, Owner.Pipeline, Kind.Toggle);
         for (int count = 2; count <= 4; count++)
         {
@@ -291,7 +291,7 @@ internal static class AdvancedGraphics
         float[] resolutions = { 256, 512, 1024, 2048, 4096, 8192 };
         string[] resolutionNames = { "256", "512", "1024", "2048", "4096", "8192" };
         bool supports16k = SystemInfo.maxTextureSize >= 16384;
-        Add(Page.Shadows, "MainResolution", "Main shadow atlas", "Higher values sharpen sunlight shadows and use more graphics memory. Experimental 16384 uses 4x the memory of 8192.", 256, supports16k ? 16384 : 8192,
+        Add(Page.Shadows, "MainResolution", "Main shadow atlas", "Requests sharper sunlight shadows, using more graphics memory. Experimental 16384 requests 4x the area of 8192; Unity may clamp it.", 256, supports16k ? 16384 : 8192,
             () => _asset!.mainLightShadowmapResolution, v => _asset!.mainLightShadowmapResolution = (int)v, Owner.Pipeline, Kind.Choice, "px",
             supports16k ? new float[] { 256, 512, 1024, 2048, 4096, 8192, 16384 } : resolutions,
             supports16k ? new[] { "256", "512", "1024", "2048", "4096", "8192", "16384 (experimental)" } : resolutionNames);
@@ -576,7 +576,7 @@ internal static class AdvancedGraphics
             MenuTheme.Fill(new Rect(x + 25, y + 169, 900, 1), MenuTheme.Raised);
             MenuTheme.DrawBorder(new Rect(frameX, frameY, 1200, 1000));
             GUI.color = Color.white;
-            GUI.Label(new Rect(x + 25, y + 18, 790, 38), "Big Beautiful Walk", _title);
+            GUI.Label(new Rect(x + 25, y + 18, 790, 38), "Big Beautiful Walk 0.8.3", _title);
             GUI.Label(new Rect(x + 25, y + 57, 870, 28), BridgeSettings.Recognized
                 ? "Home closes this panel  •  F10 opens extra upscaler controls"
                 : "Home closes this panel  •  More upscalers are available through Setup", _label);

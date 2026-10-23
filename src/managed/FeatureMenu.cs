@@ -47,16 +47,10 @@ internal static class FeatureMenu
             if (FeatureOptions.ProviderIndex(queued.Provider) == 0 && FeatureSettings.HagsMode != 1 && FeatureSettings.HagsMode != 2)
                 _confirmedHags = GUI.Toggle(new Rect(x + 25, y + 453, 900, 28), _confirmedHags,
                     "I checked that Hardware-accelerated GPU Scheduling is enabled in Windows", AdvancedGraphics.ToggleStyle);
-            GUI.Label(new Rect(x + 25, y + 489, 900, 47), "Detected GPU: " + device +
-                ". NVIDIA requires RTX 40 Series or newer and Hardware-accelerated GPU Scheduling. No Windows or driver settings are changed here.", small);
+            GUI.Label(new Rect(x + 25, y + 489, 900, 47), "Detected GPU: " + device + ". " +
+                FeatureOptions.ProviderRequirements(FeatureOptions.ProviderIndex(queued.Provider)), small);
             GUI.Label(new Rect(x + 25, y + 543, 900, 49),
-                FeatureOptions.ProviderIndex(queued.Provider) == 0
-                    ? "NVIDIA uses AI to make the in-between pictures. It was the best-looking option on the tested RTX 4090. Thin objects can shimmer; extra frames do not make controls respond faster."
-                    : FeatureOptions.ProviderIndex(queued.Provider) == 2
-                        ? "Intel uses AI to make the in-between pictures on supported GPUs. Needs windowed or borderless mode. On the tested RTX 4090 it made the game slower; compare before keeping it."
-                        : FeatureOptions.ProviderIndex(queued.Provider) == 1
-                            ? "AMD uses motion between real frames to make the in-between pictures, across different GPU brands. On the tested RTX 4090 it looked and ran worse than NVIDIA."
-                            : "A custom provider is selected in F10. Choose a supported provider above to use Home's Frame Generation controls.", small);
+                FeatureOptions.ProviderHelp(FeatureOptions.ProviderIndex(queued.Provider)), small);
             DrawSaveNote(x, y, small);
         }
         finally { GUI.enabled = enabled; }
@@ -87,10 +81,10 @@ internal static class FeatureMenu
                 if (GUI.Button(new Rect(x + 325 + i * 200, y + 300, 190, 31),
                     (queued.Style == i ? "● " : "") + FeatureOptions.StyleNames[i], button))
                 { queued.Style = i; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
-            GUI.Label(new Rect(x + 25, y + 333, 900, 21), "Chooses the AI's visual treatment. Default is the tested starting point; compare the alternatives yourself.", small);
-            float intensity = Strength(x, y + 356, "AI effect strength", "How strongly the AI redraws the scene's lighting and surfaces. 1 is the normal amount.", queued.Intensity, 2, label, small, button);
-            float detail = Strength(x, y + 401, "Lighting / detail blend", "How much AI lighting and surface detail is blended into the picture.", queued.TransferStrength, 2, label, small, button);
-            float colour = Strength(x, y + 446, "AI colour amount", "How much the AI changes colours. 0 keeps the game's original hues.", queued.ColourStrength, 4, label, small, button);
+            GUI.Label(new Rect(x + 25, y + 333, 900, 21), FeatureOptions.StyleHelp(queued.Style), small);
+            float intensity = Strength(x, y + 356, "AI effect strength", "The model's internal strength request. Its effect varies by model; 1 is the default.", queued.Intensity, 2, label, small, button);
+            float detail = Strength(x, y + 401, "Lighting / detail blend", "0 keeps the original detail; 1 applies the AI result. Above 1 exaggerates the change.", queued.TransferStrength, 2, label, small, button);
+            float colour = Strength(x, y + 446, "AI colour amount", "0 keeps the game's hues; 1 blends in the model's colours. Separate from lighting / detail.", queued.ColourStrength, 4, label, small, button);
             if (intensity != queued.Intensity || detail != queued.TransferStrength || colour != queued.ColourStrength)
             {
                 queued.Intensity = intensity; queued.TransferStrength = detail; queued.ColourStrength = colour;
@@ -103,7 +97,7 @@ internal static class FeatureMenu
             if (GUI.Button(new Rect(x + 875, y + 491, 34, 28), "›", button))
             { queued.Preset = (queued.Preset + 1) % 4; if (!FeatureSettings.SetNeural(queued, vendor)) return; }
             GUI.enabled = enabled;
-            GUI.Label(new Rect(x + 25, y + 525, 900, 36), "NR 310.9.16: A keeps the original AI look with more graphics work. B is the faster new model, with a different look. Auto chooses for you; 3 depends on the runtime.", small);
+            GUI.Label(new Rect(x + 25, y + 525, 900, 36), FeatureOptions.NeuralPresetHelp(queued.Preset), small);
             GUI.Label(new Rect(x + 25, y + 562, 900, 36), unavailable.Length > 0 ? unavailable :
                 "The required files are present. Check F10 to confirm AI rendering is running, then compare the picture; saved settings alone do not prove it.", small);
             GUI.Label(new Rect(x + 25, y + 600, 900, 23),
@@ -120,7 +114,7 @@ internal static class FeatureMenu
         GUI.Label(new Rect(x + 25, y, 280, 25), title, label);
         float next = value;
         if (GUI.Button(new Rect(x + 325, y, 34, 25), "−", button)) next = Math.Max(0, value - .1f);
-        GUI.Label(new Rect(x + 375, y, 485, 25), value.ToString("0.0") + " / " + maximum.ToString("0") + " · 1.0 is the model default", label);
+        GUI.Label(new Rect(x + 375, y, 485, 25), value.ToString("0.0") + " / " + maximum.ToString("0") + " · 1.0 is the default", label);
         if (GUI.Button(new Rect(x + 875, y, 34, 25), "+", button)) next = Math.Min(maximum, value + .1f);
         GUI.Label(new Rect(x + 25, y + 25, 900, 20), help, small);
         return next == value ? value : (float)Math.Round(next, 2);

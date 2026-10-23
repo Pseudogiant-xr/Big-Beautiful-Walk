@@ -1,0 +1,6 @@
+<Project>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)../../packaging/ui-landscape.png" LogicalName="BigWalkDLSS.ui-landscape.png" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)../../packaging/ui-border.png" LogicalName="BigWalkDLSS.ui-border.png" />
+  </ItemGroup>
+</Project>

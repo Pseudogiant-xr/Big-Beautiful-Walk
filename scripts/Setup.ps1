@@ -20,7 +20,7 @@ $optionalHeight=0
 if ($hasFg) { $optionalHeight=72 }
 if ($hasNr) { $optionalHeight+=104 }
 $form = New-Object Windows.Forms.Form
-$form.Text = 'Big Beautiful Walk - Setup 0.8.2'
+$form.Text = 'Big Beautiful Walk - Setup 0.8.3'
 $form.ClientSize = New-Object Drawing.Size(690,(470+$optionalHeight))
 $form.StartPosition = 'CenterScreen'
 $form.MinimumSize = $form.Size
@@ -56,7 +56,7 @@ $status.TabIndex=10
 $status.ScrollBars='Vertical'
 $status.SetBounds(20,(170+$optionalHeight),650,270)
 $status.Anchor='Top,Bottom,Left,Right'
-$status.Text='Ready. Install/Repair installs core Super Resolution + Advanced Graphics and verifies dependencies before changing files. Optional Frame Generation and Neural Rendering require manual setup; open the FG / NR guide. Diagnose only reads files.'
+$status.Text='Ready. Install/Repair installs core Super Resolution + Advanced Graphics and verifies dependencies before changing files. The optional bridge adds Frame Generation controls in Home. Neural Rendering also needs a model; see the choices below. Diagnose only reads files.'
 $fgCheck=New-Object Windows.Forms.CheckBox
 $fgCheck.Text='Frame Generation and extra upscalers (optional bridge)'
 $fgCheck.SetBounds(20,122,650,28)

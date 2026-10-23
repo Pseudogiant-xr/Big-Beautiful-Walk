@@ -38,6 +38,29 @@ internal static class FeatureOptions
         _ => "A custom provider is selected in F10. Choose a supported provider to use Home's Frame Generation controls."
     };
 
+    internal static string ProviderRequirements(int index) => index switch
+    {
+        0 => "NVIDIA FG needs RTX 40 Series or newer and Hardware-accelerated GPU Scheduling. This panel changes no Windows settings.",
+        1 => "AMD FG needs the optional bridge and AMD frame-generation files. Cross-vendor availability depends on the GPU and runtime.",
+        2 => "Intel FG needs the optional bridge and Intel frame-generation files, in windowed or borderless mode. Runtime support varies by GPU.",
+        _ => "A custom F10 provider has its own requirements."
+    };
+    internal static string StyleHelp(int style) => style switch
+    {
+        0 => "Default profile: stronger lighting and contrast; can look stylised. This mod's tested starting point.",
+        1 => "Natural profile: gentler detail and colours closer to the game, according to the bridge's community testing.",
+        2 => "Cinematic profile: a film-like treatment with less harsh shine, according to the bridge's community testing.",
+        _ => "A model-specific visual profile is selected."
+    };
+    internal static string NeuralPresetHelp(int preset) => preset switch
+    {
+        0 => "Auto: lets the runtime choose its default model. The result depends on the installed NR runtime.",
+        1 => "A: Standard model in NR 310.9.16. Keeps the original model family, with more graphics work than Lightweight FP8. Other runtimes may interpret A differently.",
+        2 => "B: Lightweight FP8 in NR 310.9.16. Aims to reduce graphics work, with a different look; Big Walk performance is unverified. Other runtimes may interpret B differently.",
+        3 => "Preset 3: model-specific / legacy request. No verified 310.9.16 meaning; use Auto, A or B unless comparing another runtime.",
+        _ => "A model-specific preset is selected."
+    };
+
     internal static int ProviderIndex(string value) => Array.FindIndex(ProviderValues, item => string.Equals(value, item, StringComparison.OrdinalIgnoreCase));
     internal static string ProviderName(string value)
     {

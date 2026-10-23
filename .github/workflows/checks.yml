@@ -22,6 +22,11 @@ jobs:
         run: dotnet run --project tests/FeatureChecks.csproj -c Release
       - name: Neural menu edit recovery
         run: dotnet run --project tests/FeatureMenuChecks.csproj -c Release
+      - name: Embedded menu artwork and decode recovery
+        run: |
+          dotnet run --project tests/MenuThemeChecks.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/MenuThemeChecks.csproj -c Release -- --reject
       - name: Saved bridge settings refresh
         shell: pwsh
         run: ./tests/Invoke-BridgeRefreshChecks.ps1
