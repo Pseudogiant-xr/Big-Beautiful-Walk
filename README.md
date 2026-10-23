@@ -1,4 +1,4 @@
-# Big Beautiful Walk 0.8.4
+# Big Beautiful Walk 0.8.5
 
 An unofficial graphics mod for **Big Walk** on Windows. It adds DLSS Super Resolution, FSR 3.1, FSR 4 and XeSS, DLSS5 Neural Rendering, Frame Generation and an in-game graphics panel, opened with the **Home** key, with controls for upscaling, shadows, vegetation, textures and more.
 
@@ -51,7 +51,7 @@ Big Beautiful Walk is not affiliated with or endorsed by House House, Unity or N
 
 **Diagnose** in Setup checks the installed files. **Uninstall**, with the game closed, removes what Setup installed and restores the original files it backed up. Those backups live in the `.big-beautiful-walk` folder in the game directory, so don't delete it before uninstalling.
 
-[Installation and recovery](docs/INSTALLATION.md) · [Graphics guide](docs/GRAPHICS.md) · [Upscalers and presets](docs/UPSCALERS.md) · [Compatibility and known issues](docs/COMPATIBILITY.md) · [Building from source](docs/BUILDING.md)
+[Installation and recovery](docs/INSTALLATION.md) · [Graphics guide](docs/GRAPHICS.md) · [Performance capture and plant shadows](docs/PERFORMANCE.md) · [Upscalers and presets](docs/UPSCALERS.md) · [Compatibility and known issues](docs/COMPATIBILITY.md) · [Building from source](docs/BUILDING.md)
 
 ## Features
 

@@ -29,6 +29,10 @@ jobs:
           dotnet run --project tests/MenuThemeChecks.csproj -c Release -- --reject
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/MenuThemeChecks.csproj -c Release -- --null-handle
+      - name: Read-only performance capture lifecycle
+        run: dotnet run --project tests/PerformanceCaptureChecks.csproj -c Release
+      - name: Optional small-plant caster requests
+        run: dotnet run --project tests/SmallPlantChecks.csproj -c Release
       - name: Saved bridge settings refresh
         shell: pwsh
         run: ./tests/Invoke-BridgeRefreshChecks.ps1

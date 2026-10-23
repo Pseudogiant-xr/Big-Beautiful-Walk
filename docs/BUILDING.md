@@ -32,7 +32,7 @@ Get the NVIDIA DLSS/NGX SDK and the Streamline headers under their upstream term
 
 ```powershell
 .\scripts\Build.ps1 -GameDir 'E:\SteamLibrary\steamapps\common\Big Walk' -NgxRoot 'E:\SDKs\DLSS' -StreamlineRoot 'E:\SDKs\Streamline'
-.\scripts\Package.ps1 -Destination '.\dist\Big-Beautiful-Walk-0.8.4'
+.\scripts\Package.ps1 -Destination '.\dist\Big-Beautiful-Walk-0.8.5'
 ```
 
 The managed/native packet ABI is 120 bytes, version 3. Always ship both DLLs from the same build. Release builds leave out debug-path records.
@@ -57,7 +57,7 @@ Packaging also builds the small `Setup.exe` GUI launcher from `src/setup/SetupLa
 
 Keep `LICENSE`, `NOTICE`, `THIRD_PARTY_NOTICES.md` and `docs/licenses` with both the source and any compiled build you hand out. The Unity adaptation and the NVIDIA SDK code included in this project keep their own terms. Read `docs/RELEASE-CHECKLIST.md` before you publish a build.
 
-After building with your locally generated game interop assemblies, the optional image-binding check records whether the known span-wrapper error is present and JIT-compiles the replacement loader without starting the game:
+After building with your locally generated game interop assemblies, the optional image-binding check records whether the known span-wrapper error is present and JIT-compiles the replacement loader without starting the game. It also prepares the performance and small-plant adapter methods against those assemblies:
 
 ```powershell
 dotnet run --project tests/ImageInteropChecks.csproj -c Release -- $env:BIGWALK_GAME_DIR ./src/managed/bin/Release/net6.0/BigWalkDLSS.dll

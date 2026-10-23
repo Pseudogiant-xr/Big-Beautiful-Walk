@@ -21,4 +21,11 @@ var fixedLoad=mod.GetType("BigWalkDLSS.MenuTheme",true)!.GetMethod("LoadPng",Bin
 RuntimeHelpers.PrepareMethod(fixedLoad.MethodHandle);
 Console.WriteLine("PASS fixed loader JIT resolves against the real installed interop assemblies; no Unity texture operation executed");
 
+foreach (string typeName in new[] { "BigWalkDLSS.PerformanceCapture", "BigWalkDLSS.SmallPlantShadows" })
+{
+    var type=mod.GetType(typeName,true)!;
+    foreach(var method in type.GetMethods(BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Static|BindingFlags.DeclaredOnly))
+        if(!method.ContainsGenericParameters) RuntimeHelpers.PrepareMethod(method.MethodHandle);
+}
+Console.WriteLine("PASS performance and small-plant adapter methods JIT against the real interop assemblies; native APIs not executed");
 return 0;

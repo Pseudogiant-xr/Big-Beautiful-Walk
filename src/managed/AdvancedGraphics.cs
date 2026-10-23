@@ -273,7 +273,7 @@ internal static class AdvancedGraphics
             () => _asset!.supportsMainLightShadows ? 1 : 0, v => _asset!.supportsMainLightShadows = v > .5f, Owner.Pipeline, Kind.Toggle);
         Add(Page.Shadows, "Cascades", "Shadow cascade count", "Splits sunlight shadows into detail zones. More zones help nearby shadows stay sharp over a long distance.", 1, 4,
             () => _asset!.shadowCascadeCount, v => _asset!.shadowCascadeCount = (int)v, Owner.Pipeline, Kind.Integer);
-        Add(Page.Shadows, "ConservativeCulling", "Experimental shadow culling", "Changes which objects Unity includes in each shadow zone. May reduce drawing work; compare shadow edges and frame rate.", 0, 1,
+        Add(Page.Shadows, "ConservativeCulling", "Experimental shadow culling", "Changes which objects Unity includes for shadows; applies live. Stock may already be On. Keep the override ticked and change Enabled/Disabled to compare.", 0, 1,
             () => _asset!.conservativeEnclosingSphere ? 1 : 0, v => _asset!.conservativeEnclosingSphere = v > .5f, Owner.Pipeline, Kind.Toggle);
         for (int count = 2; count <= 4; count++)
         {
@@ -527,14 +527,18 @@ internal static class AdvancedGraphics
             BridgeSettings.Recognized ? "Upscaling: smoother edges with less graphics work. Frame Gen: extra pictures for smoother movement. Neural: AI lighting and surface detail, with a performance cost." :
                 "Upscaling can improve frame rate and smooth jagged edges. Setup's optional bridge adds other upscalers and smoother-motion tools.", _small);
         GUI.enabled = _ready;
-        GUI.Label(new Rect(x + 25, y + 398, 900, 34), "Not sure where to start? Try Balanced. Presets replace custom graphics choices; upscaling, frame generation and AI lighting stay as set.", _small);
+        GUI.Label(new Rect(x + 25, y + 398, 900, 34), "Not sure where to start? Try Balanced. Presets replace custom graphics choices; upscaling, frame generation, AI lighting and the startup plant-shadow request stay as set.", _small);
         string[] presets = { "Game defaults", "Balanced", "Quality", "Extreme" };
         for (int i = 0; i < presets.Length; i++)
             if (GUI.Button(new Rect(x + 25 + i * 225, y + 443, 210, 40), presets[i], _button)) ApplyPreset(presets[i]);
-        GUI.Label(new Rect(x + 25, y + 495, 900, 85),
+        GUI.Label(new Rect(x + 25, y + 495, 900, 60),
             "Game defaults: let the game choose. Balanced: more detail with a lighter graphics load. Quality: sharper, longer shadows. Extreme: the longest shadows and highest detail, with a large performance cost. Try each in the same view.", _small);
+        GUI.enabled = !PerformanceCapture.Active;
+        if (GUI.Button(new Rect(x + 25, y + 563, 300, 32), "Capture 30-second performance sample", _button))
+        { PerformanceCapture.Begin(); if (PerformanceCapture.Active) Close(); }
         GUI.enabled = true;
-        GUI.Label(new Rect(x + 25, y + 591, 900, 60),
+        GUI.Label(new Rect(x + 340, y + 561, 585, 54), PerformanceCapture.Status, _small);
+        GUI.Label(new Rect(x + 25, y + 621, 900, 36),
             "Monitor play on DirectX 11 only. Disable the mod and optional injector before VR. In-world time continues while this panel is open.", _small);
     }
 
@@ -576,7 +580,7 @@ internal static class AdvancedGraphics
             MenuTheme.Fill(new Rect(x + 25, y + 169, 900, 1), MenuTheme.Raised);
             MenuTheme.DrawBorder(new Rect(frameX, frameY, 1200, 1000));
             GUI.color = Color.white;
-            GUI.Label(new Rect(x + 25, y + 18, 790, 38), "Big Beautiful Walk 0.8.4", _title);
+            GUI.Label(new Rect(x + 25, y + 18, 790, 38), "Big Beautiful Walk 0.8.5", _title);
             GUI.Label(new Rect(x + 25, y + 57, 870, 28), BridgeSettings.Recognized
                 ? "Home closes this panel  •  F10 opens extra upscaler controls"
                 : "Home closes this panel  •  More upscalers are available through Setup", _label);
@@ -611,8 +615,17 @@ internal static class AdvancedGraphics
                     _page == Page.Textures ? $"Textures are the surface images on objects. On-demand texture loading is {(QualitySettings.streamingMipmapsActive ? "on" : "off")} in this game profile." :
                     $"Range: {_asset!.shadowDistance:F0} m  •  Cascades: {_asset.shadowCascadeCount}  •  Atlas setting: {_asset.mainLightShadowmapResolution}px";
                 GUI.Label(new Rect(x + 25, y + 181, 900, 40), note, _small);
+                bool vegetationPage = _page == Page.Vegetation;
+                if (vegetationPage)
+                {
+                    bool next = GUI.Toggle(new Rect(x + 25, y + 225, 900, 28), SmallPlantShadows.Requested,
+                        "Request grass / shrub shadow casting after restart", _toggle);
+                    if (next != SmallPlantShadows.Requested) SmallPlantShadows.Request(next);
+                    GUI.Label(new Rect(x + 25, y + 257, 900, 56), SmallPlantShadows.Status +
+                        " Adds casting over the current vegetation shadow range; can be expensive at Extreme. Existing caster flags and tree range are preserved.", _small);
+                }
                 var rows = Settings.FindAll(s => s.Page == _page && (s.Applicable?.Invoke() ?? true));
-                _scroll = GUI.BeginScrollView(new Rect(x + 25, y + 227, 910, 427), _scroll, new Rect(0, 0, 885, rows.Count * 67 + 12));
+                _scroll = GUI.BeginScrollView(new Rect(x + 25, y + (vegetationPage ? 317 : 227), 910, vegetationPage ? 337 : 427), _scroll, new Rect(0, 0, 885, rows.Count * 67 + 12));
                 try
                 {
                     for (int i = 0; i < rows.Count; i++)

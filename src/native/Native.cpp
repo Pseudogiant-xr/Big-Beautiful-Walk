@@ -275,7 +275,7 @@ void __stdcall RenderEvent(int eventId, void* pointer) {
 
 extern "C" __declspec(dllexport) void BW_Initialize(const wchar_t* data, const wchar_t* runtime) {
     dataDirectory = data; runtimeDirectory = runtime;
-    Log("Big Beautiful Walk native 0.8.4 loaded; backend=%s; frame ABI=%zu", backend::Name(), sizeof(Frame));
+    Log("Big Beautiful Walk native 0.8.5 loaded; backend=%s; frame ABI=%zu", backend::Name(), sizeof(Frame));
     if (!backend::Attach(runtimeDirectory)) status = -1;
 }
 extern "C" __declspec(dllexport) int BW_FrameSize() { return sizeof(Frame); }
