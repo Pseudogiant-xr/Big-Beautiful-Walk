@@ -361,7 +361,7 @@ function Invoke-BbwDownloadRequest([uri]$Uri, [string]$Destination, [int]$Timeou
     $request.PreAuthenticate=$false
     $request.Timeout=$TimeoutMilliseconds
     $request.ReadWriteTimeout=$TimeoutMilliseconds
-    $request.UserAgent='BigBeautifulWalk-Setup/0.8.5'
+    $request.UserAgent='BigBeautifulWalk-Setup/0.8.6'
     $response=$null
     $elapsed=[Diagnostics.Stopwatch]::StartNew()
     try {
@@ -747,7 +747,7 @@ function Invoke-BbwSetup {
             $applied++
             if ($FaultAfter -gt 0 -and $applied -eq $FaultAfter) { throw 'Injected transaction failure.' }
         }
-        if ($Mode -eq 'Install' -or $entries.Count -gt 0) { Write-BbwJson $manifestPath ([pscustomobject]@{ SchemaVersion=1; Version='0.8.5'; Entries=@($entries.ToArray()) }) }
+        if ($Mode -eq 'Install' -or $entries.Count -gt 0) { Write-BbwJson $manifestPath ([pscustomobject]@{ SchemaVersion=1; Version='0.8.6'; Entries=@($entries.ToArray()) }) }
         elseif ([IO.File]::Exists($manifestPath)) { [IO.File]::Delete($manifestPath) }
         [IO.File]::Delete($journalPath)
         if ($Mode -eq 'Install') {

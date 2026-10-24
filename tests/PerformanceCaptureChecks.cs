@@ -129,3 +129,4 @@ namespace Unity.Profiling
 namespace BigWalkDLSS {internal static class AdvancedGraphics{internal static void Update(){}internal static void LateUpdate(){}internal static void Draw(){}internal static void Close(){}internal static void Shutdown(){}} internal static class SmallPlantShadows{internal static void Tick(){}internal static void Shutdown(){}} internal static class VegetationShadows{internal static void Shutdown(){}}}
 
 namespace BigWalkDLSS {internal static class ShadowPassProbe{internal static void Begin(Action<string> record,Func<bool> collecting){}internal static void Shutdown(){}}}
+namespace BigWalkDLSS {internal static class ShadowReceiverProbe{internal static void Begin(Func<bool> collecting){}internal static void Drain(Action<string> record){}internal static void Shutdown(){}}}

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.6 — receiver-coverage prototype
+
+- Extend manual performance captures with execution-time camera/shadow transforms, active renderer features and proposed full-resolution receiver rectangles. Bound sampling, queues and capture lifetimes; preserve the original render call and its exceptions.
+- Include conservative CPU receiver geometry, matrix composition and neighbouring-tile filter coverage checks. Proposed rectangles are diagnostic estimates, not measured GPU savings or approval to discard pixels.
+- Keep scissoring disabled: Crest water, fog, reflections and temporal/spatial sampling require a complete receiver audit first. The prototype issues no GPU commands and does not change shadow resolution, distance, cascades or caster detail.
+
 ## 0.8.5 — alpha
 
 - Add a manual 30-second performance capture on Overview. It records game-frame timings, available native counters, sun/view context and requested settings without changing graphics quality; unsupported GPU counters stay blank.

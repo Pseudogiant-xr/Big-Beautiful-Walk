@@ -1,5 +1,19 @@
 # Investigating sunrise and sunset slowdowns
 
+## Full-resolution receiver prototype
+
+The 0.8.6 prototype extends the same **Home → Overview → Capture 30-second performance sample** action. Use Extreme with the main shadow atlas at **16384**, keep the view still during a sunrise/sunset slowdown, and send the resulting CSV. Startup FG/NR requests are snapshots of launch settings; changes made through F10 are not reflected in those header fields.
+
+`# shadow_receiver_bounds` lines are sampled from the actual main-light draw, using that invocation's camera data. They include camera/atlas matrices, sun direction, active renderer features, proposed per-tile rectangles and retained-area fractions. The geometry uses an infinite camera view cone, so it does not truncate transparent or volumetric view rays at the camera near/far planes. Filter guards and neighbouring atlas-tile dependencies are included. Invalid, degenerate or uncertain inputs use the full tile.
+
+**Clipping remains disabled.** Every line explicitly reports `scissor_applied=False` and `receiver_contract=unaudited`. Crest water can request shadow samples outside the camera view, and custom fog, reflections, temporal history and spatial jitter need their own coverage bounds. A smaller proposed camera rectangle does not establish that those pixels are unused by the whole game. A retained fraction of 0.6 describes a proposed rectangle's area, not a 40% GPU-time reduction or a valid optimisation yet.
+
+The probe observes execution through a class-by-reference pass-data argument. It avoids the proposed slice detour because this installation's HarmonySupport backend mishandles struct-by-reference arguments. The original draw always runs, its exceptions are preserved, and no GPU command or graphics setting is changed. Sampling is capped at one record per camera per second, 64 camera identities and 256 queued records; explicit dropped-record lines identify a limit. Completed callbacks from an earlier capture cannot enter a later one. Native hook execution and captured coverage remain unverified until an affected-PC run.
+
+This is the measurement stage of the full-resolution path, not an active performance fix. It keeps the current sharp shadows while gathering the missing receiver evidence.
+
+## Existing evidence
+
 A reported comparison with Extreme and NR off dropped from roughly 120–140 FPS during day/night to about 50 FPS near sunrise/sunset. Temporarily disabling **Main-light shadows** in the same view recovered more than 150 FPS. This isolates the main-light shadow path; it does not yet separate CPU culling, shadow-map drawing and shadow sampling on the GPU.
 
 Extreme requests a 2 km shadow/vegetation range, four cascades and a 16384 atlas where supported. Low-angle light can include more casters and overlapping foliage in the light’s view. DLSS Performance reduces the scene’s input pixel count; it does not reduce that requested shadow-map resolution or casting range. These are reasons to investigate shadow work, not proof of the expensive pass. The atlas setting accepting 16384 still does not prove the GPU allocation.
