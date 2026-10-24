@@ -63,6 +63,7 @@ internal static class PerformanceCapture
             _nextContext = 0;
             Active = true;
             ShadowPassProbe.Begin(ShadowStates.Add, () => Active && Time.realtimeSinceStartupAsDouble >= _start && Time.realtimeSinceStartupAsDouble <= _start + 30);
+            ShadowReceiverProbe.Begin(() => Active && Time.realtimeSinceStartupAsDouble >= _start && Time.realtimeSinceStartupAsDouble <= _start + 30);
             Status = "Capturing after a 3-second warm-up. Keep the same view for 30 seconds; no settings are changed.";
             Plugin.Instance.Log.LogInfo("Performance capture started; close Home and keep the camera still.");
         }
@@ -99,6 +100,7 @@ internal static class PerformanceCapture
         {
             if (!Application.isFocused) { FocusChanged(false); return; }
             double now = Time.realtimeSinceStartupAsDouble;
+            ShadowReceiverProbe.Drain(ShadowStates.Add);
             if (now < _start) return;
             if (now >= _nextContext)
             {
@@ -134,6 +136,7 @@ internal static class PerformanceCapture
 
     private static void Save()
     {
+        ShadowReceiverProbe.Finish(ShadowStates.Add);
         var output = new StringBuilder(_metadata).AppendLine();
         output.AppendLine("# Complete frame intervals are retained, including the finishing frame; a boundary stall can extend the requested 30-second window.");
         output.AppendLine("# Game update timings are not generated-frame FPS. Marker values use the stated native units; blank means unavailable. CPU scopes do not measure GPU cost.");
@@ -181,6 +184,7 @@ internal static class PerformanceCapture
     {
         Active = false;
         ShadowPassProbe.Shutdown();
+        ShadowReceiverProbe.Shutdown();
         ShadowStates.Clear();
         foreach (var counter in Counters)
             if (counter.Created) { try { counter.Recorder.Dispose(); } catch { } }

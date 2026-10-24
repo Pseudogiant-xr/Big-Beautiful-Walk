@@ -9,17 +9,17 @@ try
 {
  ShadowPassProbe.Begin(lines.Add,()=>true);
  var pass=new MainLightShadowCasterPass();var data=new UniversalCameraData();
- ShadowPassProbe.AfterSetup(pass,true,data);
+ ShadowPassProbe.Record(pass,data);
  if(lines.Count!=1||!lines[0].Contains("cascades=4")||!lines[0].Contains("effective_max_shadow_distance=1000")||!lines[0].Contains("cascade3_slice_resolution=8192"))throw new Exception("Produced cascade data missing or replaced by asset settings");
- ShadowPassProbe.AfterSetup(pass,true,data);if(lines.Count!=1)throw new Exception("Snapshot rate limit failed");
- var other=new UniversalCameraData();other.camera.targetTexture=new object();ShadowPassProbe.AfterSetup(pass,true,other);
+ ShadowPassProbe.Record(pass,data);if(lines.Count!=1)throw new Exception("Snapshot rate limit failed");
+ var other=new UniversalCameraData();other.camera.targetTexture=new object();ShadowPassProbe.Record(pass,other);
  if(lines.Count!=2||!lines[1].Contains("target_texture=True"))throw new Exception("A second base render-to-texture camera was suppressed");
- Time.realtimeSinceStartupAsDouble=2;pass.m_CreateEmptyShadowmap=true;ShadowPassProbe.AfterSetup(pass,true,data);
- pass.m_CreateEmptyShadowmap=false;data.renderType=CameraRenderType.Overlay;ShadowPassProbe.AfterSetup(pass,true,data);
+ Time.realtimeSinceStartupAsDouble=2;pass.m_CreateEmptyShadowmap=true;ShadowPassProbe.Record(pass,data);
+ pass.m_CreateEmptyShadowmap=false;data.renderType=CameraRenderType.Overlay;ShadowPassProbe.Record(pass,data);
  if(lines.Count!=2)throw new Exception("Empty/overlay pass was misidentified as the world shadow pass");
- data.renderType=CameraRenderType.Base;pass.m_CascadeSplitDistances=Array.Empty<Vector4>();ShadowPassProbe.AfterSetup(pass,true,data);
+ data.renderType=CameraRenderType.Base;pass.m_CascadeSplitDistances=Array.Empty<Vector4>();ShadowPassProbe.Record(pass,data);
  if(lines.Count!=3)throw new Exception("Short data arrays were not handled");
- ShadowPassProbe.Shutdown();Time.realtimeSinceStartupAsDouble=4;ShadowPassProbe.AfterSetup(pass,true,data);
+ ShadowPassProbe.Shutdown();Time.realtimeSinceStartupAsDouble=4;ShadowPassProbe.Record(pass,data);
  if(lines.Count!=3)throw new Exception("Stopped probe still recorded data");
  Console.WriteLine("Shadow pass probe checks passed: real-pass fields, camera distance clamp, slices, cadence, overlay/empty filtering, short arrays and shutdown.");return 0;
 }
