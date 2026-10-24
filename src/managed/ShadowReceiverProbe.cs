@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Threading;
-using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -11,18 +10,18 @@ using MainShadowPass = UnityEngine.Rendering.Universal.Internal.MainLightShadowC
 
 namespace BigWalkDLSS;
 
-// Inspect actual execution-time receiver coverage before enabling scissoring.
+// Inspect graph-recording receiver coverage before enabling scissoring.
 // Crest/Enviro and material-level consumers have not yet been bounded: this
 // prototype never changes GPU commands, shadow maps, matrices or caster flags.
 internal static class ShadowReceiverProbe
 {
-    private static Harmony? _harmony;
     private static Func<bool>? _collecting;
     private static readonly object ReportsLock = new();
     private static readonly Queue<string> Reports = new();
     private static readonly Dictionary<int, double> NextReport = new();
     private static int _droppedReports;
     private static long _generation;
+    private static int _observations;
 
     internal sealed class Snapshot
     {
@@ -34,34 +33,43 @@ internal static class ShadowReceiverProbe
     {
         Shutdown();
         lock (ReportsLock) _collecting = collecting;
-        try
-        {
-            _harmony = new Harmony("local.bigwalk.shadow-receiver-probe");
-            // Class-byref PassData is supported by the installed backend.
-            // Avoid detouring RenderShadowSlice: its struct-byref arguments
-            // are mishandled by this installation's HarmonySupport version.
-            _harmony.Patch(AccessTools.Method(typeof(MainShadowPass), nameof(MainShadowPass.RenderMainLightCascadeShadowmap)),
-                prefix: new HarmonyMethod(typeof(ShadowReceiverProbe), nameof(BeforePass)),
-                finalizer: new HarmonyMethod(typeof(ShadowReceiverProbe), nameof(AfterPass)));
-        }
-        catch (Exception error)
-        {
-            Shutdown();
-            lock (ReportsLock) Reports.Enqueue("# shadow_receiver_probe_unavailable=" + error.GetType().Name);
-        }
     }
 
-    internal static void BeforePass(MainShadowPass __instance, RasterCommandBuffer __0,
-        ref MainShadowPass.PassData __1, bool __2, out Snapshot? __state)
+    // Called inside the mod's already-owned replacement callback. No observer
+    // detours wrap the original shadow setup/draw: this backend's trampoline
+    // logs and swallows failures crossing a native -> managed -> native detour.
+    internal static void ObserveFrame(ContextContainer frame)
+    {
+        long generation = Volatile.Read(ref _generation);
+        try
+        {
+            if (_collecting?.Invoke() != true) return;
+            var data = frame.Get<UniversalCameraData>();
+            var shadow = frame.Get<UniversalShadowData>();
+            var renderer = data.renderer?.TryCast<UniversalRenderer>();
+            if (renderer == null || !shadow.supportsMainLightShadows || !shadow.mainLightShadowsEnabled) return;
+            var pass = renderer.m_MainLightShadowCasterPass;
+            if (pass == null) return;
+            lock (ReportsLock)
+            {
+                if (_collecting == null || generation != _generation) return;
+                ShadowPassProbe.Record(pass, data);
+                ReadSnapshot(pass, data, out var snapshot);
+                CompleteSnapshot(snapshot);
+            }
+        }
+        catch (Exception error) { Enqueue("# shadow_receiver_probe_read_failed=" + error.GetType().Name, generation); }
+    }
+
+    internal static void ReadSnapshot(MainShadowPass __instance, UniversalCameraData data, out Snapshot? __state)
     {
         __state = null;
         long generation = Volatile.Read(ref _generation);
         try
         {
             if (_collecting?.Invoke() != true) return;
-            var data = __1?.cameraData;
             var camera = data?.camera;
-            if (camera == null || __0 == null || __instance.m_CreateEmptyShadowmap) return;
+            if (camera == null || __instance.m_CreateEmptyShadowmap) return;
             int identity = camera.GetInstanceID();
             double now = Time.realtimeSinceStartupAsDouble;
             lock (ReportsLock)
@@ -73,13 +81,13 @@ internal static class ShadowReceiverProbe
             }
             var text = new StringBuilder("# shadow_receiver_bounds frame=").Append(Time.frameCount)
                 .Append(" camera_id=").Append(identity).Append(" scissor_applied=False receiver_contract=unaudited")
-                .Append(" render_graph=").Append(__2).Append(" render_type=").Append(data!.renderType)
+                .Append(" phase=render_graph_recording render_type=").Append(data!.renderType)
                 .Append(" target_texture=").Append(camera.targetTexture != null || data.targetTexture != null);
             __state = new Snapshot { Generation = generation };
             try
             {
                 DescribeConsumers(data, text);
-                if (!__2 || camera.cameraType != CameraType.Game || data.renderType != CameraRenderType.Base ||
+                if (camera.cameraType != CameraType.Game || data.renderType != CameraRenderType.Base ||
                     camera.stereoEnabled || data.xrRendering || camera.orthographic)
                 { text.Append(" bounds_reason=unsupported_camera"); return; }
                 int atlasWidth = __instance.m_RenderTargetWidth, atlasHeight = __instance.m_RenderTargetHeight;
@@ -137,10 +145,9 @@ internal static class ShadowReceiverProbe
         catch (Exception error) { Enqueue("# shadow_receiver_probe_read_failed=" + error.GetType().Name, generation); }
     }
 
-    internal static Exception? AfterPass(Exception? __exception, Snapshot? __state)
+    internal static void CompleteSnapshot(Snapshot? snapshot)
     {
-        if (__state != null) Enqueue(__state.Text + " pass_failed=" + (__exception != null), __state.Generation);
-        return __exception; // Observe the original; never suppress or replace its failure.
+        if (snapshot != null) Enqueue(snapshot.Text + " draw_execution=unobserved", snapshot.Generation);
     }
 
     private static void DescribeConsumers(UniversalCameraData data, StringBuilder text)
@@ -181,6 +188,7 @@ internal static class ShadowReceiverProbe
             if (_collecting == null || generation != _generation) return;
             if (Reports.Count >= 256) { _droppedReports++; return; }
             Reports.Enqueue(text);
+            _observations++;
         }
     }
     internal static void Drain(Action<string> record)
@@ -191,12 +199,15 @@ internal static class ShadowReceiverProbe
             if (_droppedReports > 0) { record("# shadow_receiver_probe_dropped=" + _droppedReports); _droppedReports = 0; }
         }
     }
+    internal static void Finish(Action<string> record)
+    {
+        Drain(record);
+        lock (ReportsLock)
+            if (_observations == 0) record("# shadow_receiver_probe_unavailable=owned_render_callback_not_observed");
+    }
     internal static void Shutdown()
     {
         lock (ReportsLock) { _collecting = null; _generation++; }
-        try { _harmony?.UnpatchSelf(); }
-        catch (Exception error) { Plugin.Instance.Log.LogWarning("Receiver probe cleanup failed: " + error.GetType().Name); }
-        finally { _harmony = null; }
-        lock (ReportsLock) { Reports.Clear(); NextReport.Clear(); _droppedReports = 0; }
+        lock (ReportsLock) { Reports.Clear(); NextReport.Clear(); _droppedReports = 0; _observations = 0; }
     }
 }

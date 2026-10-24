@@ -43,12 +43,14 @@ jobs:
           }
       - name: Actual shadow-pass producer snapshots
         run: dotnet run --project tests/ShadowPassProbeChecks.csproj -c Release
-      - name: Full-resolution receiver bounds and read-only execution probe
+      - name: Full-resolution receiver bounds and read-only recording probe
         run: |
           foreach ($project in @('ShadowReceiverBoundsChecks', 'ShadowClipProjectionChecks', 'ShadowReceiverProbeChecks')) {
             dotnet run --project "tests/$project.csproj" -c Release
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
+      - name: Native observer exception-boundary regression
+        run: dotnet run --project tests/NativeObserverBoundaryChecks.csproj -c Release
       - name: Saved bridge settings refresh
         shell: pwsh
         run: ./tests/Invoke-BridgeRefreshChecks.ps1

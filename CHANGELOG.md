@@ -2,8 +2,9 @@
 
 ## 0.8.6 — receiver-coverage prototype
 
-- Extend manual performance captures with execution-time camera/shadow transforms, active renderer features and proposed full-resolution receiver rectangles. Bound sampling, queues and capture lifetimes; preserve the original render call and its exceptions.
+- Extend manual performance captures with recording-time camera/shadow transforms, active renderer features and proposed full-resolution receiver rectangles. Bound sampling, queues and capture lifetimes; leave original shadow setup/draw calls unintercepted.
 - Include conservative CPU receiver geometry, matrix composition and neighbouring-tile filter coverage checks. Proposed rectangles are diagnostic estimates, not measured GPU savings or approval to discard pixels.
+- Remove the producer Setup observer detour as well: the installed native trampoline can swallow original exceptions. Reuse the existing owned replacement callback, label draw execution unobserved and report missing observations explicitly.
 - Keep scissoring disabled: Crest water, fog, reflections and temporal/spatial sampling require a complete receiver audit first. The prototype issues no GPU commands and does not change shadow resolution, distance, cascades or caster detail.
 
 ## 0.8.5 — alpha

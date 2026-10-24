@@ -162,6 +162,7 @@ public sealed class Plugin : BasePlugin
     {
         var resources = frameData.Get<UniversalResourceData>();
         var camera = frameData.Get<UniversalCameraData>();
+        ShadowReceiverProbe.ObserveFrame(frameData);
         TextureHandle output = activeCameraColorTexture;
         bool stock = false;
         if (RestorePostEffects.Value && !_stockFaulted)

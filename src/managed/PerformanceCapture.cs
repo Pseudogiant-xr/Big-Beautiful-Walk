@@ -136,6 +136,7 @@ internal static class PerformanceCapture
 
     private static void Save()
     {
+        ShadowReceiverProbe.Finish(ShadowStates.Add);
         var output = new StringBuilder(_metadata).AppendLine();
         output.AppendLine("# Complete frame intervals are retained, including the finishing frame; a boundary stall can extend the requested 30-second window.");
         output.AppendLine("# Game update timings are not generated-frame FPS. Marker values use the stated native units; blank means unavailable. CPU scopes do not measure GPU cost.");

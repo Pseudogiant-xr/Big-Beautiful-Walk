@@ -12,51 +12,57 @@ try
 {
  bool collecting=false;ShadowReceiverProbe.Begin(()=>collecting);
  var pass=new MainLightShadowCasterPass();var data=new MainLightShadowCasterPass.PassData();var command=new RasterCommandBuffer();
- ShadowReceiverProbe.BeforePass(pass,command,ref data,true,out var warmup);Check(warmup==null,"Warmup recorded");
+ ShadowReceiverProbe.ReadSnapshot(pass,data.cameraData,out var warmup);Check(warmup==null,"Warmup recorded");
  collecting=true;
- ShadowReceiverProbe.BeforePass(pass,command,ref data,true,out var sample);
- Check(sample!=null&&sample.Text.Contains("slice3_kept=")&&sample.Text.Contains("Crest.SampleShadowsURP"),"Actual execution data/consumer list missing");
+ ShadowReceiverProbe.ReadSnapshot(pass,data.cameraData,out var sample);
+ Check(sample!=null&&sample.Text.Contains("slice3_kept=")&&sample.Text.Contains("Crest.SampleShadowsURP"),"Recording data/consumer list missing");
  Check(sample!.Text.Contains("scissor_applied=False")&&sample.Text.Contains("receiver_contract=unaudited"),"Proposed bounds mislabeled as safe clipping");
- var originalFailure=new InvalidOperationException("original");
- Check(ReferenceEquals(ShadowReceiverProbe.AfterPass(originalFailure,sample),originalFailure),"Original exception suppressed/replaced");
- ShadowReceiverProbe.Drain(lines.Add);Check(lines.Count==1&&lines[0].Contains("pass_failed=True"),"Completed scope missing");
- ShadowReceiverProbe.BeforePass(pass,command,ref data,true,out var sameSecond);Check(sameSecond==null,"Sampling cadence failed");
+ ShadowReceiverProbe.CompleteSnapshot(sample);
+ ShadowReceiverProbe.Drain(lines.Add);Check(lines.Count==1&&lines[0].Contains("draw_execution=unobserved"),"Completed scope missing");
+ ShadowReceiverProbe.ReadSnapshot(pass,data.cameraData,out var sameSecond);Check(sameSecond==null,"Sampling cadence failed");
  // Same draw pass reused for a different camera must use that call's data.
  var second=new MainLightShadowCasterPass.PassData();second.cameraData.camera.Id=99;second.cameraData.renderType=CameraRenderType.Overlay;
- ShadowReceiverProbe.BeforePass(pass,command,ref second,true,out var overlay);
+ ShadowReceiverProbe.ReadSnapshot(pass,second.cameraData,out var overlay);
  Check(overlay!=null&&overlay.Text.Contains("camera_id=99")&&overlay.Text.Contains("unsupported_camera"),"Overlay confused with earlier camera");
- ShadowReceiverProbe.AfterPass(null,overlay);ShadowReceiverProbe.Drain(lines.Add);
+ ShadowReceiverProbe.CompleteSnapshot(overlay);ShadowReceiverProbe.Drain(lines.Add);
  Time.realtimeSinceStartupAsDouble=2;
  pass.m_CascadeSlices[0].offsetX=17;
- ShadowReceiverProbe.BeforePass(pass,command,ref data,true,out var layout);
+ ShadowReceiverProbe.ReadSnapshot(pass,data.cameraData,out var layout);
  Check(layout!=null&&layout.Text.Contains("layout_fallback"),"Nonstandard layout accepted");
- ShadowReceiverProbe.AfterPass(null,layout);ShadowReceiverProbe.Drain(lines.Add);pass.m_CascadeSlices[0].offsetX=0;
- // Native finalizer from an old capture must not contaminate a new capture.
- Time.realtimeSinceStartupAsDouble=4;ShadowReceiverProbe.BeforePass(pass,command,ref data,true,out var delayed);
+ ShadowReceiverProbe.CompleteSnapshot(layout);ShadowReceiverProbe.Drain(lines.Add);pass.m_CascadeSlices[0].offsetX=0;
+ // A delayed snapshot from an old capture must not contaminate a new capture.
+ Time.realtimeSinceStartupAsDouble=4;ShadowReceiverProbe.ReadSnapshot(pass,data.cameraData,out var delayed);
  ShadowReceiverProbe.Shutdown();ShadowReceiverProbe.Begin(()=>true);
- ShadowReceiverProbe.AfterPass(null,delayed);ShadowReceiverProbe.Drain(lines.Add);Check(lines.Count==3,"Old capture finalizer entered new capture");
+ ShadowReceiverProbe.CompleteSnapshot(delayed);ShadowReceiverProbe.Drain(lines.Add);Check(lines.Count==3,"Old snapshot entered new capture");
  // Invalid reads produce explicit diagnostic fallback and no command changes.
  Time.realtimeSinceStartupAsDouble=5;data.cameraData.ThrowMatrices=true;
- ShadowReceiverProbe.BeforePass(pass,command,ref data,true,out var invalid);
- ShadowReceiverProbe.AfterPass(null,invalid);ShadowReceiverProbe.Drain(lines.Add);
+ ShadowReceiverProbe.ReadSnapshot(pass,data.cameraData,out var invalid);
+ ShadowReceiverProbe.CompleteSnapshot(invalid);ShadowReceiverProbe.Drain(lines.Add);
  Check(lines.Count==4&&lines[3].Contains("read_failed_InvalidOperationException"),"Read failure not reported");
  data.cameraData.ThrowMatrices=false;
  // Camera and queue caps keep capture-owned state bounded.
  Time.realtimeSinceStartupAsDouble=6;
- for(int index=100;index<180;index++){data.cameraData.camera.Id=index;ShadowReceiverProbe.BeforePass(pass,command,ref data,true,out var many);ShadowReceiverProbe.AfterPass(null,many);}
+ for(int index=100;index<180;index++){data.cameraData.camera.Id=index;ShadowReceiverProbe.ReadSnapshot(pass,data.cameraData,out var many);ShadowReceiverProbe.CompleteSnapshot(many);}
  ShadowReceiverProbe.Drain(lines.Add);Check(lines.Exists(line=>line.Contains("probe_dropped=")),"Camera limit silently lost records");
  ShadowReceiverProbe.Shutdown();Time.realtimeSinceStartupAsDouble=20;
- ShadowReceiverProbe.BeforePass(pass,command,ref data,true,out var stopped);Check(stopped==null,"Stopped probe still sampled");
- Check(HarmonyLib.Harmony.ValueRefHooks==0,"Installed a struct-byref hook on affected backend");
+ ShadowReceiverProbe.ReadSnapshot(pass,data.cameraData,out var stopped);Check(stopped==null,"Stopped probe still sampled");
+ Check(HarmonyLib.Harmony.PatchCalls==0,"Read-only probe installed a native observer detour");
  Check(RasterCommandBuffer.CommandWrites==0,"Read-only prototype issued GPU commands");
- Console.WriteLine("Receiver probe checks passed: actual pass camera/consumers, geometry/fallback, cadence/caps, generation isolation, original exception and zero GPU writes.");return 0;
+ // Exercise the production bridge rather than only the geometry entry point.
+ lines.Clear();ShadowReceiverProbe.Begin(()=>true);
+ var frame=new ContextContainer();ShadowReceiverProbe.ObserveFrame(frame);ShadowReceiverProbe.Finish(lines.Add);
+ Check(lines.Count==1&&lines[0].Contains("phase=render_graph_recording")&&ShadowPassProbe.Records==1,"Owned callback failed to observe its frame");
+ ShadowReceiverProbe.Shutdown();ShadowReceiverProbe.Begin(()=>true);lines.Clear();
+ ShadowReceiverProbe.Finish(lines.Add);Check(lines.Count==1&&lines[0].Contains("owned_render_callback_not_observed"),"Missing callback was silently treated as complete evidence");
+ ShadowReceiverProbe.Shutdown();
+ Console.WriteLine("Receiver probe checks passed: recording context/consumers, owned bridge and unavailable path, geometry/fallback, cadence/caps, generation isolation, no observer detours and zero GPU writes.");return 0;
 }
 catch(Exception error){Console.Error.WriteLine("FAIL "+error);return 1;}
 
 namespace BigWalkDLSS{internal sealed class Log{internal void LogWarning(string value){}}internal sealed class Host{internal readonly Log Log=new();}internal static class Plugin{internal static readonly Host Instance=new();}}
 namespace HarmonyLib
 {
- internal sealed class Harmony(string id){internal static int ValueRefHooks;internal void Patch(System.Reflection.MethodInfo? method,HarmonyMethod prefix,HarmonyMethod finalizer){if(method==null)throw new Exception("Missing hook");foreach(var p in method.GetParameters())if(p.ParameterType.IsByRef&&p.ParameterType.GetElementType()!.IsValueType)ValueRefHooks++;}internal void UnpatchSelf(){}}
+ internal sealed class Harmony(string id){internal static int PatchCalls;internal void Patch(System.Reflection.MethodInfo? method,HarmonyMethod prefix,HarmonyMethod finalizer){PatchCalls++;}internal void UnpatchSelf(){}}
  internal sealed class HarmonyMethod(Type type,string name){}internal static class AccessTools{internal static System.Reflection.MethodInfo? Method(Type type,string name)=>type.GetMethod(name);}
 }
 namespace UnityEngine
@@ -72,17 +78,19 @@ namespace UnityEngine
   internal static Matrix4x4 Identity=>new(){m00=1,m11=1,m22=1,m33=1};
  }
 }
-namespace UnityEngine.Rendering{internal sealed class RasterCommandBuffer{internal static int CommandWrites=0;internal IntPtr Pointer=>new(42);}}
+namespace UnityEngine.Rendering{internal sealed class ContextContainer{internal readonly Universal.UniversalCameraData camera=new();internal T Get<T>()where T:class=>typeof(T)==typeof(Universal.UniversalCameraData)?(T)(object)camera:(T)(object)new Universal.UniversalShadowData();}internal sealed class RasterCommandBuffer{internal static int CommandWrites=0;internal IntPtr Pointer=>new(42);}}
 namespace UnityEngine.Rendering.Universal
 {
  internal enum CameraRenderType{Base,Overlay}internal readonly record struct Descriptor(int width,int height);
  internal sealed class UniversalCameraData
  {
   internal readonly Camera camera=new();internal CameraRenderType renderType;internal bool xrRendering=>false;internal object? targetTexture=>null;internal Descriptor cameraTargetDescriptor=>new(1920,1080);internal bool ThrowMatrices;
-  internal readonly Renderer renderer=new();internal Matrix4x4 GetViewMatrix()=>Matrix4x4.Identity;
+  internal readonly UniversalRenderer renderer=new();internal Matrix4x4 GetViewMatrix()=>Matrix4x4.Identity;
   internal Matrix4x4 GetProjectionMatrix(){if(ThrowMatrices)throw new InvalidOperationException();return new(){m00=10,m03=-5,m11=5,m13=-2.5f,m22=1,m33=1};}
  }
- internal sealed class Renderer{internal readonly Features supportedRenderingFeatures=new();internal readonly Feature[] rendererFeatures={new("Crest.SampleShadowsURP"),new("Inactive",false)};}
+ internal class Renderer{internal T? TryCast<T>()where T:class=>this as T;internal readonly Features supportedRenderingFeatures=new();internal readonly Feature[] rendererFeatures={new("Crest.SampleShadowsURP"),new("Inactive",false)};}
+ internal sealed class UniversalRenderer:Renderer{internal readonly MainLightShadowCasterPass m_MainLightShadowCasterPass=new();}
+ internal sealed class UniversalShadowData{internal bool supportsMainLightShadows=>true;internal bool mainLightShadowsEnabled=>true;}
  internal sealed class Features{internal bool cameraStacking=>true;}
  internal sealed class Feature(string name,bool active=true){internal bool isActive=>active;internal TypeName GetIl2CppType()=>new(name);}
  internal sealed class TypeName(string name){internal string FullName=>name;}
@@ -99,3 +107,5 @@ namespace UnityEngine.Rendering.Universal.Internal
   public void RenderMainLightCascadeShadowmap(RasterCommandBuffer cmd,ref PassData data,bool graph){}
  }
 }
+
+namespace BigWalkDLSS{internal static class ShadowPassProbe{internal static int Records;internal static void Record(UnityEngine.Rendering.Universal.Internal.MainLightShadowCasterPass pass,UnityEngine.Rendering.Universal.UniversalCameraData camera){Records++;}}}
