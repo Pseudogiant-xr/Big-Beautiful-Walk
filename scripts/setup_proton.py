@@ -75,16 +75,20 @@ def sync_directory(path):
 
 
 def save_json(path, value):
-    temporary = path.with_name(path.name + ".tmp")
-    if temporary.is_symlink():
-        raise SetupError("Linked installer state: " + str(temporary))
-    with temporary.open("w", encoding="utf-8") as stream:
-        json.dump(value, stream, indent=2)
-        stream.write("\n")
-        stream.flush()
-        os.fsync(stream.fileno())
-    os.replace(temporary, path)
-    sync_directory(path.parent)
+    # O_EXCL creates a new inode: never truncate a pre-existing link, including
+    # a leftover predictable temporary name from an earlier installer.
+    descriptor, name = tempfile.mkstemp(prefix=path.name + ".", suffix=".tmp", dir=path.parent)
+    temporary = Path(name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            json.dump(value, stream, indent=2)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+        sync_directory(path.parent)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def assert_closed(proc=Path("/proc")):
@@ -100,7 +104,7 @@ def assert_closed(proc=Path("/proc")):
         try:
             args = (process / "cmdline").read_bytes().split(b"\0")
             comm = (process / "comm").read_text().strip().casefold()
-        except FileNotFoundError:
+        except (FileNotFoundError, ProcessLookupError):
             continue  # Process exited between enumeration and inspection.
         except PermissionError as error:
             raise SetupError("Cannot inspect a process; close Big Walk and retry.") from error

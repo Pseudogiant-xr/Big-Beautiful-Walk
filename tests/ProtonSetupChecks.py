@@ -221,6 +221,39 @@ class ProtonSetupChecks(unittest.TestCase):
             with self.assertRaisesRegex(setup.SetupError, "Cannot inspect"):
                 setup.assert_closed(proc)
 
+    def test_exited_proc_esrch_is_ignored_for_both_reads(self):
+        proc = self.root / "proc"
+        put(proc, "123/cmdline", b"unrelated-process\0")
+        put(proc, "123/comm", b"unrelated")
+        for method in ("read_bytes", "read_text"):
+            with self.subTest(method=method):
+                with patch.object(Path, method, side_effect=ProcessLookupError(3, "No such process")):
+                    setup.assert_closed(proc)
+
+    def test_hard_linked_journal_temporary_cannot_overwrite_game(self):
+        assembly = self.game / "GameAssembly.dll"
+        before = assembly.read_bytes()
+        state = self.game / setup.STATE
+        state.mkdir()
+        stale = state / "manifest.json.tmp"
+        os.link(assembly, stale)
+        self.run_setup()
+        self.assertEqual(assembly.read_bytes(), before)
+        self.assertEqual(stale.read_bytes(), before)
+        self.run_setup("diagnose")
+        self.run_setup("uninstall")
+        self.assertEqual(assembly.read_bytes(), before)
+
+    def test_failed_state_replace_cleans_only_its_exclusive_temp(self):
+        state = self.root / "state"
+        state.mkdir()
+        stale = put(state, "manifest.json.tmp", b"preserve unrelated file")
+        with patch.object(setup.os, "replace", side_effect=PermissionError("fixture denied")):
+            with self.assertRaises(PermissionError):
+                setup.save_json(state / "manifest.json", {"schema": 1})
+        self.assertEqual(stale.read_bytes(), b"preserve unrelated file")
+        self.assertEqual(list(state.iterdir()), [stale])
+
     def test_refuse_duplicate_installer_lock(self):
         with setup.locked_game(self.game):
             with self.assertRaisesRegex(setup.SetupError, "Another Proton installer"):
