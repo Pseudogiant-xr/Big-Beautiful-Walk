@@ -563,6 +563,9 @@ function Invoke-BbwSetup {
           [ValidateSet('Auto','Nvidia','Bridge')][string]$GpuPath='Auto',
           [string]$NeuralModelPath)
     Test-BbwGame $GamePath
+    if (Test-Path -LiteralPath (Resolve-BbwPath $GamePath '.big-beautiful-walk-proton/manifest.json')) {
+        throw 'This installation is managed by Setup.sh on Linux. Use its uninstall or recover command before switching to Windows Setup.'
+    }
     $GamePath = Get-BbwFinalPath $GamePath
     $state = Resolve-BbwPath $GamePath '.big-beautiful-walk'
     $manifestPath = Resolve-BbwPath $state 'manifest.json'

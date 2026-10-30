@@ -2,7 +2,7 @@
 
 An unofficial graphics mod for **Big Walk** on Windows. It adds DLSS Super Resolution, FSR 3.1, FSR 4 and XeSS, DLSS5 Neural Rendering, Frame Generation and an in-game graphics panel, opened with the **Home** key, with controls for upscaling, shadows, vegetation, textures and more.
 
-**[Download the Windows alpha](https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/releases)** · [Installation](#install) · [Compatibility](docs/COMPATIBILITY.md)
+**[Download the Windows alpha](https://github.com/Pseudogiant-xr/Big-Beautiful-Walk/releases)** · [Installation](#install) · [Experimental Proton installation](docs/PROTON.md) · [Compatibility](docs/COMPATIBILITY.md)
 
 Open the newest release and download `Big-Beautiful-Walk-<version>-alpha.zip` from **Assets**. Extract the whole ZIP and run **Setup.exe** with Big Walk closed.
 
@@ -40,6 +40,8 @@ Big Beautiful Walk is not affiliated with or endorsed by House House, Unity or N
 6. Load into a private world and press **Home**. You should see **Upscaling active**. On the title screen it says **Waiting for a scene**, which is normal.
 
 `Setup.cmd` runs the same installer in a console window, for troubleshooting and command-line use.
+
+Linux users running the Windows game through Steam/Proton can try the separate, command-line [Proton installation path](docs/PROTON.md). It has not yet been tested in the game.
 
 ## First steps
 

@@ -15,7 +15,7 @@ foreach ($path in @($ManagedDll,$NativeDll,$BridgeDll)) {
 $destinationPath = [IO.Path]::GetFullPath($Destination)
 if (Test-Path -LiteralPath $destinationPath) { throw 'Choose a new, empty destination folder.' }
 [void][IO.Directory]::CreateDirectory($destinationPath)
-foreach ($name in @('README.md','LICENSE','NOTICE','THIRD_PARTY_NOTICES.md','CHANGELOG.md','Setup.cmd')) {
+foreach ($name in @('README.md','LICENSE','NOTICE','THIRD_PARTY_NOTICES.md','CHANGELOG.md','Setup.cmd','Setup.sh')) {
     Copy-Item -LiteralPath (Join-Path $root $name) -Destination $destinationPath
 }
 & (Join-Path $PSScriptRoot 'Build-Setup.ps1') -Destination (Join-Path $destinationPath 'Setup.exe')
@@ -23,7 +23,7 @@ foreach ($folder in @('src','scripts','docs','tests','packaging')) {
     $sourceRoot = Join-Path $root $folder
     foreach ($file in Get-ChildItem -LiteralPath $sourceRoot -Recurse -File) {
         $relative = $file.FullName.Substring($root.Length + 1)
-        if ($relative -match '(^|[\\/])(bin|obj)([\\/]|$)') { continue }
+        if ($relative -match '(^|[\\/])(bin|obj|__pycache__)([\\/]|$)' -or $relative -match '\.pyc$') { continue }
         $target = Join-Path $destinationPath $relative
         [void][IO.Directory]::CreateDirectory((Split-Path $target -Parent))
         Copy-Item -LiteralPath $file.FullName -Destination $target

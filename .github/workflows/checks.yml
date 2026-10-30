@@ -3,6 +3,15 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  proton-installer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Proton installer recovery and GPU selection (no game launch)
+        run: python3 tests/ProtonSetupChecks.py
   checks:
     runs-on: windows-latest
     steps:

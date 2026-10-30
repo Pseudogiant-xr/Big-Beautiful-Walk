@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — experimental Proton installer
+
+- Add a separate Python/Steam Proton installer for the existing Windows payload, with explicit NVIDIA DLSS and AMD/Intel FSR 3.1/XeSS paths. It verifies pinned downloads and release checksums, refuses conflicting files, and records ownership before publishing files for interrupted-install recovery.
+- Preserve reused files, edited configurations and other plugins' shared loader during removal. Keep Linux and Windows installer ownership separate; no native Linux renderer or tested Proton rendering is claimed.
+- Leave Frame Generation and Neural Rendering out of this initial Linux installation. Add Linux filesystem/recovery checks and a CachyOS testing guide; existing managed/native rendering binaries are unchanged.
+
 ## 0.8.5 — alpha
 
 - Add a manual 30-second performance capture on Overview. It records game-frame timings, available native counters, sun/view context and requested settings without changing graphics quality; unsupported GPU counters stay blank.
