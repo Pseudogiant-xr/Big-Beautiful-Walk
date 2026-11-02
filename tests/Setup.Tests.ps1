@@ -77,6 +77,14 @@ function Add-BridgeFixture($Fixture) {
     Put $lockPath ($lock | ConvertTo-Json -Depth 8)
 }
 try {
+    Case 'Proton ownership refuses Windows install and uninstall' {
+        $f=New-Fixture 'proton-owned'
+        Put (Join-Path $f.GamePath '.big-beautiful-walk-proton/manifest.json') '{"schema":1}'
+        Expect-Failure { Install $f } 'managed by Setup.sh'
+        Expect-Failure { Uninstall $f } 'managed by Setup.sh'
+        Assert (-not (Test-Path -LiteralPath (Join-Path $f.GamePath '.big-beautiful-walk/manifest.json'))) 'Windows state must not claim a Proton installation'
+        Assert ((Get-Content -LiteralPath (Join-Path $f.GamePath 'GameAssembly.dll') -Raw) -eq 'game-assembly-do-not-touch') 'game assembly must remain intact'
+    }
     Case 'Windows PowerShell parses the GUI entry point' {
         $parseErrors=$null
         [void][Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot '../scripts/Setup.ps1'),[ref]$null,[ref]$parseErrors)

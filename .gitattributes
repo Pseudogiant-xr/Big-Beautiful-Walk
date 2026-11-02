@@ -12,3 +12,6 @@
 # Preserve upstream licence snapshots byte-for-byte with their recorded hashes.
 LICENSE -text
 docs/licenses/* -text
+/Setup.sh text eol=lf
+/scripts/setup_proton.py text eol=lf
+/tests/ProtonSetupChecks.py text eol=lf
